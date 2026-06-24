@@ -2,6 +2,21 @@ const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 let accessToken = null;
 
+function setAccessToken(token) {
+  accessToken = token;
+  try {
+    if (token) {
+      sessionStorage.setItem("access_token", token);
+    } else {
+      sessionStorage.removeItem("access_token");
+    }
+  } catch (_) {}
+}
+
+try {
+  accessToken = sessionStorage.getItem("access_token");
+} catch (_) {}
+
 export async function loginUser(email, password) {
   const res = await fetch(`${API_BASE}/auth/login/`, {
     method: "POST",
@@ -11,7 +26,7 @@ export async function loginUser(email, password) {
   });
   if (!res.ok) throw new Error((await res.json()).detail || "Invalid credentials");
   const data = await res.json();
-  accessToken = data.access;
+  setAccessToken(data.access);
   return data;
 }
 
@@ -26,7 +41,7 @@ export async function registerUser(data) {
     throw new Error(JSON.stringify(errBody));
   }
   const tokenData = await res.json();
-  accessToken = tokenData.access;
+  setAccessToken(tokenData.access);
   return tokenData;
 }
 
@@ -36,11 +51,11 @@ export async function refreshAccessToken() {
     credentials: "include",
   });
   if (!res.ok) {
-    accessToken = null;
+    setAccessToken(null);
     throw new Error("AUTH_REQUIRED");
   }
   const data = await res.json();
-  accessToken = data.access;
+  setAccessToken(data.access);
   return data;
 }
 
@@ -49,7 +64,7 @@ export async function logoutUser() {
     method: "POST",
     credentials: "include",
   });
-  accessToken = null;
+  setAccessToken(null);
   window.location.reload();
 }
 
@@ -93,7 +108,7 @@ async function fetchJson(path, { method = "GET", body } = {}) {
   }
 
   if (res.status === 401 || res.status === 403) {
-    accessToken = null;
+    setAccessToken(null);
     throw new Error("AUTH_REQUIRED");
   }
 

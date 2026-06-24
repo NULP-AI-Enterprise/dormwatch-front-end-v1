@@ -59,10 +59,12 @@ const AccountPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchBuildings()
-      .then(setBuildings)
-      .catch(() => {});
-  }, []);
+    if (!user) {
+      fetchBuildings()
+        .then(setBuildings)
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (regForm.building_id) {
