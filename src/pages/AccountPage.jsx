@@ -24,8 +24,7 @@ const AccountPage = () => {
 
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+
 
   const [editForm, setEditForm] = useState({
     first_name: "",
