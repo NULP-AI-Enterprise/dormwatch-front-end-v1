@@ -24,6 +24,8 @@ const AccountPage = () => {
 
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [editForm, setEditForm] = useState({
     first_name: "",
@@ -449,7 +451,7 @@ const AccountPage = () => {
   const buildingObj = placeObj?.building;
 
   const buildingInfo = buildingObj
-    ? buildingObj.name || `№${buildingObj.building_id}`
+    ? buildingObj.name || `№${buildingObj.number || buildingObj.building_id || '?'}`
     : "Не вказано";
   const roomInfo = placeObj
     ? placeObj.place_name

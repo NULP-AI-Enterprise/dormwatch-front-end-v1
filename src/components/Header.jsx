@@ -49,10 +49,10 @@ const Header = () => {
       (user.role.role_name || "").toLowerCase()
     );
 
-  const roomObj = user?.place;
-  const buildingName = roomObj?.building?.name || roomObj?.building?.building_id;
-  const roomText = roomObj
-    ? `${buildingName ? buildingName + ', ' : ''}${roomObj.place_name}`
+  const placeObj = user?.place; 
+  const buildingName = placeObj?.building?.name || placeObj?.building?.number || placeObj?.building?.building_id;
+  const roomText = placeObj 
+    ? `Гуртожиток №${buildingName || '?'}, ${placeObj.place_name}`
     : "Кімната не вказана";
 
   return (

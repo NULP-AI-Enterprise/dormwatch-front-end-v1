@@ -40,8 +40,8 @@ const HomePage = () => {
 
   const getLocationText = (p) => {
     const b = p.building ? `Корпус ${p.building}` : "";
-    const f = p.floor ? `, ${p.floor} поверх` : "";
-    return `${b}${f}`;
+    const place = p.placeName ? `, ${p.placeName}` : "";
+    return `${b}${place}`;
   };
 
   return (

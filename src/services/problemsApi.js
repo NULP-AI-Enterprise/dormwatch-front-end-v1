@@ -165,6 +165,7 @@ function normalizeComplaint(raw) {
     category: raw.category?.name ?? raw.category ?? "plumbing",
     building: safeBuilding,
     room: safeRoom,
+    placeName: safeRoom,
     floor: safeFloor,
     photoUrl: raw.photo_url ?? raw.photoUrl ?? null,
     status: status,

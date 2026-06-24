@@ -235,7 +235,7 @@ const DashboardPage = () => {
                           </span>
                         </div>
                         <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">
-                          Корпус {problem.building} • поверх {problem.floor} • к. {problem.room}
+                          Корпус {problem.building} • {problem.placeName}
                         </span>
                       </div>
 

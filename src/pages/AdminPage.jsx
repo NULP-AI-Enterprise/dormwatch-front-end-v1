@@ -17,7 +17,6 @@ import Preloader from "../components/Preloader";
 const SERVER_URL = "http://127.0.0.1:8000";
 
 const AdminPage = () => {
-  const [selectedFloor, setSelectedFloor] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("pending");
 
@@ -144,17 +143,15 @@ const AdminPage = () => {
 
   const filtered = useMemo(() => {
     return items.filter((p) => {
-      const floorOk = selectedFloor === "all" ? true : String(p.floor) === String(selectedFloor);
       const categoryOk = selectedCategory === "all" ? true : String(p.category) === String(selectedCategory);
-      return floorOk && categoryOk;
+      return categoryOk;
     });
-  }, [items, selectedFloor, selectedCategory]);
+  }, [items, selectedCategory]);
 
   const humanLocation = (p) => {
     const b = p.building ? `Корпус №${p.building}` : "Корпус ?";
-    const f = p.floor ? `${p.floor} поверх` : "поверх ?";
-    const r = p.room ? `кімн. ${p.room}` : "кімн. ?";
-    return `${b} • ${f} • ${r}`;
+    const place = p.placeName ? `${p.placeName}` : "Місце ?";
+    return `${b} • ${place}`;
   };
 
   return (
@@ -165,16 +162,7 @@ const AdminPage = () => {
           <p className="text-sm sm:text-base text-slate-500 mt-1">Керування заявками</p>
         </div>
 
-        <div className="flex gap-3">
-          <select value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)} className="px-3 sm:px-4 py-2 sm:py-3 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-            <option value="all">Всі поверхи</option>
-            <option value="1">1 поверх</option>
-            <option value="2">2 поверх</option>
-            <option value="3">3 поверх</option>
-            <option value="4">4 поверх</option>
-            <option value="5">5 поверх</option>
-          </select>
-        </div>
+
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 sm:gap-8">

@@ -7,9 +7,6 @@ const CreateReportPage = () => {
 
   const [selectedCategory, setSelectedCategory] = useState("plumbing");
   const [formData, setFormData] = useState({
-    building: "4",
-    floor: "4",
-    room: "",
     title: "",
     description: "",
   });
@@ -24,19 +21,7 @@ const CreateReportPage = () => {
 useEffect(() => {
     async function checkAuth() {
       try {
-        const user = await fetchUserProfile();
-        if (user && user.room) {
-            const roomObj = user.room;
-            const floorObj = roomObj?.floor;
-            const buildingObj = floorObj?.building;
-
-            setFormData((prev) => ({
-              ...prev,
-              room: roomObj.room_number ? String(roomObj.room_number) : "",
-              floor: floorObj?.floor_number ? String(floorObj.floor_number) : "4",
-              building: buildingObj?.number ? String(buildingObj.number) : "4",
-            }));
-        }
+        await fetchUserProfile();
       } catch (e) {
          console.warn("Помилка завантаження профілю", e);
       } finally {
@@ -83,10 +68,6 @@ useEffect(() => {
       setError("Вкажи короткий заголовок проблеми.");
       return;
     }
-    if (!formData.room.trim()) {
-      setError("Вкажи кімнату (наприклад 405).");
-      return;
-    }
     if (!formData.description.trim()) {
       setError("Опиши проблему.");
       return;
@@ -97,9 +78,6 @@ useEffect(() => {
     try {
       await createProblem({
         category: selectedCategory,
-        building: formData.building,
-        floor: formData.floor,
-        room: formData.room.trim(),
         title: formData.title.trim(),
         description: formData.description.trim(),
         photoFile: photoFile, 
@@ -174,50 +152,7 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* Location Fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            <div>
-              <label className="block text-[10px] sm:text-xs font-bold text-slate-400 mb-2 uppercase">
-                Корпус
-              </label>
-              <select
-                name="building"
-                value={formData.building}
-                onChange={handleInputChange}
-                className="w-full p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-sm sm:text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="4">№4</option>
-                <option value="2">№2</option>
-                <option value="3">№3</option>
-                <option value="1">№1</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] sm:text-xs font-bold text-slate-400 mb-2 uppercase">
-                Поверх
-              </label>
-              <input
-                type="number"
-                name="floor"
-                value={formData.floor}
-                onChange={handleInputChange}
-                className="w-full p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-sm sm:text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] sm:text-xs font-bold text-slate-400 mb-2 uppercase">
-                Кімната
-              </label>
-              <input
-                type="text"
-                name="room"
-                value={formData.room}
-                onChange={handleInputChange}
-                placeholder="405"
-                className="w-full p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-sm sm:text-base font-bold outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-          </div>
+
 
           {/* Title & Description */}
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
