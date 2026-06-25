@@ -327,6 +327,51 @@ export async function fetchComments(complaintId) {
   }
 }
 
+// ------------------ EMPLOYEES & TICKETS ------------------
+
+export async function fetchEmployees() {
+  try {
+      const data = await fetchJson("/admin/employees/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch employees", e);
+  }
+  return [];
+}
+
+export async function fetchTickets() {
+  try {
+      const data = await fetchJson("/tickets/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch tickets", e);
+  }
+  return [];
+}
+
+export async function createTicket(complaintId, employeeId, deadline = null) {
+  const payload = {
+      complaint: complaintId,
+      user: employeeId,
+      deadline: deadline
+  };
+  return await fetchJson("/tickets/", {
+      method: "POST",
+      body: payload
+  });
+}
+
+export async function updateTicket(ticketId, employeeId, deadline = null) {
+  const payload = {};
+  if (employeeId !== undefined) payload.user = employeeId;
+  if (deadline !== undefined) payload.deadline = deadline;
+  
+  return await fetchJson(`/tickets/${ticketId}/`, {
+      method: "PATCH",
+      body: payload
+  });
+}
+
 export async function postComment(complaintId, text) {
   const data = await fetchJson(`/complaints/${complaintId}/comments/`, {
     method: "POST",
@@ -366,24 +411,3 @@ export async function changeUserRoom(building, floor, room) {
   });
 }
 
-export async function fetchTickets() {
-  try {
-    const data = await fetchJson("/tickets/");
-    if (Array.isArray(data)) {
-      return data;
-    }
-  } catch (e) {
-    console.warn("Fetch tickets error:", e);
-  }
-  return [];
-}
-
-export async function createTicket(complaintId, deadline) {
-  return await fetchJson("/tickets/", {
-    method: "POST",
-    body: {
-      complaint: complaintId,
-      deadline: deadline || null
-    }
-  });
-}

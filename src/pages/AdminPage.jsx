@@ -13,7 +13,9 @@ import {
   fetchUserProfile,
   CATEGORY_LABELS,
   fetchTickets,
-  createTicket
+  createTicket,
+  fetchEmployees,
+  updateTicket
 } from "../services/problemsApi";
 import Preloader from "../components/Preloader";
 
@@ -36,6 +38,11 @@ const AdminPage = () => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [selectedComplaintForTicket, setSelectedComplaintForTicket] = useState(null);
   const [ticketDeadline, setTicketDeadline] = useState("");
+  const [employees, setEmployees] = useState([]);
+  const [ticketEmployee, setTicketEmployee] = useState("");
+  const [ticketToEdit, setTicketToEdit] = useState(null); // stores ticket_id if editing
+  const [complaintSearchQuery, setComplaintSearchQuery] = useState("");
+  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
   const navigate = useNavigate();
 
   // Перевірка авторизації
@@ -106,26 +113,42 @@ const AdminPage = () => {
     if (activeTab === "tickets") {
       fetchTickets().then(setTickets);
       fetchApprovedComplaints("new").then(setApprovedForTickets);
+      fetchEmployees().then(setEmployees);
     }
   }, [activeTab]);
 
   const openTicketModal = (complaint) => {
     setSelectedComplaintForTicket(complaint);
     setTicketDeadline("");
+    setTicketEmployee("");
+    setTicketToEdit(null);
+    setIsTicketModalOpen(true);
+  };
+
+  const openEditTicketModal = (complaint, ticket) => {
+    setSelectedComplaintForTicket(complaint);
+    setTicketDeadline(ticket.deadline ? ticket.deadline.split("T")[0] : "");
+    setTicketEmployee(ticket.user?.user || "");
+    setTicketToEdit(ticket.ticket_id);
     setIsTicketModalOpen(true);
   };
 
   const handleConfirmCreateTicket = async () => {
     if (!selectedComplaintForTicket) return;
     try {
-      await createTicket(selectedComplaintForTicket.id, ticketDeadline || null);
-      alert("Тікет створено!");
+      if (ticketToEdit) {
+        await updateTicket(ticketToEdit, ticketEmployee || "", ticketDeadline || "");
+        alert("Тікет оновлено!");
+      } else {
+        await createTicket(selectedComplaintForTicket.id, ticketEmployee || null, ticketDeadline || null);
+        alert("Тікет створено!");
+      }
       const newTickets = await fetchTickets();
       setTickets(newTickets);
       setIsTicketModalOpen(false);
       setSelectedComplaintForTicket(null);
     } catch (e) {
-      alert("Помилка створення тікета");
+      alert("Помилка збереження тікета");
     }
   };
 
@@ -204,9 +227,12 @@ const AdminPage = () => {
   const filtered = useMemo(() => {
     return items.filter((p) => {
       const categoryOk = selectedCategory === "all" ? true : String(p.category) === String(selectedCategory);
-      return categoryOk;
+      const searchOk = complaintSearchQuery === "" || 
+        (p.title || "").toLowerCase().includes(complaintSearchQuery.toLowerCase()) || 
+        (p.description || "").toLowerCase().includes(complaintSearchQuery.toLowerCase());
+      return categoryOk && searchOk;
     });
-  }, [items, selectedCategory]);
+  }, [items, selectedCategory, complaintSearchQuery]);
 
   const filteredTicketsList = useMemo(() => {
     return approvedForTickets.filter((p) => {
@@ -215,9 +241,12 @@ const AdminPage = () => {
       const statusOk = ticketStatus === "all" ? true : 
                        ticketStatus === "created" ? hasTicket : 
                        !hasTicket;
-      return categoryOk && statusOk;
+      const searchOk = ticketSearchQuery === "" || 
+        (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) || 
+        (p.description || "").toLowerCase().includes(ticketSearchQuery.toLowerCase());
+      return categoryOk && statusOk && searchOk;
     });
-  }, [approvedForTickets, tickets, ticketCategory, ticketStatus]);
+  }, [approvedForTickets, tickets, ticketCategory, ticketStatus, ticketSearchQuery]);
 
   const humanLocation = (p) => {
     const b = p.building ? `Корпус №${p.building}` : "Корпус ?";
@@ -259,9 +288,16 @@ const AdminPage = () => {
 
       {activeTab === "requests" && (
         <div className="grid lg:grid-cols-4 gap-6 sm:gap-8">
-        <div className="lg:col-span-1 space-y-4 sm:space-y-6">
-          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm">
-            <h4 className="text-sm sm:text-base font-bold mb-3 sm:mb-4">Статус</h4>
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm">
+              <input 
+                type="text" 
+                placeholder="Пошук заявок..." 
+                value={complaintSearchQuery}
+                onChange={e => setComplaintSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 mb-4 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <h4 className="text-sm sm:text-base font-bold mb-3 sm:mb-4">Статус</h4>
             <div className="space-y-2">
               {statusOptions.map((s) => (
                 <label key={s.id} className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg sm:rounded-xl cursor-pointer ${selectedStatus === s.id ? "bg-indigo-50" : "hover:bg-slate-50"}`}>
@@ -411,6 +447,13 @@ const AdminPage = () => {
         <div className="grid lg:grid-cols-4 gap-6 sm:gap-8">
           <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 shadow-sm">
+              <input 
+                type="text" 
+                placeholder="Пошук тікетів..." 
+                value={ticketSearchQuery}
+                onChange={e => setTicketSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 mb-4 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
               <h4 className="text-sm sm:text-base font-bold mb-3 sm:mb-4">Наявність тікета</h4>
               <div className="space-y-2">
                 {[
@@ -472,9 +515,17 @@ const AdminPage = () => {
                       </div>
                       <div>
                         {ticket ? (
-                          <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                          <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 relative group">
                             <p className="text-xs font-bold text-indigo-900">Тікет створено (ID: {ticket.ticket_id})</p>
+                            {ticket.user && <p className="text-xs text-indigo-800 mt-1">Виконавець: {ticket.user.first_name} {ticket.user.last_name}</p>}
                             {ticket.deadline && <p className="text-xs text-indigo-700 mt-1">Дедлайн: {new Date(ticket.deadline).toLocaleDateString()}</p>}
+                            <button 
+                              onClick={() => openEditTicketModal(p, ticket)} 
+                              className="absolute top-3 right-3 text-indigo-600 hover:text-indigo-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Редагувати тікет"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
                           </div>
                         ) : (
                           <button 
@@ -527,6 +578,20 @@ const AdminPage = () => {
 
               {/* Form fields */}
               <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Виконавець</label>
+                <select
+                  value={ticketEmployee}
+                  onChange={(e) => setTicketEmployee(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+                >
+                  <option value="">-- Не призначено --</option>
+                  {employees.map(emp => (
+                    <option key={emp.user} value={emp.user}>
+                      {emp.first_name} {emp.last_name} (ID: {emp.user})
+                    </option>
+                  ))}
+                </select>
+
                 <label className="block text-sm font-bold text-slate-700 mb-2">Дедлайн виконання</label>
                 <input 
                   type="date" 

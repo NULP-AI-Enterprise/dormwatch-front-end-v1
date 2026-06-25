@@ -25,6 +25,7 @@ const PhotoModal = ({ src, onClose }) => {
 
 const DashboardPage = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -141,9 +142,13 @@ const DashboardPage = () => {
       }
   };
 
-  const filteredProblems = activeCategory === "all" 
-    ? problems 
-    : problems.filter(p => p.category === activeCategory);
+  const filteredProblems = problems.filter(p => {
+    const matchesCategory = activeCategory === "all" || p.category === activeCategory;
+    const matchesSearch = searchQuery === "" || 
+      (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -170,20 +175,29 @@ const DashboardPage = () => {
           </h1>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 border rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
-                activeCategory === category.id
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100"
-                  : "bg-white border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {category.emoji && `${category.emoji} `}{category.name}
-            </button>
-          ))}
+        <div className="flex flex-col gap-4">
+          <input 
+            type="text" 
+            placeholder="Пошук заявок..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+          />
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 border rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
+                  activeCategory === category.id
+                    ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100"
+                    : "bg-white border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {category.emoji && `${category.emoji} `}{category.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
