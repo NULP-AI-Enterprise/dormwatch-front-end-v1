@@ -532,14 +532,8 @@ const AccountPage = () => {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100"
-                    >
-                      Редагувати
-                    </button>
-                    <button
                       onClick={logoutUser}
-                      className="flex-1 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 border border-red-100"
+                      className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold hover:bg-red-100 border border-red-100"
                     >
                       Вийти
                     </button>

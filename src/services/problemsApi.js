@@ -192,9 +192,12 @@ export async function createProblem(problem) {
   formData.append("building_number", problem.building);
   formData.append("floor_number", problem.floor);
   formData.append("room_number", problem.room);
-  formData.append("room", problem.category);
+  formData.append("category", problem.category);
   formData.append("title", problem.title);
   formData.append("description", problem.description);
+  if (problem.priority) {
+    formData.append("priority", problem.priority);
+  }
   if (problem.photoFile instanceof File) {
     formData.append("photo_url", problem.photoFile);
   }
