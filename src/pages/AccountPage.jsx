@@ -112,6 +112,7 @@ const AccountPage = () => {
     try {
       await loginUser(loginEmail, loginPassword);
       await loadProfile();
+      window.dispatchEvent(new Event('profileUpdated'));
       setLoginEmail("");
       setLoginPassword("");
     } catch (err) {
@@ -145,6 +146,7 @@ const AccountPage = () => {
       setRegSuccess("Реєстрація успішна!");
       setTimeout(async () => {
         await loadProfile();
+        window.dispatchEvent(new Event('profileUpdated'));
       }, 500);
     } catch (err) {
       try {
@@ -200,6 +202,7 @@ const AccountPage = () => {
       }
 
       await loadProfile();
+      window.dispatchEvent(new Event('profileUpdated'));
       setIsEditing(false);
       setPhotoFile(null);
       setPhotoPreview(null);
