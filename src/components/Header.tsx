@@ -1,133 +1,69 @@
-// import {
-//   SignedIn,
-//   SignedOut,
-//   SignInButton,
-//   UserButton,
-// } from "@clerk/clerk-react";
 import { Link, useLocation } from "react-router-dom";
+import { Building2, Plus, User } from "lucide-react";
+
+const navLinks = [
+  { to: "/", label: "Головна" },
+  { to: "/dashboard", label: "Дашборд" },
+  { to: "/admin", label: "Комендант-центр" },
+];
 
 const Header = () => {
   const location = useLocation();
   const currentPath = location.pathname;
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="bg-card border-b border-border sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2 cursor-pointer">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                ></path>
-              </svg>
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-primary-foreground" strokeWidth={2} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-indigo-900">
+            <span className="text-base font-bold tracking-tight text-foreground">
               DormWatch
             </span>
           </Link>
-          <nav className="hidden md:flex gap-1">
-            <Link
-              to="/"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "hover:bg-slate-100"
-              }`}
-            >
-              Головна
-            </Link>
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/dashboard"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "hover:bg-slate-100"
-              }`}
-            >
-              Дашборд
-            </Link>
-            {/* Admin link now always visible - Clerk authentication commented out */}
-            <Link
-              to="/admin"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/admin"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-indigo-600 hover:bg-indigo-50"
-              }`}
-            >
-              Комендант-центр
-            </Link>
-            {/* COMMENTED OUT - Clerk SignedIn wrapper
-            <SignedIn>
+          <nav className="hidden md:flex gap-0">
+            {navLinks.map((link) => (
               <Link
-                to="/admin"
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPath === "/admin"
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-indigo-600 hover:bg-indigo-50"
+                key={link.to}
+                to={link.to}
+                className={`px-3 py-2 text-xs font-medium transition-all border-l-4 ${
+                  currentPath === link.to
+                    ? "border-l-primary text-foreground bg-primary/5 translate-x-0"
+                    : "border-l-transparent text-muted-foreground hover:translate-x-1 hover:border-l-primary hover:text-foreground hover:bg-primary/5"
                 }`}
               >
-                Комендант-центр
+                {link.label}
               </Link>
-            </SignedIn>
-            */}
+            ))}
           </nav>
         </div>
-        <div className="flex items-center gap-4">
-          {/* Create report button now always visible - Clerk authentication commented out */}
+
+        <div className="flex items-center gap-3">
           <Link
             to="/create-report"
-            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+            className="bg-primary text-primary-foreground px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-primary/80 transition-colors"
           >
-            + Створити заявку
+            <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+            Створити заявку
           </Link>
-          {/* User account section */}
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+
+          <div className="flex items-center gap-2 pl-3 border-l border-border">
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-slate-900">
+              <p className="text-xs font-bold text-foreground leading-tight">
                 Олексій Коваленко
               </p>
-              <p className="text-[10px] text-slate-500 font-medium tracking-tight">
+              <p className="text-[10px] text-muted-foreground font-medium tracking-wide">
                 Гуртожиток №4, Кімн. 512
               </p>
             </div>
             <Link to="/account">
-              <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-200 transition-all">
-                <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=DormUser"
-                  alt="Аватар студента"
-                />
+              <div className="w-8 h-8 bg-muted flex items-center justify-center border border-border cursor-pointer hover:border-primary transition-colors">
+                <User className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
               </div>
             </Link>
           </div>
-
-          {/* COMMENTED OUT - Clerk authentication components
-          <SignedIn>
-            <Link
-              to="/create-report"
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-            >
-              + Створити заявку
-            </Link>
-            <UserButton />
-          </SignedIn>
-          <SignedOut>
-            <SignInButton>
-              <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95">
-                Увійти
-              </button>
-            </SignInButton>
-          </SignedOut>
-          */}
         </div>
       </div>
     </header>

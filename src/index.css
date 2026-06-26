@@ -1,25 +1,188 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: "Plus Jakarta Sans", sans-serif;
+@layer base {
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+  }
+
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.147 0.004 49.25);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.147 0.004 49.25);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.147 0.004 49.25);
+    --primary: oklch(0.488 0.243 264.376);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.97 0.001 106.424);
+    --muted-foreground: oklch(0.553 0.013 58.071);
+    --accent: oklch(0.488 0.243 264.376);
+    --accent-foreground: oklch(0.97 0.014 254.604);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.923 0.003 48.717);
+    --input: oklch(0.923 0.003 48.717);
+    --ring: oklch(0.709 0.01 56.259);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --radius: 0;
+    --sidebar: oklch(0.985 0.001 106.423);
+    --sidebar-foreground: oklch(0.147 0.004 49.25);
+    --sidebar-primary: oklch(0.546 0.245 262.881);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    --sidebar-accent: oklch(0.97 0.001 106.424);
+    --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
+    --sidebar-border: oklch(0.923 0.003 48.717);
+    --sidebar-ring: oklch(0.709 0.01 56.259);
+  }
+
+  .dark {
+    --background: oklch(0.147 0.004 49.25);
+    --foreground: oklch(0.985 0.001 106.423);
+    --card: oklch(0.216 0.006 56.043);
+    --card-foreground: oklch(0.985 0.001 106.423);
+    --popover: oklch(0.216 0.006 56.043);
+    --popover-foreground: oklch(0.985 0.001 106.423);
+    --primary: oklch(0.424 0.199 265.638);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.268 0.007 34.298);
+    --muted-foreground: oklch(0.709 0.01 56.259);
+    --accent: oklch(0.424 0.199 265.638);
+    --accent-foreground: oklch(0.97 0.014 254.604);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.553 0.013 58.071);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --sidebar: oklch(0.216 0.006 56.043);
+    --sidebar-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-primary: oklch(0.623 0.214 259.815);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    --sidebar-accent: oklch(0.268 0.007 34.298);
+    --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.553 0.013 58.071);
+  }
+
+  html {
+    font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  .dark body {
+    background-image: radial-gradient(circle, rgba(120, 113, 108, 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  body:not(.dark *) {
+    background-image: radial-gradient(circle, rgba(214, 211, 209, 0.5) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
 }
 
-.vote-btn:active {
-  transform: scale(0.9);
-}
+@layer components {
+  .ticket-card {
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--border);
+    background-color: var(--card);
+  }
 
-.status-pill {
-  @apply px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider;
-}
+  .ticket-card:hover {
+    background-color: color-mix(in oklab, var(--accent) 5%, transparent);
+  }
 
-.category-chip.active {
-  @apply bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100;
-}
+  .ticket-separator {
+    border-top-width: 1px;
+    border-top-style: dashed;
+    border-color: var(--border);
+  }
 
-.category-chip.active {
-  @apply bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100;
+  .badge-status {
+    padding: 0 0.5rem;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    font-size: 0.625rem;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    border-width: 1px;
+    border-style: solid;
+  }
+
+  .badge-pending {
+    color: #eab308;
+    background-color: color-mix(in oklab, #eab308 10%, transparent);
+    border-color: color-mix(in oklab, #a16207 50%, transparent);
+  }
+
+  .badge-progress {
+    color: #3b82f6;
+    background-color: color-mix(in oklab, #3b82f6 10%, transparent);
+    border-color: color-mix(in oklab, #1d4ed8 50%, transparent);
+  }
+
+  .badge-resolved {
+    color: #22c55e;
+    background-color: color-mix(in oklab, #22c55e 10%, transparent);
+    border-color: color-mix(in oklab, #15803d 50%, transparent);
+  }
+
+  .badge-urgent {
+    color: #ef4444;
+    background-color: color-mix(in oklab, #ef4444 10%, transparent);
+    border-color: color-mix(in oklab, #b91c1c 50%, transparent);
+  }
+
+  .micro-label {
+    font-size: 0.625rem;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    color: var(--muted-foreground);
+  }
+
+  .link-hover {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  .link-hover:hover {
+    transform: translateX(0.25rem);
+    border-left-width: 4px;
+    border-left-color: var(--primary);
+    padding-left: 0.5rem;
+  }
+
+  .empty-state {
+    border-width: 1px;
+    border-style: dashed;
+    border-color: var(--border);
+    padding: 2rem;
+    text-align: center;
+  }
 }

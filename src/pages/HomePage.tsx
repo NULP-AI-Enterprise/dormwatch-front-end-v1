@@ -1,90 +1,143 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { fetchApprovedComplaints } from "../services/problemsApi";
+import { ArrowRight } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+
+const categoryMeta: Record<string, string> = {
+  plumbing: "🚿",
+  electricity: "⚡",
+  furniture: "🪑",
+  internet: "🌐",
+};
+
+const getLocationText = (p: any) => {
+  const b = p.building ? `Корпус ${p.building}` : "";
+  const place = p.placeName ? `, ${p.placeName}` : "";
+  return `${b}${place}`;
+};
 
 const HomePage = () => {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadData = async () => {
+      try {
+        const data = await fetchApprovedComplaints("new");
+        if (mounted && Array.isArray(data)) {
+          setActivities(data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error("Failed to load activity", error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const stats = [
+    { value: "№12", label: "Корпусів підключено" },
+    { value: "452", label: "Виправлено несправностей" },
+    { value: "92%", label: "Задоволеність" },
+  ];
+
   return (
-    <section className="max-w-7xl mx-auto px-4 py-16">
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
+    <section className="max-w-6xl mx-auto px-4 py-16">
+      <div className="grid lg:grid-cols-2 gap-16 items-start">
         <div>
-          <span className="inline-block px-4 py-1.5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full mb-6 uppercase tracking-wider">
+          <span className="micro-label inline-block mb-6">
             Для студентів та адміністрації
           </span>
-          <h1 className="text-5xl font-extrabold leading-[1.1] mb-6 tracking-tight text-slate-900">
-            Твій гуртожиток — <br />
-            <span className="text-indigo-600">твої правила.</span>
+          <h1 className="text-6xl font-bold leading-[1.05] mb-6 tracking-tight text-foreground">
+            Твій гуртожиток —<br />
+            <span className="text-primary">твої правила.</span>
           </h1>
-          <p className="text-lg text-slate-500 mb-8 max-w-lg leading-relaxed">
+          <p className="text-base text-muted-foreground mb-10 max-w-md leading-relaxed">
             Помітили зламаний кран, несправну плитку чи проблеми з опаленням?
             Повідомте про це та слідкуйте за ремонтом онлайн.
           </p>
 
-          <div className="grid grid-cols-3 gap-6 mb-10">
-            <div>
-              <p className="text-3xl font-black text-slate-900">№12</p>
-              <p className="text-xs text-slate-400 font-bold uppercase mt-1">
-                Корпусів підключено
-              </p>
-            </div>
-            <div>
-              <p className="text-3xl font-black text-indigo-600">452</p>
-              <p className="text-xs text-slate-400 font-bold uppercase mt-1">
-                Виправлено несправностей
-              </p>
-            </div>
-            <div>
-              <p className="text-3xl font-black text-slate-900">92%</p>
-              <p className="text-xs text-slate-400 font-bold uppercase mt-1">
-                Задоволеність
-              </p>
-            </div>
+          <div className="grid grid-cols-3 gap-8 mb-10 border-t border-dashed border-border pt-8">
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <p className="text-3xl font-bold text-foreground">
+                  {stat.value}
+                </p>
+                <p className="micro-label mt-1">{stat.label}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="flex gap-4">
-            <Link
-              to="/user"
-              className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all"
-            >
-              Переглянути проблеми
-            </Link>
+          <div className="flex gap-3">
+            <Button asChild size="lg" className="font-bold text-sm">
+              <Link to="/user" className="inline-flex items-center gap-2">
+                Переглянути проблеми
+                <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              </Link>
+            </Button>
           </div>
         </div>
+
         <div className="relative">
-          <div className="absolute -top-10 -right-10 w-64 h-64 bg-indigo-100 rounded-full blur-3xl opacity-60"></div>
-          <div className="relative bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="font-bold text-lg italic tracking-tight">
-                Активність у вашому корпусі
-              </h3>
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-2xl">
-                  ⚡
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">
-                    Заміна розеток закінчена
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Блок А, 3 поверх • Сьогодні о 14:20
-                  </p>
-                </div>
+          <Card className="border-border shadow-none">
+            <CardHeader className="border-b border-dashed border-border">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">
+                  Остання активність
+                </CardTitle>
+                <span className="w-2 h-2 bg-green-500"></span>
               </div>
-              <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-2xl">
-                  🚿
+            </CardHeader>
+            <CardContent className="space-y-0 pt-0">
+              {loading && (
+                <div className="py-8 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent animate-spin"></div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">
-                    Нова заявка: Тече кран
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Блок Г, 5 поверх • 2 год тому
-                  </p>
+              )}
+              {!loading && activities.length === 0 && (
+                <p className="py-8 text-xs text-muted-foreground text-center">
+                  Поки що тихо...
+                </p>
+              )}
+              {!loading &&
+                activities.map((item) => (
+                  <div
+                    key={item.id}
+                    className="py-4 border-b border-dashed border-border last:border-b-0 flex items-start gap-4 link-hover cursor-default"
+                  >
+                    <div className="w-10 h-10 bg-muted border border-border flex items-center justify-center flex-shrink-0 text-lg">
+                      {categoryMeta[item.category] || "🔧"}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground truncate max-w-[260px]">
+                        {item.title}
+                      </p>
+                      <p className="micro-label mt-0.5">
+                        {getLocationText(item)} &middot;{" "}
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              {!loading && activities.length > 0 && (
+                <div className="py-4 text-center border-t border-dashed border-border">
+                  <Link
+                    to="/dashboard"
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Дивитись всі &rarr;
+                  </Link>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
