@@ -18,12 +18,16 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
-import { statusBadgeClass, statusLabel, humanLocation } from "../lib/complaintUtils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
+import { Label } from "../components/ui/label";
+import { Separator } from "../components/ui/separator";
+import { statusBadgeClass, statusLabel, humanLocation, priorityBadgeClass, priorityLabel, isAdminUser, getUserInitials } from "../lib/complaintUtils";
 import {
   Search,
   Trash2,
   Edit3,
-  Loader2,
   MessageSquare,
   X,
 } from "lucide-react";
@@ -43,10 +47,45 @@ const statusOptions = [
   { id: "resolved", name: "Вирішено" },
 ];
 
+const ticketStatusOptions = [
+  { id: "all", name: "Всі" },
+  { id: "not_created", name: "Без тікета" },
+  { id: "created", name: "З тікетом" },
+];
+
+function FilterRadioGroup({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: string; name: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <RadioGroup value={value} onValueChange={onChange} className="space-y-1">
+      {options.map((opt) => (
+        <div
+          key={opt.id}
+          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
+            value === opt.id
+              ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
+              : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
+          }`}
+        >
+          <RadioGroupItem value={opt.id} id={`filter-${opt.id}`} className="w-3.5 h-3.5 accent-blue-500" />
+          <Label htmlFor={`filter-${opt.id}`} className="text-xs font-semibold cursor-pointer">
+            {opt.name}
+          </Label>
+        </div>
+      ))}
+    </RadioGroup>
+  );
+}
+
 const AdminComplaintsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("requests");
   const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -76,12 +115,7 @@ const AdminComplaintsPage = () => {
         navigate("/");
         return;
       }
-      const isAdmin =
-        user.role &&
-        ["admin", "адміністратор"].includes(
-          (user.role.role_name || "").toLowerCase()
-        );
-      if (!isAdmin) navigate("/");
+      if (!isAdminUser(user)) navigate("/");
       setCurrentUser(user);
     };
     checkAuth();
@@ -108,13 +142,15 @@ const AdminComplaintsPage = () => {
     loadComplaints();
   }, []);
 
+  const [tab, setTab] = useState<"requests" | "tickets">("requests");
+
   useEffect(() => {
-    if (activeTab === "tickets") {
+    if (tab === "tickets") {
       loadTickets();
       fetchApprovedComplaints("new").then(setApprovedForTickets);
       fetchEmployees().then(setEmployees);
     }
-  }, [activeTab]);
+  }, [tab]);
 
   const handleChangeStatus = async (id: number, newStatus: string) => {
     try {
@@ -173,9 +209,7 @@ const AdminComplaintsPage = () => {
     [approvedForTickets, tickets, ticketCategory, ticketStatus, ticketSearchQuery]
   );
 
-  const initials = currentUser
-    ? `${(currentUser.first_name || "")[0] || ""}${(currentUser.last_name || "")[0] || ""}`.toUpperCase() || "AD"
-    : "AD";
+  const initials = getUserInitials(currentUser, "AD");
 
   const userName = currentUser
     ? `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim() || "Admin"
@@ -190,35 +224,23 @@ const AdminComplaintsPage = () => {
       />
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <div className="flex items-center border-b border-stone-700">
-          <button
-            onClick={() => setActiveTab("requests")}
-            className={`px-5 py-3 text-xs font-bold border-b-2 transition-colors ${
-              activeTab === "requests"
-                ? "border-blue-500 text-stone-50"
-                : "border-transparent text-stone-400 hover:text-stone-50"
-            }`}
-          >
-            Заявки
-          </button>
-          <button
-            onClick={() => setActiveTab("tickets")}
-            className={`px-5 py-3 text-xs font-bold border-b-2 transition-colors ${
-              activeTab === "tickets"
-                ? "border-blue-500 text-stone-50"
-                : "border-transparent text-stone-400 hover:text-stone-50"
-            }`}
-          >
-            Тікети
-          </button>
-        </div>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
+          <div className="flex items-center border-b border-stone-700">
+            <TabsList variant="line" className="h-auto bg-transparent">
+              <TabsTrigger value="requests" className="px-5 py-3 text-xs font-bold">
+                Заявки
+              </TabsTrigger>
+              <TabsTrigger value="tickets" className="px-5 py-3 text-xs font-bold">
+                Тікети
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <div className="flex-1 p-5">
-          {activeTab === "requests" && (
+          <TabsContent value="requests" className="flex-1 p-5">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-stone-700 shadow-none bg-stone-800">
-                  <CardContent className="p-4 pt-4">
+                  <CardContent className="p-4">
                     <div className="relative mb-4">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-stone-400" strokeWidth={2} />
                       <Input
@@ -232,65 +254,22 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3">
                       Статус
                     </h4>
-                    <div className="space-y-1">
-                      <label
-                        className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-                          selectedStatus === "all"
-                            ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
-                            : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          checked={selectedStatus === "all"}
-                          onChange={() => setSelectedStatus("all")}
-                          className="w-3.5 h-3.5 accent-blue-500"
-                        />
-                        <span className="text-xs font-semibold">Всі</span>
-                      </label>
-                      {statusOptions.map((s) => (
-                        <label
-                          key={s.id}
-                          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-                            selectedStatus === s.id
-                              ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
-                              : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            checked={selectedStatus === s.id}
-                            onChange={() => setSelectedStatus(s.id)}
-                            className="w-3.5 h-3.5 accent-blue-500"
-                          />
-                          <span className="text-xs font-semibold">{s.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <FilterRadioGroup
+                      options={[{ id: "all", name: "Всі" }, ...statusOptions]}
+                      value={selectedStatus}
+                      onChange={setSelectedStatus}
+                    />
 
-                    <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3 mt-4">
+                    <Separator className="my-4 bg-stone-700" />
+
+                    <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3">
                       Категорії
                     </h4>
-                    <div className="space-y-1">
-                      {categoryOptions.map((cat) => (
-                        <label
-                          key={cat.id}
-                          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-                            selectedCategory === cat.id
-                              ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
-                              : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            checked={selectedCategory === cat.id}
-                            onChange={() => setSelectedCategory(cat.id)}
-                            className="w-3.5 h-3.5 accent-blue-500"
-                          />
-                          <span className="text-xs font-semibold">{cat.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <FilterRadioGroup
+                      options={categoryOptions}
+                      value={selectedCategory}
+                      onChange={setSelectedCategory}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -298,7 +277,7 @@ const AdminComplaintsPage = () => {
               <div className="lg:col-span-3 space-y-4">
                 {loading && (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" strokeWidth={2} />
+                    <LoadingSpinner size="md" className="text-blue-500 border-blue-500" />
                   </div>
                 )}
                 {!loading && err && (
@@ -337,16 +316,9 @@ const AdminComplaintsPage = () => {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className={`badge-status ${
-                              p.priority === "high"
-                                ? "badge-urgent"
-                                : p.priority === "low"
-                                ? "badge-resolved"
-                                : "badge-pending"
-                            }`}
+                            className={`badge-status ${priorityBadgeClass(p.priority)}`}
                           >
-                            Пріоритет:{" "}
-                            {p.priority === "high" ? "Високий" : p.priority === "low" ? "Низький" : "Середній"}
+                            Пріоритет: {priorityLabel(p.priority)}
                           </Badge>
                           {p.createdAt && (
                             <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
@@ -374,15 +346,17 @@ const AdminComplaintsPage = () => {
                             <span className="text-[10px] text-stone-400 font-medium">
                               ID: {p.id}
                             </span>
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="xs"
                               onClick={() =>
                                 setOpenCommentsId(openCommentsId === p.id ? null : p.id)
                               }
-                              className="text-blue-400 text-[10px] font-semibold hover:underline inline-flex items-center gap-1"
+                              className="text-blue-400 text-[10px] font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
                             >
                               <MessageSquare className="w-3 h-3" strokeWidth={2} />
                               Коментарі {openCommentsId === p.id ? "▲" : "▼"}
-                            </button>
+                            </Button>
                           </div>
 
                           <div className="flex flex-wrap gap-2">
@@ -392,16 +366,16 @@ const AdminComplaintsPage = () => {
                                   size="xs"
                                   onClick={() => handleChangeStatus(p.id, "approved")}
                                   className="text-[10px] font-bold uppercase tracking-wider"
-                                  >
-                                    Схвалити
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="destructive"
-                                    onClick={() => handleChangeStatus(p.id, "rejected")}
-                                    className="text-[10px] font-bold uppercase tracking-wider"
-                                  >
-                                    Відхилити
+                                >
+                                  Схвалити
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  variant="destructive"
+                                  onClick={() => handleChangeStatus(p.id, "rejected")}
+                                  className="text-[10px] font-bold uppercase tracking-wider"
+                                >
+                                  Відхилити
                                 </Button>
                               </>
                             )}
@@ -410,9 +384,9 @@ const AdminComplaintsPage = () => {
                                 size="xs"
                                 onClick={() => handleChangeStatus(p.id, "resolved")}
                                 className="text-[10px] font-bold uppercase tracking-wider"
-                                  >
-                                    Вирішити
-                                  </Button>
+                              >
+                                Вирішити
+                              </Button>
                             )}
                             <Button
                               size="xs"
@@ -440,13 +414,13 @@ const AdminComplaintsPage = () => {
                   ))}
               </div>
             </div>
-          )}
+          </TabsContent>
 
-          {activeTab === "tickets" && (
+          <TabsContent value="tickets" className="flex-1 p-5">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-stone-700 shadow-none bg-stone-800">
-                  <CardContent className="p-4 pt-4">
+                  <CardContent className="p-4">
                     <div className="relative mb-4">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-stone-400" strokeWidth={2} />
                       <Input
@@ -460,54 +434,22 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3">
                       Статус тікету
                     </h4>
-                    <div className="space-y-1">
-                      {[
-                        { id: "all", name: "Всі" },
-                        { id: "not_created", name: "Без тікета" },
-                        { id: "created", name: "З тікетом" },
-                      ].map((s) => (
-                        <label
-                          key={s.id}
-                          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-                            ticketStatus === s.id
-                              ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
-                              : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            checked={ticketStatus === s.id}
-                            onChange={() => setTicketStatus(s.id)}
-                            className="w-3.5 h-3.5 accent-blue-500"
-                          />
-                          <span className="text-xs font-semibold">{s.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <FilterRadioGroup
+                      options={ticketStatusOptions}
+                      value={ticketStatus}
+                      onChange={setTicketStatus}
+                    />
 
-                    <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3 mt-4">
+                    <Separator className="my-4 bg-stone-700" />
+
+                    <h4 className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-3">
                       Категорії
                     </h4>
-                    <div className="space-y-1">
-                      {categoryOptions.map((cat) => (
-                        <label
-                          key={cat.id}
-                          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-                            ticketCategory === cat.id
-                              ? "border-l-blue-500 bg-blue-500/5 text-stone-50"
-                              : "border-l-transparent text-stone-400 hover:border-l-stone-500 hover:text-stone-200"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            checked={ticketCategory === cat.id}
-                            onChange={() => setTicketCategory(cat.id)}
-                            className="w-3.5 h-3.5 accent-blue-500"
-                          />
-                          <span className="text-xs font-semibold">{cat.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <FilterRadioGroup
+                      options={categoryOptions}
+                      value={ticketCategory}
+                      onChange={setTicketCategory}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -533,15 +475,9 @@ const AdminComplaintsPage = () => {
                               </h4>
                               <Badge
                                 variant="outline"
-                                className={`badge-status ${
-                                  p.priority === "high"
-                                    ? "badge-urgent"
-                                    : p.priority === "low"
-                                    ? "badge-resolved"
-                                    : "badge-pending"
-                                }`}
+                                className={`badge-status ${priorityBadgeClass(p.priority)}`}
                               >
-                                {p.priority === "high" ? "Високий" : p.priority === "low" ? "Низький" : "Середній"}
+                                {priorityLabel(p.priority)}
                               </Badge>
                             </div>
                             <div className="flex gap-2 mb-3 items-center">
@@ -567,12 +503,14 @@ const AdminComplaintsPage = () => {
                                     Дедлайн: {new Date(ticket.deadline).toLocaleDateString()}
                                   </p>
                                 )}
-                                <button
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
                                   onClick={() => openTicketModal(p, ticket)}
                                   className="absolute top-2 right-2 text-blue-400 hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" strokeWidth={2} />
-                                </button>
+                                </Button>
                               </div>
                             ) : (
                               <Button
@@ -591,8 +529,8 @@ const AdminComplaintsPage = () => {
                 )}
               </div>
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {isTicketModalOpen && selectedForTicket && (
@@ -602,12 +540,14 @@ const AdminComplaintsPage = () => {
               <h2 className="text-base font-bold text-stone-50">
                 {ticketToEdit ? "Редагувати тікет" : "Створити тікет"}
               </h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => setIsTicketModalOpen(false)}
                 className="text-stone-400 hover:text-stone-50"
               >
                 <X className="w-5 h-5" strokeWidth={2} />
-              </button>
+              </Button>
             </div>
             <TicketCreateForm
               onClose={() => setIsTicketModalOpen(false)}

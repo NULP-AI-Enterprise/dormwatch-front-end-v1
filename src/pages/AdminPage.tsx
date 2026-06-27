@@ -5,12 +5,20 @@ import {
   fetchUserProfile,
 } from "../services/problemsApi";
 import AdminSidebar from "../components/AdminSidebar";
-import { StatCard } from "../components/StatCard";
+import { StatCard, StatCardSkeleton } from "../components/StatCard";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "../components/ui/table";
 import { Clock, Hammer, CheckCircle, Download, Plus } from "lucide-react";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
+import { statusBadgeClass, statusLabel, isAdminUser, getUserInitials } from "../lib/complaintUtils";
 import { CATEGORY_LABELS } from "../services/problemsApi";
 
 const AdminPage = () => {
@@ -28,12 +36,7 @@ const AdminPage = () => {
         navigate("/");
         return;
       }
-      const isAdmin =
-        user.role &&
-        ["admin", "адміністратор"].includes(
-          (user.role.role_name || "").toLowerCase()
-        );
-      if (!isAdmin) {
+      if (!isAdminUser(user)) {
         navigate("/");
         return;
       }
@@ -63,9 +66,7 @@ const AdminPage = () => {
     setComplaints(data);
   };
 
-  const initials = currentUser
-    ? `${(currentUser.first_name || "")[0] || ""}${(currentUser.last_name || "")[0] || ""}`.toUpperCase() || "AD"
-    : "AD";
+  const initials = getUserInitials(currentUser, "AD");
 
   const userName = currentUser
     ? `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim() || "Admin"
@@ -122,15 +123,7 @@ const AdminPage = () => {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-stone-800 border border-stone-700 p-5 animate-pulse">
-                    <div className="h-3 w-16 bg-stone-700/50 mb-4" />
-                    <div className="h-8 w-12 bg-stone-700/50 mb-3" />
-                    <div className="flex gap-px h-12 items-end">
-                      {Array.from({ length: 7 }).map((_, j) => (
-                        <div key={j} className="flex-1 bg-stone-700/30" style={{ height: `${4 + Math.random() * 20}px` }} />
-                      ))}
-                    </div>
-                  </div>
+                  <StatCardSkeleton key={i} />
                 ))}
               </div>
             ) : (
@@ -163,68 +156,65 @@ const AdminPage = () => {
                   Всі заявки
                 </Link>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-stone-900/50 border-b border-stone-700 text-sm text-stone-400">
-                      <th className="px-6 py-3 font-semibold">Проблема</th>
-                      <th className="px-6 py-3 font-semibold">Категорія</th>
-                      <th className="px-6 py-3 font-semibold">Дата подання</th>
-                      <th className="px-6 py-3 font-semibold">Статус</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-base divide-y divide-stone-700">
-                    {loading ? (
-                      Array.from({ length: 4 }).map((_, i) => (
-                        <tr key={i} className="animate-pulse">
-                          <td className="px-6 py-4">
-                            <div className="h-5 w-48 bg-stone-700/50 mb-1" />
-                            <div className="h-4 w-32 bg-stone-700/30" />
-                          </td>
-                          <td className="px-6 py-4"><div className="h-5 w-20 bg-stone-700/50" /></td>
-                          <td className="px-6 py-4"><div className="h-5 w-24 bg-stone-700/50" /></td>
-                          <td className="px-6 py-4"><div className="h-6 w-16 bg-stone-700/50" /></td>
-                        </tr>
-                      ))
-                    ) : recentComplaints.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center">
-                          <p className="text-sm text-stone-400">Заявок поки немає.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      recentComplaints.map((c) => (
-                        <tr
-                          key={c.id}
-                          className="group relative bg-stone-800 hover:bg-stone-700/50 transition-colors cursor-pointer"
-                          onClick={() => handleRowClick(c)}
-                        >
-                          <td className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-stone-50 group-hover:translate-x-1 transition-transform">
-                              {c.title}
-                            </p>
-                            <p className="text-sm text-stone-400 mt-0.5 group-hover:translate-x-1 transition-transform">
-                              {c.description}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4 text-[10px] uppercase tracking-widest text-stone-400 font-semibold">
-                            {CATEGORY_LABELS[c.category as keyof typeof CATEGORY_LABELS] || c.category}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-stone-300">
-                            {new Date(c.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold ${statusBadgeClass(c.status)}`}>
-                              {statusLabel(c.status)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <Table className="text-left border-collapse">
+                <TableHeader>
+                  <TableRow className="bg-stone-900/50 border-b border-stone-700 text-sm text-stone-400">
+                    <TableHead className="px-6 py-3 font-semibold">Проблема</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Категорія</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Дата подання</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Статус</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="text-base divide-y divide-stone-700">
+                  {loading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <TableRow key={i} className="animate-pulse">
+                        <TableCell className="px-6 py-4">
+                          <div className="h-5 w-48 bg-stone-700/50 mb-1" />
+                          <div className="h-4 w-32 bg-stone-700/30" />
+                        </TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-5 w-20 bg-stone-700/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-5 w-24 bg-stone-700/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-6 w-16 bg-stone-700/50" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : recentComplaints.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="px-6 py-8 text-center">
+                        <p className="text-sm text-stone-400">Заявок поки немає.</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recentComplaints.map((c) => (
+                      <TableRow
+                        key={c.id}
+                        className="group relative bg-stone-800 hover:bg-stone-700/50 transition-colors cursor-pointer"
+                        onClick={() => handleRowClick(c)}
+                      >
+                        <TableCell className="px-6 py-4">
+                          <p className="font-semibold text-stone-50">
+                            {c.title}
+                          </p>
+                          <p className="text-sm text-stone-400 mt-0.5">
+                            {c.description}
+                          </p>
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-[10px] uppercase tracking-widest text-stone-400 font-semibold">
+                          {CATEGORY_LABELS[c.category as keyof typeof CATEGORY_LABELS] || c.category}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-stone-300">
+                          {new Date(c.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          <Badge variant="outline" className={statusBadgeClass(c.status)}>
+                            {statusLabel(c.status)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>

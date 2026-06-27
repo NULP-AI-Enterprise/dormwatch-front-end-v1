@@ -5,13 +5,10 @@ import {
   fetchUserProfile,
   deleteProblem,
   voteComplaint,
-  fetchComments,
-  postComment,
-  deleteComment,
-  CATEGORY_LABELS,
+  fetchBuildings,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
-import { ChevronUp, MessageSquare, X, Search, Trash2, Send } from "lucide-react";
+import { ChevronUp, MessageSquare, X, Search, Trash2 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -39,7 +36,9 @@ import {
   DialogTitle,
   DialogClose,
 } from "../components/ui/dialog";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
+import CommentSection from "../components/CommentSection";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 
 const categories = [
   { id: "all", name: "Всі" },
@@ -60,10 +59,16 @@ const DashboardPage = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
-  const [commentsData, setCommentsData] = useState<Record<number, any[]>>({});
-  const [commentInput, setCommentInput] = useState("");
 
   const [votedIds, setVotedIds] = useState<number[]>([]);
+  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
+
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchBuildings().then(setBuildings).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -84,10 +89,6 @@ const DashboardPage = () => {
     loadData();
   }, [activeCorps, activePriority]);
 
-    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
-  const [deleteCommentTarget, setDeleteCommentTarget] = useState<{ complaintId: number; commentId: number } | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const handleDelete = async (id: number) => {
     setDeleteTarget(id);
   };
@@ -101,21 +102,6 @@ const DashboardPage = () => {
       setErrorMessage("Помилка при видаленні");
     } finally {
       setDeleteTarget(null);
-    }
-  };
-
-  const confirmDeleteComment = async () => {
-    if (!deleteCommentTarget) return;
-    try {
-      await deleteComment(deleteCommentTarget.commentId);
-      setCommentsData((prev) => ({
-        ...prev,
-        [deleteCommentTarget.complaintId]: prev[deleteCommentTarget.complaintId].filter((c: any) => c.id !== deleteCommentTarget.commentId),
-      }));
-    } catch {
-      setErrorMessage("Помилка видалення коментаря");
-    } finally {
-      setDeleteCommentTarget(null);
     }
   };
 
@@ -140,34 +126,6 @@ const DashboardPage = () => {
     }
   };
 
-  const toggleComments = async (id: number) => {
-    if (openCommentsId === id) {
-      setOpenCommentsId(null);
-    } else {
-      setOpenCommentsId(id);
-      if (!commentsData[id]) {
-        const comms = await fetchComments(id);
-        setCommentsData((prev) => ({ ...prev, [id]: comms }));
-      }
-    }
-  };
-
-  const handleSendComment = async (id: number) => {
-    if (!commentInput.trim()) return;
-    try {
-      await postComment(id, commentInput);
-      const comms = await fetchComments(id);
-      setCommentsData((prev) => ({ ...prev, [id]: comms }));
-      setCommentInput("");
-    } catch {
-      setErrorMessage("Не вдалось відправити коментар");
-    }
-  };
-
-  const handleDeleteComment = (complaintId: number, commentId: number) => {
-    setDeleteCommentTarget({ complaintId, commentId });
-  };
-
   const filteredProblems = problems.filter((p) => {
     const matchesCategory = activeCategory === "all" || p.category === activeCategory;
     const matchesSearch =
@@ -177,19 +135,15 @@ const DashboardPage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const isAdmin =
-    currentUser?.role &&
-    ["admin", "адміністратор"].includes(
-      (currentUser.role.role_name || "").toLowerCase()
-    );
+  const admin = isAdminUser(currentUser);
 
   const canManage = (problem: any) =>
-    isAdmin || currentUser?.user === problem.user_id;
+    admin || currentUser?.user === problem.user_id;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -237,12 +191,11 @@ const DashboardPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Всі гуртожитки</SelectItem>
-                  <SelectItem value="Гуртожиток 1">Гуртожиток 1</SelectItem>
-                  <SelectItem value="Гуртожиток 2">Гуртожиток 2</SelectItem>
-                  <SelectItem value="Гуртожиток 3">Гуртожиток 3</SelectItem>
-                  <SelectItem value="Гуртожиток 4">Гуртожиток 4</SelectItem>
-                  <SelectItem value="Гуртожиток 5">Гуртожиток 5</SelectItem>
-                  <SelectItem value="Гуртожиток 6">Гуртожиток 6</SelectItem>
+                  {buildings.map((b) => (
+                    <SelectItem key={b.building_id} value={b.name}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={activePriority} onValueChange={setActivePriority}>
@@ -260,17 +213,15 @@ const DashboardPage = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
-                <button
+                <Button
                   key={category.id}
+                  variant={activeCategory === category.id ? "default" : "outline"}
+                  size="xs"
                   onClick={() => setActiveCategory(category.id)}
-                  className={`px-3 py-1.5 border text-[10px] font-semibold uppercase tracking-widest transition-colors ${
-                    activeCategory === category.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-transparent border-border text-muted-foreground hover:border-primary hover:text-foreground"
-                  }`}
+                  className="text-[10px] font-semibold uppercase tracking-widest"
                 >
                   {category.name}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -280,7 +231,6 @@ const DashboardPage = () => {
           <div className="lg:col-span-2 space-y-4">
             {filteredProblems.map((problem) => {
               const hasVoted = votedIds.includes(problem.id);
-              const cmts = commentsData[problem.id] || [];
 
               return (
                 <Card
@@ -288,24 +238,28 @@ const DashboardPage = () => {
                   className="border-border shadow-none group relative"
                 >
                   {canManage(problem) && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => handleDelete(problem.id)}
-                      className="absolute top-2 right-2 z-10 p-1.5 bg-card text-destructive border border-border opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Видалити"
                     >
                       <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                    </button>
+                    </Button>
                   )}
 
                   <div className="flex">
                     <div className="flex-shrink-0 p-5 border-r border-dashed border-border flex flex-col items-center gap-0.5 min-w-[72px]">
-                      <button
+                      <Button
+                        variant={hasVoted ? "default" : "outline"}
+                        size="sm"
                         onClick={() => handleVote(problem.id)}
                         disabled={hasVoted}
-                        className={`flex flex-col items-center gap-0.5 p-2 border transition-colors ${
+                        className={`flex flex-col items-center gap-0.5 p-2 ${
                           hasVoted
-                            ? "bg-primary text-primary-foreground border-primary cursor-default"
-                            : "bg-muted border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                            ? "cursor-default"
+                            : ""
                         }`}
                       >
                         <ChevronUp className="w-4 h-4" strokeWidth={2.5} />
@@ -315,7 +269,7 @@ const DashboardPage = () => {
                         <span className="text-[8px] font-semibold uppercase tracking-tight">
                           {hasVoted ? "Ваш голос" : "Голос"}
                         </span>
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="flex-1 p-5">
@@ -359,13 +313,17 @@ const DashboardPage = () => {
                           {new Date(problem.createdAt).toLocaleDateString()}
                         </span>
                         {canManage(problem) && (
-                          <button
-                            onClick={() => toggleComments(problem.id)}
-                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1"
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() =>
+                              setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
+                            }
+                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
                           >
                             <MessageSquare className="w-3 h-3" strokeWidth={2} />
                             Коментарі {openCommentsId === problem.id ? "▲" : "▼"}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -373,55 +331,11 @@ const DashboardPage = () => {
 
                   {openCommentsId === problem.id && (
                     <div className="bg-muted/30 border-t border-dashed border-border p-4">
-                      <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
-                        {cmts.length === 0 ? (
-                          <p className="text-center text-xs text-muted-foreground font-medium">
-                            Поки немає коментарів
-                          </p>
-                        ) : (
-                          cmts.map((c: any) => (
-                            <div
-                              key={c.id}
-                              className="bg-card p-3 border border-border relative group/comment"
-                            >
-                              <div className="flex justify-between items-baseline mb-1">
-                                <span className="text-xs font-bold text-foreground">
-                                  {c.author}
-                                </span>
-                                <span className="text-[9px] text-muted-foreground">
-                                  {new Date(c.date).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{c.text}</p>
-                              {(currentUser?.user === c.author_id || isAdmin) && (
-                                <button
-                                  onClick={() => handleDeleteComment(problem.id, c.id)}
-                                  className="absolute top-1 right-1 text-destructive opacity-0 group-hover/comment:opacity-100 transition-opacity"
-                                >
-                                  <X className="w-3 h-3" strokeWidth={2} />
-                                </button>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          value={commentInput}
-                          onChange={(e) => setCommentInput(e.target.value)}
-                          placeholder="Написати коментар..."
-                          className="flex-1"
-                          onKeyDown={(e) => e.key === "Enter" && handleSendComment(problem.id)}
-                        />
-                        <Button
-                          size="sm"
-                          className="inline-flex items-center gap-1"
-                          onClick={() => handleSendComment(problem.id)}
-                        >
-                          <Send className="w-3 h-3" strokeWidth={2} />
-                          Відправити
-                        </Button>
-                      </div>
+                      <CommentSection
+                        complaintId={problem.id}
+                        currentUserId={currentUser?.user}
+                        isAdmin={admin}
+                      />
                     </div>
                   )}
                 </Card>
@@ -442,7 +356,7 @@ const DashboardPage = () => {
               <h4 className="text-xs font-semibold uppercase tracking-wider mb-4">
                 Дії
               </h4>
-              {isAdmin ? (
+              {admin ? (
                 <Button
                   asChild
                   size="sm"
@@ -473,19 +387,6 @@ const DashboardPage = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Скасувати</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>Видалити</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={deleteCommentTarget !== null} onOpenChange={(open) => { if (!open) setDeleteCommentTarget(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Видалити коментар?</AlertDialogTitle>
-            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteComment}>Видалити</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

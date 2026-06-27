@@ -1,6 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { LayoutDashboard, ClipboardList, Settings, Users, Bell, LogOut, Building2 } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Settings, LogOut, Building2 } from "lucide-react";
 import { logoutUser } from "../services/problemsApi";
 
 interface AdminSidebarProps {
@@ -11,9 +11,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { to: "/admin", icon: LayoutDashboard, label: "Огляд" },
-  { to: "/admin/residents", icon: Users, label: "Мешканці" },
   { to: "/admin/complaints", icon: ClipboardList, label: "Всі заявки" },
-  { to: "/admin/announcements", icon: Bell, label: "Оголошення" },
 ];
 
 const AdminSidebar = ({ userName = "Адмін", userRole = "Адміністратор", initials = "AD" }: AdminSidebarProps) => {

@@ -1,8 +1,8 @@
 const Sparkline = ({
-  data = [30, 45, 25, 60, 40, 55, 70],
+  data,
   color = "var(--primary)",
 }: {
-  data?: number[];
+  data: number[];
   color?: string;
 }) => {
   const max = Math.max(...data, 1);

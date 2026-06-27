@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchUserProfile } from "../services/problemsApi";
 import { ArrowRight, Search, Building2, Camera, Activity, ShieldAlert } from "lucide-react";
+import LoadingSpinner from "../components/LoadingSpinner";
+import Footer from "../components/Footer";
+import { isAdminUser } from "../lib/complaintUtils";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -14,12 +17,7 @@ const HomePage = () => {
         const user = await fetchUserProfile();
         if (!mounted) return;
         if (user) {
-          const isAdmin =
-            user.role &&
-            ["admin", "адміністратор"].includes(
-              (user.role.role_name || "").toLowerCase()
-            );
-          navigate(isAdmin ? "/admin" : "/user", { replace: true });
+          navigate(isAdminUser(user) ? "/admin" : "/user", { replace: true });
           return;
         }
       } catch {
@@ -35,7 +33,7 @@ const HomePage = () => {
   if (checkingAuth) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] dark bg-stone-900">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent animate-spin" />
+        <LoadingSpinner size="lg" className="border-blue-500" />
       </div>
     );
   }
@@ -126,16 +124,6 @@ const HomePage = () => {
                 <div className="w-full h-2 bg-stone-700 mb-1" />
                 <div className="w-4/5 h-2 bg-stone-700" />
               </div>
-
-              <div className="mt-auto pt-4 flex items-end gap-1 h-16 opacity-30 pointer-events-none">
-                <div className="flex-1 bg-stone-600 h-[30%]" />
-                <div className="flex-1 bg-stone-600 h-[50%]" />
-                <div className="flex-1 bg-stone-600 h-[40%]" />
-                <div className="flex-1 bg-stone-600 h-[70%]" />
-                <div className="flex-1 bg-stone-600 h-[60%]" />
-                <div className="flex-1 bg-stone-600 h-[80%]" />
-                <div className="flex-1 bg-blue-600 h-full border border-blue-500" />
-              </div>
             </div>
           </div>
         </div>
@@ -223,26 +211,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-stone-900 py-12 border-t border-stone-800">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 text-stone-500 font-bold text-lg tracking-tight">
-            <Building2 className="w-5 h-5" strokeWidth={1.5} />
-            <span>DormWatch</span>
-          </div>
-
-          <div className="flex gap-6 text-sm text-stone-500 font-semibold">
-            <Link to="/account" className="hover:text-stone-300 transition-colors">Конфіденційність</Link>
-            <Link to="/account" className="hover:text-stone-300 transition-colors">Умови використання</Link>
-            <Link to="/dashboard" className="hover:text-stone-300 transition-colors">Статус системи</Link>
-            <a href="mailto:support@dormwatch.edu" className="hover:text-stone-300 transition-colors">Контакти</a>
-          </div>
-
-          <p className="text-stone-600 text-xs">
-            &copy; 2025 DormWatch Systems. Всі права захищено.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

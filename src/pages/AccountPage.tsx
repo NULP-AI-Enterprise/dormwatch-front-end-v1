@@ -6,13 +6,28 @@ import {
   updateUserProfile,
   changeUserRoom,
   fetchAllComplaints,
+  fetchBuildings,
 } from "../services/problemsApi";
 import { Building2, Home, Phone, LogOut } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import LoadingSpinner from "../components/LoadingSpinner";
 import UserPage from "./UserPage";
+import { priorityBadgeClass, priorityLabel, isAdminUser } from "../lib/complaintUtils";
+
+const CONTACT_PHONES = {
+  commandant: "093 123 45 67",
+  dutyMaster: "067 987 65 43",
+};
 
 const AdminProfileView = () => {
   const [stats, setStats] = useState({
@@ -65,7 +80,7 @@ const AdminProfileView = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent animate-spin"></div>
+        <LoadingSpinner size="sm" />
       </div>
     );
   }
@@ -131,15 +146,9 @@ const AdminProfileView = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <Badge
                         variant="outline"
-                        className={`badge-status ${
-                          issue.priority === "critical"
-                            ? "badge-urgent"
-                            : "badge-pending"
-                        }`}
+                        className={`badge-status ${priorityBadgeClass(issue.priority)}`}
                       >
-                        {issue.priority === "critical"
-                          ? "Критично"
-                          : "Високий"}
+                        {priorityLabel(issue.priority)}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground">
                         {issue.building
@@ -179,6 +188,8 @@ const AccountPage = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
+  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
+
   const [editForm, setEditForm] = useState({
     first_name: "",
     last_name: "",
@@ -190,6 +201,10 @@ const AccountPage = () => {
 
   useEffect(() => {
     loadProfile();
+  }, []);
+
+  useEffect(() => {
+    fetchBuildings().then(setBuildings).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -263,7 +278,7 @@ const AccountPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -281,11 +296,7 @@ const AccountPage = () => {
   const roomInfo = placeObj
     ? placeObj.place_name
     : "Кімната не вказана";
-  const isAdmin =
-    user.role &&
-    ["admin", "адміністратор"].includes(
-      (user.role.role_name || "").toLowerCase()
-    );
+  const admin = isAdminUser(user);
   const SERVER_URL = "http://127.0.0.1:8000";
   let avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${
     user.first_name || "Guest"
@@ -324,7 +335,7 @@ const AccountPage = () => {
                   <p className="text-xs text-muted-foreground mb-4">
                     {user.email}
                   </p>
-                  {isAdmin && (
+                  {admin && (
                     <Badge
                       variant="outline"
                       className="badge-progress mb-4"
@@ -457,22 +468,23 @@ const AccountPage = () => {
                         <label className="text-[10px] font-semibold text-muted-foreground uppercase">
                           Корпус
                         </label>
-                        <select
-                          name="building"
+                        <Select
                           value={editForm.building}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              [e.target.name]: e.target.value,
-                            }))
+                          onValueChange={(value) =>
+                            setEditForm((prev) => ({ ...prev, building: value }))
                           }
-                          className="w-full h-8 border border-input bg-transparent px-2 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring/50"
                         >
-                          <option value="1">№1</option>
-                          <option value="2">№2</option>
-                          <option value="3">№3</option>
-                          <option value="4">№4</option>
-                        </select>
+                          <SelectTrigger className="w-full h-8 text-xs">
+                            <SelectValue placeholder="Оберіть корпус" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {buildings.map((b) => (
+                              <SelectItem key={b.building_id} value={String(b.building_id)}>
+                                {b.name || `№${b.building_id}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <label className="text-[10px] font-semibold text-muted-foreground uppercase">
@@ -544,14 +556,14 @@ const AccountPage = () => {
                   <p className="micro-label mb-0.5">Комендант</p>
                   <p className="text-xs font-bold text-primary tracking-tight inline-flex items-center gap-1.5">
                     <Phone className="w-3 h-3" strokeWidth={2} />
-                    093 123 45 67
+                    {CONTACT_PHONES.commandant}
                   </p>
                 </div>
                 <div className="p-3 bg-muted border border-border">
                   <p className="micro-label mb-0.5">Черговий майстер</p>
                   <p className="text-xs font-bold text-primary tracking-tight inline-flex items-center gap-1.5">
                     <Phone className="w-3 h-3" strokeWidth={2} />
-                    067 987 65 43
+                    {CONTACT_PHONES.dutyMaster}
                   </p>
                 </div>
               </div>
@@ -560,7 +572,7 @@ const AccountPage = () => {
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          {isAdmin ? <AdminProfileView /> : <UserPage />}
+          {admin ? <AdminProfileView /> : <UserPage />}
         </div>
       </div>
     </main>

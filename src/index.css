@@ -220,30 +220,6 @@ input:-webkit-autofill:active {
     border-style: solid;
   }
 
-  .badge-pending {
-    color: #eab308;
-    background-color: color-mix(in oklab, #eab308 10%, transparent);
-    border-color: color-mix(in oklab, #a16207 50%, transparent);
-  }
-
-  .badge-progress {
-    color: #3b82f6;
-    background-color: color-mix(in oklab, #3b82f6 10%, transparent);
-    border-color: color-mix(in oklab, #1d4ed8 50%, transparent);
-  }
-
-  .badge-resolved {
-    color: #22c55e;
-    background-color: color-mix(in oklab, #22c55e 10%, transparent);
-    border-color: color-mix(in oklab, #15803d 50%, transparent);
-  }
-
-  .badge-urgent {
-    color: #ef4444;
-    background-color: color-mix(in oklab, #ef4444 10%, transparent);
-    border-color: color-mix(in oklab, #b91c1c 50%, transparent);
-  }
-
   .micro-label {
     font-size: 0.625rem;
     line-height: 1.25;
@@ -273,4 +249,28 @@ input:-webkit-autofill:active {
     padding: 2rem;
     text-align: center;
   }
+}
+
+.badge-pending {
+  color: #eab308 !important;
+  background-color: color-mix(in oklab, #eab308 10%, transparent) !important;
+  border-color: color-mix(in oklab, #a16207 50%, transparent) !important;
+}
+
+.badge-progress {
+  color: #3b82f6 !important;
+  background-color: color-mix(in oklab, #3b82f6 10%, transparent) !important;
+  border-color: color-mix(in oklab, #1d4ed8 50%, transparent) !important;
+}
+
+.badge-resolved {
+  color: #22c55e !important;
+  background-color: color-mix(in oklab, #22c55e 10%, transparent) !important;
+  border-color: color-mix(in oklab, #15803d 50%, transparent) !important;
+}
+
+.badge-urgent {
+  color: #ef4444 !important;
+  background-color: color-mix(in oklab, #ef4444 10%, transparent) !important;
+  border-color: color-mix(in oklab, #b91c1c 50%, transparent) !important;
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import {
   Select,
   SelectContent,
@@ -106,11 +107,11 @@ const TicketCreateForm = ({ onClose, onSaved, editTicket }: TicketCreateFormProp
         <label className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 mb-2 block">
           Дедлайн
         </label>
-        <input
+        <Input
           type="date"
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
-          className="w-full h-8 border border-stone-700 bg-transparent px-2 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 text-stone-50"
+          className="w-full"
         />
       </div>
 

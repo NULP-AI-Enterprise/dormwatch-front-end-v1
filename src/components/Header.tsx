@@ -3,6 +3,7 @@ import { Building2, Bell, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { fetchUserProfile } from "../services/problemsApi";
+import { getUserInitials } from "../lib/complaintUtils";
 
 const Header = () => {
   const [user, setUser] = useState<any>(null);
@@ -13,9 +14,7 @@ const Header = () => {
       .catch(() => {});
   }, []);
 
-  const initials = user
-    ? `${(user.first_name || "")[0] || ""}${(user.last_name || "")[0] || ""}`.toUpperCase() || "U"
-    : "U";
+  const initials = getUserInitials(user, "U");
 
   return (
     <nav className="bg-stone-800 border-b border-stone-700 sticky top-0 z-10">

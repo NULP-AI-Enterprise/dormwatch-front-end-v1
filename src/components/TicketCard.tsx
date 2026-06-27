@@ -1,5 +1,6 @@
 import ProgressStepper from "./ProgressStepper";
-import { cn } from "../lib/utils";
+import { Separator } from "./ui/separator";
+import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
 
 interface TicketCardProps {
   id: number;
@@ -11,13 +12,6 @@ interface TicketCardProps {
   location?: string;
   categoryLabel?: string;
 }
-
-const statusMeta: Record<string, { label: string; className: string }> = {
-  pending: { label: "Очікує", className: "badge-pending" },
-  approved: { label: "Активно", className: "badge-progress" },
-  resolved: { label: "Вирішено", className: "badge-resolved" },
-  rejected: { label: "Відхилено", className: "badge-urgent" },
-};
 
 const stageMap: Record<string, "submitted" | "in_progress" | "resolved"> = {
   pending: "submitted",
@@ -35,14 +29,13 @@ const TicketCardSkeleton = () => (
       <div className="h-5 w-3/4 bg-stone-700/50 mb-2" />
       <div className="h-3 w-full bg-stone-700/30 mb-1" />
       <div className="h-3 w-2/3 bg-stone-700/30 mb-4" />
-      <hr className="border-t border-dashed border-stone-700 mb-4" />
+      <Separator className="bg-stone-700 mb-4" />
       <div className="h-1.5 bg-stone-700/50 rounded-none" />
     </div>
   </div>
 );
 
 const TicketCard = ({ id, title, description, category, date, status, location, categoryLabel }: TicketCardProps) => {
-  const meta = statusMeta[status] || { label: status, className: "badge-status" };
   const step = stageMap[status] || "submitted";
 
   return (
@@ -57,8 +50,8 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
             <span className="w-1 h-1 bg-stone-600" />
             <span className="text-xs text-stone-500">{date}</span>
           </div>
-          <span className={cn("inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold", meta.className)}>
-            {meta.label}
+          <span className={`inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold ${statusBadgeClass(status)}`}>
+            {statusLabel(status)}
           </span>
         </div>
 
@@ -71,7 +64,7 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
           </p>
         </div>
 
-        <div className="border-b border-dashed border-stone-700 my-5" />
+        <Separator className="bg-stone-700 my-5" />
 
         <div className="flex items-center justify-between">
           <div className="flex-1">

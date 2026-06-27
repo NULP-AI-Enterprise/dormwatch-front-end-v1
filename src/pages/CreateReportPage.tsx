@@ -5,6 +5,8 @@ import { ArrowLeft, Camera, Droplets, Zap, Armchair, Wifi, X } from "lucide-reac
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { isAdminUser } from "../lib/complaintUtils";
 
 const categories = [
   { id: "plumbing", label: "Сантехніка", Icon: Droplets },
@@ -33,12 +35,7 @@ const CreateReportPage = () => {
       try {
         const user = await fetchUserProfile();
         if (user) {
-          const isAdmin =
-            user.role &&
-            ["admin", "адміністратор"].includes(
-              (user.role.role_name || "").toLowerCase()
-            );
-          if (isAdmin) {
+          if (isAdminUser(user)) {
             navigate("/admin");
             return;
           }
@@ -112,7 +109,7 @@ const CreateReportPage = () => {
   if (loadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent animate-spin"></div>
+        <LoadingSpinner size="md" />
       </div>
     );
   }
@@ -144,30 +141,27 @@ const CreateReportPage = () => {
             {categories.map((category) => {
               const isActive = selectedCategory === category.id;
               return (
-                <button
+                <Button
                   key={category.id}
                   type="button"
+                  variant={isActive ? "default" : "outline"}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`p-4 border-2 flex flex-col items-center gap-2 transition-all ${
-                    isActive
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
+                  className="p-4 h-auto border-2 flex flex-col items-center gap-2 transition-all"
                 >
                   <category.Icon
                     className={`w-6 h-6 ${
-                      isActive ? "text-primary" : "text-muted-foreground"
+                      isActive ? "text-primary-foreground" : "text-muted-foreground"
                     }`}
                     strokeWidth={2}
                   />
                   <span
                     className={`text-[10px] font-semibold uppercase tracking-widest ${
-                      isActive ? "text-primary" : "text-muted-foreground"
+                      isActive ? "text-primary-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {category.label}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -183,20 +177,17 @@ const CreateReportPage = () => {
                   { id: "medium", label: "Середній" },
                   { id: "high", label: "Високий" },
                 ].map((p) => (
-                  <button
+                  <Button
                     key={p.id}
                     type="button"
+                    variant={formData.priority === p.id ? "default" : "outline"}
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, priority: p.id }))
                     }
-                    className={`flex-1 py-2 border text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                      formData.priority === p.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border text-muted-foreground hover:border-primary hover:text-foreground"
-                    }`}
+                    className="flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
                   >
                     {p.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -248,13 +239,15 @@ const CreateReportPage = () => {
                   alt="Preview"
                   className="w-full h-full object-cover"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={handleRemovePhoto}
-                  className="absolute top-2 right-2 bg-card/80 p-1.5 border border-border text-destructive hover:bg-card transition-all"
+                  className="absolute top-2 right-2 bg-card/80 border border-border text-destructive hover:bg-card transition-all"
                 >
                   <X className="w-4 h-4" strokeWidth={2} />
-                </button>
+                </Button>
               </div>
             ) : (
               <label className="w-full aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">

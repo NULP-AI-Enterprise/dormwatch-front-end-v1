@@ -4,10 +4,20 @@ import CommentSection from "./CommentSection";
 import TicketCreateForm from "./TicketCreateForm";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
 import { resolveImageUrl } from "../services/imageUtils";
 import { CATEGORY_LABELS, updateComplaintStatus, deleteProblem } from "../services/problemsApi";
-import { statusBadgeClass, statusLabel, humanLocation } from "../lib/complaintUtils";
+import { statusBadgeClass, statusLabel, humanLocation, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
 import { Trash2, Ticket } from "lucide-react";
+
+interface ComplaintSidePanelProps {
+  complaint: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onStatusChange: () => void;
+  currentUserId?: number | string;
+  isAdmin: boolean;
+}
 
 const ComplaintSidePanel = ({
   complaint,
@@ -70,15 +80,9 @@ const ComplaintSidePanel = ({
             </Badge>
             <Badge
               variant="outline"
-              className={`badge-status ${
-                complaint.priority === "high"
-                  ? "badge-urgent"
-                  : complaint.priority === "low"
-                  ? "badge-resolved"
-                  : "badge-pending"
-              }`}
+              className={`badge-status ${priorityBadgeClass(complaint.priority)}`}
             >
-                Пріоритет: {complaint.priority === "high" ? "Високий" : complaint.priority === "low" ? "Низький" : "Середній"}
+                Пріоритет: {priorityLabel(complaint.priority)}
             </Badge>
             {complaint.createdAt && (
               <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
@@ -87,7 +91,7 @@ const ComplaintSidePanel = ({
             )}
           </div>
 
-          <hr className="border-t border-dashed border-stone-700" />
+          <Separator className="bg-stone-700" />
 
           <p className="text-xs text-stone-400 leading-relaxed">{complaint.description || "—"}</p>
 
@@ -101,7 +105,7 @@ const ComplaintSidePanel = ({
             </div>
           )}
 
-          <hr className="border-t border-dashed border-stone-700" />
+          <Separator className="bg-stone-700" />
 
           {isAdmin && (
             <div className="space-y-3">
@@ -145,7 +149,7 @@ const ComplaintSidePanel = ({
                 </Button>
               </div>
 
-              <hr className="border-t border-dashed border-stone-700" />
+              <Separator className="bg-stone-700" />
 
               {!showTicketForm ? (
                 <Button
@@ -169,7 +173,7 @@ const ComplaintSidePanel = ({
             </div>
           )}
 
-          <hr className="border-t border-dashed border-stone-700" />
+          <Separator className="bg-stone-700" />
 
           <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} />
         </div>

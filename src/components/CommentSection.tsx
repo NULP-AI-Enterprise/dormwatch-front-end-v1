@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Send, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import LoadingSpinner from "./LoadingSpinner";
 import {
   fetchComments,
   postComment,
@@ -59,7 +60,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin }: CommentSectionP
 
       {loading && (
         <div className="flex items-center justify-center py-4">
-          <div className="w-4 h-4 border-2 border-primary border-t-transparent animate-spin" />
+          <LoadingSpinner size="sm" />
         </div>
       )}
 
