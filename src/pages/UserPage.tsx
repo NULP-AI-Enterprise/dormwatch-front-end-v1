@@ -15,6 +15,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 import {
   Trash2,
@@ -167,7 +168,7 @@ const UserPage = () => {
               {problems.map((p) => (
                 <Card key={p.id} className="border-stone-700 shadow-none bg-stone-800">
                   <div className="flex">
-                    <div className="flex-shrink-0 p-5 border-r border-dashed border-stone-700 flex flex-col items-center gap-0.5 min-w-[64px]">
+                    <div className="flex-shrink-0 p-5 flex flex-col items-center gap-0.5 min-w-[64px]">
                       <span className="text-base font-bold text-stone-50 leading-none">
                         {p.votesCount || 0}
                       </span>
@@ -175,6 +176,7 @@ const UserPage = () => {
                         голосів
                       </span>
                     </div>
+                    <Separator orientation="vertical" dashed className="border-stone-700" />
                     <div className="flex-1 p-5">
                       <div className="flex justify-between items-start mb-3 gap-2">
                         <div className="flex flex-wrap gap-2">
@@ -207,7 +209,9 @@ const UserPage = () => {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-stone-700">
+                      <Separator dashed className="border-stone-700 mt-4" />
+
+                      <div className="flex items-center justify-between pt-4">
                         <div className="flex items-center gap-4">
                           <span className="text-[10px] font-semibold text-stone-50">
                             {typeof p.votesCount === "number"
@@ -239,13 +243,16 @@ const UserPage = () => {
                   </div>
 
                   {openCommentsId === p.id && (
-                    <div className="bg-stone-900/30 border-t border-dashed border-stone-700 p-4">
+                    <>
+                      <Separator dashed className="border-stone-700" />
+                      <div className="bg-stone-900/30 p-4">
                       <CommentSection
                         complaintId={p.id}
                         currentUserId={currentUser?.user}
                         isAdmin={isAdminUser(currentUser)}
                       />
-                    </div>
+                      </div>
+                    </>
                   )}
                 </Card>
               ))}

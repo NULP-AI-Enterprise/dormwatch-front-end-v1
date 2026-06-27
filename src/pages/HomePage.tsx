@@ -4,6 +4,7 @@ import { fetchUserProfile } from "../services/problemsApi";
 import { ArrowRight, Search, Building2, Camera, Activity, ShieldAlert } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Footer from "../components/Footer";
+import { Separator } from "../components/ui/separator";
 import { isAdminUser } from "../lib/complaintUtils";
 
 const HomePage = () => {
@@ -41,7 +42,7 @@ const HomePage = () => {
   return (
     <div className="dark bg-stone-900 min-h-screen flex flex-col antialiased">
       {/* Navigation */}
-      <nav className="border-b border-stone-800 bg-stone-900/80 backdrop-blur-md sticky top-0 z-50">
+      <nav className="bg-stone-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 text-blue-500 font-bold text-xl tracking-tight">
             <Building2 className="w-6 h-6" strokeWidth={1.5} />
@@ -63,6 +64,7 @@ const HomePage = () => {
             </Link>
           </div>
         </div>
+        <Separator />
       </nav>
 
       {/* Hero Section */}
@@ -98,10 +100,11 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-stone-800 border border-stone-700 transform -rotate-2 scale-100 opacity-80" />
 
             <div className="absolute inset-0 bg-stone-900 border border-stone-700 shadow-2xl p-6 flex flex-col gap-4">
-              <div className="flex justify-between items-center border-b border-stone-800 pb-4">
+              <div className="flex justify-between items-center pb-4">
                 <div className="w-32 h-4 bg-stone-800" />
                 <div className="w-8 h-8 bg-blue-900 border border-blue-800" />
               </div>
+              <Separator />
 
               <div className="bg-stone-800 border border-stone-700 p-4 group hover:border-stone-500 transition-colors relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -130,7 +133,8 @@ const HomePage = () => {
       </section>
 
       {/* Stats Banner */}
-      <div className="border-y border-stone-800 bg-stone-900">
+      <Separator />
+      <div className="bg-stone-900">
         <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-stone-800">
           <div className="text-center px-4">
             <p className="text-3xl font-bold text-stone-50 mb-1">15с</p>
@@ -150,6 +154,7 @@ const HomePage = () => {
           </div>
         </div>
       </div>
+      <Separator />
 
       {/* Features Grid */}
       <section className="py-24 max-w-7xl mx-auto px-6" id="how-it-works">
@@ -195,7 +200,8 @@ const HomePage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="border-y border-stone-800 bg-stone-900 py-20 relative overflow-hidden">
+      <Separator />
+      <section className="bg-stone-900 py-20 relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl font-bold text-stone-50 mb-6">Потрібно щось полагодити?</h2>
           <p className="text-stone-400 mb-8 text-lg">Увійдіть за допомогою студентського квитка, щоб надіслати заявку безпосередньо до служби експлуатації кампусу.</p>
@@ -210,6 +216,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      <Separator />
 
       <Footer />
     </div>

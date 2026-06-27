@@ -38,6 +38,7 @@ import {
 } from "../components/ui/dialog";
 import CommentSection from "../components/CommentSection";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 
 const categories = [
@@ -250,7 +251,7 @@ const DashboardPage = () => {
                   )}
 
                   <div className="flex">
-                    <div className="flex-shrink-0 p-5 border-r border-dashed border-border flex flex-col items-center gap-0.5 min-w-[72px]">
+                    <div className="flex-shrink-0 p-5 flex flex-col items-center gap-0.5 min-w-[72px]">
                       <Button
                         variant={hasVoted ? "default" : "outline"}
                         size="sm"
@@ -271,6 +272,7 @@ const DashboardPage = () => {
                         </span>
                       </Button>
                     </div>
+                    <Separator orientation="vertical" dashed />
 
                     <div className="flex-1 p-5">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
@@ -307,7 +309,8 @@ const DashboardPage = () => {
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between pt-3 border-t border-dashed border-border">
+                      <Separator dashed className="mt-4" />
+                      <div className="flex items-center justify-between pt-3">
                         <span className="micro-label">
                           Додано{" "}
                           {new Date(problem.createdAt).toLocaleDateString()}
@@ -330,13 +333,16 @@ const DashboardPage = () => {
                   </div>
 
                   {openCommentsId === problem.id && (
-                    <div className="bg-muted/30 border-t border-dashed border-border p-4">
+                    <>
+                      <Separator dashed />
+                      <div className="bg-muted/30 p-4">
                       <CommentSection
                         complaintId={problem.id}
                         currentUserId={currentUser?.user}
                         isAdmin={admin}
                       />
-                    </div>
+                      </div>
+                    </>
                   )}
                 </Card>
               );

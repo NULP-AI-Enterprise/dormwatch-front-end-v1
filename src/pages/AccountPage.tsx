@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { Separator } from "../components/ui/separator";
 import UserPage from "./UserPage";
 import { priorityBadgeClass, priorityLabel, isAdminUser } from "../lib/complaintUtils";
 
@@ -459,7 +460,8 @@ const AccountPage = () => {
                       }
                     />
                   </div>
-                  <div className="pt-4 border-t border-dashed border-border">
+                  <Separator dashed className="mt-4" />
+                  <div className="pt-4">
                     <p className="text-xs font-bold text-primary uppercase mb-3">
                       Зміна кімнати
                     </p>

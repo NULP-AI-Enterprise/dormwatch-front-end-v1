@@ -9,6 +9,7 @@ import { StatCard, StatCardSkeleton } from "../components/StatCard";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Separator } from "../components/ui/separator";
 import {
   Table,
   TableHeader,
@@ -81,7 +82,7 @@ const AdminPage = () => {
       />
 
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-16 bg-stone-800 border-b border-stone-700 flex items-center justify-between px-6 lg:px-8 shrink-0">
+        <header className="h-16 bg-stone-800 flex items-center justify-between px-6 lg:px-8 shrink-0">
           <h1 className="text-2xl font-bold text-stone-50">Інформаційна панель</h1>
           <div className="flex items-center gap-3">
             <Button
@@ -117,6 +118,7 @@ const AdminPage = () => {
             </Button>
           </div>
         </header>
+        <Separator />
 
         <div className="flex-1 overflow-auto p-6 lg:p-8">
           <div className="max-w-5xl mx-auto space-y-8">
@@ -150,12 +152,13 @@ const AdminPage = () => {
             )}
 
             <div className="bg-stone-800 border border-stone-700 overflow-hidden">
-              <div className="px-6 py-4 border-b border-stone-700 flex justify-between items-center">
+              <div className="px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-stone-50">Останні заявки</h2>
                 <Link to="/admin/complaints" className="text-sm font-semibold text-blue-500 hover:text-blue-400">
                   Всі заявки
                 </Link>
               </div>
+              <Separator />
               <Table className="text-left border-collapse">
                 <TableHeader>
                   <TableRow className="bg-stone-900/50 border-b border-stone-700 text-sm text-stone-400">
@@ -219,7 +222,8 @@ const AdminPage = () => {
           </div>
         </div>
 
-        <footer className="p-4 border-t border-stone-700">
+        <footer className="p-4">
+          <Separator className="mb-4" />
           <p className="text-[9px] font-semibold text-stone-500 uppercase tracking-wider text-center">
             DormWatch &middot; Система керування об'єктами
           </p>

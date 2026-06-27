@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetHeader, SheetTitle, SheetClose, SheetContent } from "./ui/sheet";
+import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "./ui/sheet";
 import CommentSection from "./CommentSection";
 import TicketCreateForm from "./TicketCreateForm";
 import { Button } from "./ui/button";
@@ -55,29 +55,32 @@ const ComplaintSidePanel = ({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetHeader>
-        <SheetTitle>Деталі заявки</SheetTitle>
-        <SheetClose />
-      </SheetHeader>
       <SheetContent>
-        <div className="space-y-5">
+        <SheetHeader>
+          <SheetTitle>Деталі заявки</SheetTitle>
+          <SheetDescription>Інформація про заявку та керування статусом</SheetDescription>
+        </SheetHeader>
+
+        <div className="space-y-5 px-4 pb-6">
           <div>
             <div className="flex items-center justify-between mb-2">
               <Badge variant="outline" className={statusBadgeClass(complaint.status)}>
                 {statusLabel(complaint.status)}
               </Badge>
               <span className="text-[9px] font-semibold uppercase tracking-widest text-stone-500">
-                #{complaint.id}
+                {complaint.id !== "new" && `#${complaint.id}`}
               </span>
             </div>
-            <h3 className="text-base font-bold text-stone-50 mb-1">{complaint.title}</h3>
+            <h3 className="text-base font-bold text-stone-50 mb-1">{complaint.title || "Без назви"}</h3>
             <p className="micro-label">{humanLocation(complaint)}</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
-              {categoryLabel}
-            </Badge>
+            {categoryLabel && (
+              <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
+                {categoryLabel}
+              </Badge>
+            )}
             <Badge
               variant="outline"
               className={`badge-status ${priorityBadgeClass(complaint.priority)}`}

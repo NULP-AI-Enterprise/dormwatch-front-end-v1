@@ -2,6 +2,7 @@ import { NavLink, Link } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { LayoutDashboard, ClipboardList, Settings, LogOut, Building2 } from "lucide-react";
 import { logoutUser } from "../services/problemsApi";
+import { Separator } from "./ui/separator";
 
 interface AdminSidebarProps {
   userName?: string;
@@ -17,12 +18,13 @@ const navItems = [
 const AdminSidebar = ({ userName = "Адмін", userRole = "Адміністратор", initials = "AD" }: AdminSidebarProps) => {
   return (
     <aside className="hidden md:flex md:flex-col md:w-56 lg:w-64 bg-stone-800 border-r border-stone-700 min-h-screen shrink-0">
-      <div className="h-16 flex items-center px-6 border-b border-stone-700">
+      <div className="h-16 flex items-center px-6">
         <Link to="/admin" className="flex items-center gap-2 text-blue-500 font-bold text-2xl tracking-tight">
           <Building2 className="w-6 h-6" strokeWidth={1.5} />
           <span>DormWatch</span>
         </Link>
       </div>
+      <Separator />
 
       <nav className="flex-1 px-4 py-6 space-y-1">
         {navItems.map((item) => (
@@ -45,7 +47,8 @@ const AdminSidebar = ({ userName = "Адмін", userRole = "Адміністр�
         ))}
       </nav>
 
-      <div className="p-4 border-t border-stone-700">
+      <div className="p-4">
+        <Separator className="mb-4" />
         <NavLink
           to="/account"
           className={({ isActive }) =>

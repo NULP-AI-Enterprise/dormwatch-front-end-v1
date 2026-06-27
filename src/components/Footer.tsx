@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { Building2 } from "lucide-react";
+import { Separator } from "./ui/separator";
 
 const Footer = () => {
   return (
-    <footer className="bg-stone-900 py-12 border-t border-stone-800">
+    <footer className="bg-stone-900 py-12">
+      <Separator className="mb-12" />
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2 text-stone-500 font-bold text-lg tracking-tight">
           <Building2 className="w-5 h-5" strokeWidth={1.5} />

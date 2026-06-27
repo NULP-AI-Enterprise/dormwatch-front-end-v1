@@ -70,7 +70,8 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
           <div className="flex-1">
             <ProgressStepper stage={step} />
           </div>
-          <span className="ml-3 text-[8px] font-semibold uppercase tracking-widest text-stone-600 shrink-0 border-l border-dashed border-stone-700 pl-3">
+          <Separator orientation="vertical" dashed className="border-stone-700 h-6" />
+          <span className="ml-3 text-[8px] font-semibold uppercase tracking-widest text-stone-600 shrink-0 pl-3">
             #{id}
           </span>
         </div>

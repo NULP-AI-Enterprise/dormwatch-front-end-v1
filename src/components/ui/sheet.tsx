@@ -3,6 +3,7 @@ import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon } from "@hugeicons/core-free-icons"
 
@@ -66,7 +67,9 @@ function SheetContent({
         )}
         {...props}
       >
-        {children}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
         {showCloseButton && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button
@@ -88,9 +91,12 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-0.5 p-4", className)}
+      className={cn("flex flex-col gap-0.5 p-4 pb-3", className)}
       {...props}
-    />
+    >
+      {props.children}
+      <Separator />
+    </div>
   )
 }
 
@@ -127,7 +133,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-xs/relaxed text-muted-foreground", className)}
+      className={cn("sr-only", className)}
       {...props}
     />
   )

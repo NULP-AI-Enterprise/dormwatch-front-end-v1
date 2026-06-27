@@ -225,7 +225,7 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
         <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="flex items-center border-b border-stone-700">
+          <div className="flex items-center">
             <TabsList variant="line" className="h-auto bg-transparent">
               <TabsTrigger value="requests" className="px-5 py-3 text-xs font-bold">
                 Заявки
@@ -235,6 +235,7 @@ const AdminComplaintsPage = () => {
               </TabsTrigger>
             </TabsList>
           </div>
+          <Separator />
 
           <TabsContent value="requests" className="flex-1 p-5">
             <div className="grid lg:grid-cols-4 gap-8">
@@ -341,7 +342,8 @@ const AdminComplaintsPage = () => {
                           </div>
                         )}
 
-                        <div className="flex flex-col md:flex-row md:items-center justify-between border-t border-dashed border-stone-700 pt-4 gap-4">
+                        <Separator dashed className="border-stone-700 mt-4" />
+                        <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4">
                           <div className="flex items-center gap-4">
                             <span className="text-[10px] text-stone-400 font-medium">
                               ID: {p.id}
@@ -401,7 +403,9 @@ const AdminComplaintsPage = () => {
                         </div>
 
                         {openCommentsId === p.id && (
-                          <div className="bg-stone-900/30 border-t border-dashed border-stone-700 mt-4 p-4">
+                          <>
+                            <Separator dashed className="border-stone-700 mt-4" />
+                            <div className="bg-stone-900/30 p-4">
                             <CommentSection
                               complaintId={p.id}
                               currentUserId={currentUser?.user}
@@ -558,8 +562,9 @@ const AdminComplaintsPage = () => {
               editTicket={ticketToEdit}
             />
           </div>
-        </div>
-      )}
+                            </div>
+                          </>
+                        )}
     </div>
   );
 };
