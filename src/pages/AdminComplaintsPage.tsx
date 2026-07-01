@@ -396,7 +396,7 @@ const AdminComplaintsPage = () => {
                 <Card className="border-border shadow-none bg-card">
                   <CardContent className="p-4">
                     <div className="relative mb-4">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" strokeWidth={2} />
+                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" strokeWidth={2} />
                       <Input
                         placeholder="Пошук тікетів..."
                         value={ticketSearchQuery}
@@ -435,7 +435,7 @@ const AdminComplaintsPage = () => {
                 {filteredTickets.length === 0 ? (
                   <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <Inbox className="w-5 h-5" strokeWidth={1.5} />
+                      <HugeiconsIcon icon={InboxIcon} className="w-5 h-5" strokeWidth={1.5} />
                     </div>
                     <p className="text-xs text-muted-foreground">Жодна заявка не відповідає фільтрам.</p>
                   </div>
