@@ -25,7 +25,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     <div className="min-h-screen flex flex-col md:flex-row bg-stone-900 bg-dot-grid relative">
       <aside className="w-full md:w-64 bg-stone-900 border-r border-stone-700 flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
         <div className="h-20 px-6 flex items-center border-b border-stone-700">
-          <Link to="/admin" className="flex items-center gap-3 text-blue-500 font-bold text-xl tracking-tight hover:text-blue-400 transition-colors">
+          <Link to="/admin" className="flex items-center gap-3 text-primary font-bold text-xl tracking-tight hover:text-primary/80 transition-colors">
             <Building2 className="w-6 h-6" />
             <span>Dormwatch</span>
           </Link>

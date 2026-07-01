@@ -43,7 +43,7 @@ const HomePage = () => {
     <div className="min-h-screen flex flex-col">
       <nav className="bg-stone-900/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-blue-500 font-bold text-xl tracking-tight">
+          <div className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
             <Building2 className="w-6 h-6" strokeWidth={1.5} />
             <span>DormWatch</span>
           </div>
@@ -81,7 +81,7 @@ const HomePage = () => {
                 className="bg-blue-800 hover:bg-blue-900 text-white px-6 py-3 text-base font-bold transition-colors flex items-center justify-center gap-2 border border-blue-700"
               >
                 Повідомити про проблему
-                <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+                <ArrowRight className="w-5 h-5" strokeWidth={2} />
               </Link>
               <Link
                 to="/dashboard"
@@ -102,8 +102,7 @@ const HomePage = () => {
                 <div className="w-8 h-8 bg-blue-900 border border-blue-800" />
               </div>
               <Separator />
-              <div className="bg-stone-800 border border-stone-700 p-4 group hover:border-stone-500 transition-colors relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="bg-stone-800 border border-stone-700 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs text-stone-400 font-semibold">Сантехніка</span>
                   <span className="px-2 py-0.5 bg-yellow-900/30 text-yellow-500 border border-yellow-700/50 text-xs font-bold">Очікує</span>
@@ -112,8 +111,7 @@ const HomePage = () => {
                 <div className="w-full h-2 bg-stone-700 mb-1" />
                 <div className="w-2/3 h-2 bg-stone-700" />
               </div>
-              <div className="bg-stone-800 border border-stone-700 p-4 group hover:border-stone-500 transition-colors relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="bg-stone-800 border border-stone-700 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs text-stone-400 font-semibold">Опалення</span>
                   <span className="px-2 py-0.5 bg-blue-900/30 text-blue-500 border border-blue-700/50 text-xs font-bold">В роботі</span>
@@ -200,7 +198,7 @@ const HomePage = () => {
               className="bg-blue-800 hover:bg-blue-900 text-white px-8 py-4 text-base font-bold transition-colors border border-blue-700 inline-flex items-center gap-2"
             >
               Розпочати
-              <ArrowRight className="w-5 h-5" strokeWidth={2.5} />
+              <ArrowRight className="w-5 h-5" strokeWidth={2} />
             </Link>
           </div>
         </div>

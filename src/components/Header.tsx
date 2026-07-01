@@ -41,7 +41,7 @@ const Header = () => {
       <nav className="bg-stone-800 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 text-blue-500 font-bold text-xl tracking-tight">
+            <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
               <Building2 className="w-6 h-6" strokeWidth={1.5} />
               <span>DormWatch</span>
             </Link>
@@ -107,7 +107,7 @@ const Header = () => {
                     className="text-xs font-semibold cursor-pointer"
                     onSelect={() => setSettingsOpen(true)}
                   >
-                    <Settings className="w-3.5 h-3.5 mr-2" strokeWidth={2} />
+                    <Settings className="w-3.5 h-3.5 mr-2" strokeWidth={1.5} />
                     Налаштування
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

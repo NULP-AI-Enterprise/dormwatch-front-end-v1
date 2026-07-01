@@ -7,7 +7,7 @@ import {
   fetchBuildings,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
-import { ChevronUp, MessageSquare, X, Search, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, X, Search, Trash2 } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -164,26 +164,24 @@ const DashboardPage = () => {
       </Dialog>
 
       <main className="max-w-6xl mx-auto px-4 py-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Стрічка проблем
-            </h1>
-          </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-8">
+          Стрічка проблем
+        </h1>
 
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" strokeWidth={2} />
                 <Input
                   placeholder="Пошук заявок..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 w-48"
+                  className="pl-8"
                 />
               </div>
               <Select value={activeCorps} onValueChange={setActiveCorps}>
-                <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectTrigger className="w-full h-8 text-xs">
                   <SelectValue placeholder="Всі гуртожитки" />
                 </SelectTrigger>
                 <SelectContent>
@@ -196,7 +194,7 @@ const DashboardPage = () => {
                 </SelectContent>
               </Select>
               <Select value={activePriority} onValueChange={setActivePriority}>
-                <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectTrigger className="w-full h-8 text-xs">
                   <SelectValue placeholder="Всі пріоритети" />
                 </SelectTrigger>
                 <SelectContent>
@@ -220,10 +218,30 @@ const DashboardPage = () => {
                 </Button>
               ))}
             </div>
-          </div>
-        </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+            <div className="bg-primary p-6 text-primary-foreground">
+              <h4 className="text-xs font-semibold mb-4">
+                Дії
+              </h4>
+              {admin ? (
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
+                >
+                  <Link to="/admin">Перейти в комендант-центр</Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
+                >
+                  <Link to="/create-report">Створити нову заявку</Link>
+                </Button>
+              )}
+            </div>
+          </div>
           <div className="lg:col-span-2 space-y-4">
             {filteredProblems.map((problem) => {
               const hasVoted = votedIds.includes(problem.id);
@@ -258,7 +276,7 @@ const DashboardPage = () => {
                             : ""
                         }`}
                       >
-                        <ChevronUp className="w-4 h-4" strokeWidth={2.5} />
+                        <ChevronUp className="w-4 h-4" strokeWidth={2} />
                         <span className="text-base font-bold leading-none">
                           {problem.votesCount || 0}
                         </span>
@@ -267,7 +285,7 @@ const DashboardPage = () => {
                         </span>
                       </Button>
                     </div>
-                    <Separator orientation="vertical" dashed />
+                    <div className="w-px bg-border" />
 
                     <div className="flex-1 p-5">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
@@ -275,12 +293,9 @@ const DashboardPage = () => {
                           <Badge variant="outline" className={statusBadgeClass(problem.status)}>
                             {statusLabel(problem.status)}
                           </Badge>
-                          <Badge variant="outline" className="text-muted-foreground border-border bg-muted">
-                            {categories.find((c) => c.id === problem.category)?.name || problem.category}
-                          </Badge>
                         </div>
-                        <span className="label-meta">
-                          {problem.building ? `Корпус ${problem.building}` : ""} &middot; {problem.placeName}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {categories.find((c) => c.id === problem.category)?.name || problem.category} &middot; {problem.building ? `Корпус ${problem.building}` : ""} &middot; {problem.placeName}
                         </span>
                       </div>
 
@@ -304,9 +319,8 @@ const DashboardPage = () => {
                         </div>
                       )}
 
-                      <Separator dashed className="mt-4" />
                       <div className="flex items-center justify-between pt-3">
-                        <span className="label-meta">
+                        <span className="text-xs font-normal text-muted-foreground">
                           Додано{" "}
                           {new Date(problem.createdAt).toLocaleDateString()}
                         </span>
@@ -320,7 +334,7 @@ const DashboardPage = () => {
                             className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
                           >
                             <MessageSquare className="w-3 h-3" strokeWidth={2} />
-                            Коментарі {openCommentsId === problem.id ? "▲" : "▼"}
+                            Коментарі {openCommentsId === problem.id ? <ChevronUp className="w-3 h-3 inline" strokeWidth={2} /> : <ChevronDown className="w-3 h-3 inline" strokeWidth={2} />}
                           </Button>
                         )}
                       </div>
@@ -345,36 +359,23 @@ const DashboardPage = () => {
 
             {filteredProblems.length === 0 && (
               <div className="border border-dashed border-border p-8 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Заявок поки немає.
+                <p className="text-xs text-muted-foreground mb-3">
+                  Немає заявок за вибраними фільтрами.
                 </p>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setActiveCorps("all");
+                    setActivePriority("all");
+                    setSearchQuery("");
+                  }}
+                >
+                  Скинути фільтри
+                </Button>
               </div>
             )}
-          </div>
-
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-primary p-6 text-primary-foreground">
-              <h4 className="text-xs font-semibold mb-4">
-                Дії
-              </h4>
-              {admin ? (
-                <Button
-                  asChild
-                  size="sm"
-                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
-                >
-                  <Link to="/admin">Перейти в комендант-центр</Link>
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  size="sm"
-                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
-                >
-                  <Link to="/create-report">Створити нову заявку</Link>
-                </Button>
-              )}
-            </div>
           </div>
         </div>
       </main>

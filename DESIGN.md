@@ -46,7 +46,7 @@ The application background utilizes two overlaid textures for depth: a dot matri
 
 ### The "Ticket" Motif
 Complaint cards and data containers feel like physical work orders.
-*   **Categorization:** Use context-specific label classes (§3.3) — `label-field` for form labels, `label-section` for section headers, `label-meta` for metadata values.
+*   **Categorization:** Use inline Tailwind utilities — `text-xs font-semibold text-foreground` for form/section labels, `text-xs font-normal text-muted-foreground` for metadata.
 *   **Separators:** Dashed borders via `<Separator dashed />` to divide card sections. Solid separators for page-level and header boundaries.
 *   **Status Indicators:** Small, crisp, rectangular badges with high-contrast text and a subtle, translucent background fill (see Semantic Status Colors below).
 
@@ -54,7 +54,7 @@ Complaint cards and data containers feel like physical work orders.
 Interactions feel mechanical and precise.
 *   Instead of lifting elements with a drop-shadow on hover, reveal a solid `1px` left border in the primary accent color (`blue-500`), accompanied by a slight text color shift.
 *   Implemented via a `1px` absolute bar (`w-1`) that transitions from `opacity-0` to `opacity-100` on group hover.
-*   The `link-hover` utility class provides an alternative pattern: `border-left: 4px solid var(--primary)` combined with `translateX(0.25rem)` and `padding-left: 0.5rem`.
+*   The `link-hover` pattern: `border-left: 4px solid var(--primary)` combined with `translateX(0.25rem)` and `padding-left: 0.5rem`.
 
 ### The "Auth Field" Interaction
 Form inputs on the login/register pages use a custom focus treatment: a `3px` solid left border in `var(--primary)` crops in via `border-left-color` transition, accompanied by a `padding-left` shift of `0.5rem`. This creates the effect of the field "indenting" when focused.
@@ -65,14 +65,14 @@ Form inputs on the login/register pages use a custom focus treatment: a `3px` so
 
 ### 3.1 Core Rules
 
-1. **No raw CSS for visual styles.** Every visual style must use Tailwind utility classes directly in JSX. The only exceptions: CSS custom properties for theme tokens, keyframe animations, and `@layer components` utility classes when a Tailwind combination repeats 3+ times. A single-use custom class is never acceptable.
+1. **No raw CSS for visual styles.** Every visual style must use Tailwind utility classes directly in JSX. The only exceptions: CSS custom properties for theme tokens, keyframe animations, and imperative CSS that cannot be expressed as Tailwind utilities (background textures, SVG filters, noise overlays).
 2. **No bracket classes where the named scale covers the value.** `text-[10px]`, `w-[420px]`, `h-[32px]`, `gap-[12px]`, `px-[16px]` are banned if `text-xs`, `w-96`, `h-8`, `gap-3`, `px-4` exist. Arbitrary values (`[brackets]`) are only acceptable for truly non-standard dimensions — layout edge cases like `top-[calc(50%-20px)]`. If you reach for brackets, check the Tailwind docs first.
 3. **No positive letter-spacing.** `tracking-wider`, `tracking-widest`, and `letter-spacing` with positive values are banned. They are the typographic equivalent of purple gradients — an artificial "design" signal with no functional purpose.
 4. **`tracking-tight` (negative letter-spacing) is allowed only on display sizes** — Hero (`text-5xl+`) and H1 (`text-2xl+`). Inter's default kerning at large sizes benefits from it.
 5. **No arbitrary pixel font sizes.** `text-[Npx]` is forbidden. Minimum `text-xs` (12px). Use only the named scale.
 6. **No 8px, 9px, 10px, or 11px text anywhere.** If content doesn't fit at `text-xs`, the layout is wrong.
 7. **No uppercase-only convention.** Let content determine its case. Forced uppercase (`uppercase`) is only acceptable for status badges.
-8. **No `.micro-label` as a generic utility.** It must be replaced by specific use-case classes (see §3.3).
+8. **No `.micro-label` as a generic utility.** All labels use inline Tailwind utilities.
 9. **No per-instance button typography overrides.** Button label styling is defined once in the Button component and never overridden with `className`.
 
 ### 3.2 Type Scale
@@ -96,26 +96,13 @@ Form inputs on the login/register pages use a custom focus treatment: a `3px` so
 - `font-semibold` = subheadings (H2, H3), labels, buttons
 - `font-normal` = everything else
 
-### 3.3 Label Classes (replacing `.micro-label`)
+### 3.3 Button Typography
 
-Instead of one universal `.micro-label` class, use context-specific tokens:
+Defined once in `components/ui/button.tsx`. Currently uses `text-xs font-medium` — change to `text-xs font-semibold` and remove the tracking. Never add `className` typography overrides at call sites. If a button needs visual distinction, use the `variant` or `size` props, not font overrides.
 
-| Purpose | Class | Background |
-|---|---|---|
-| Form / field label | `label-field` | `text-xs font-semibold text-foreground` |
-| Section header | `label-section` | `text-xs font-semibold text-foreground` |
-| Metadata value | `label-meta` | `text-xs font-normal text-muted-foreground` |
-| Badge / tag | uses `<Badge>` component | `text-xs font-semibold` via badge base class |
+### 3.4 Contrast Requirement
 
-This prevents the current pattern where one class serves as form label, section header, metadata value, error message, and action hint.
-
-### 3.4 Button Typography
-
-Defined once in `components/ui/button.tsx`. The base already uses `text-xs font-medium` — change this to `text-xs font-semibold` and remove the tracking. Never add `className="text-[10px] font-bold tracking-wider"` at call sites. If a button needs visual distinction, use the `variant` or `size` props, not font overrides.
-
-### 3.5 Contrast Requirement
-
-All text using `text-xs` or smaller must maintain a minimum 4.5:1 contrast ratio against its background. The current `--muted-foreground` (#a8a29e) on `--card` (#292524) fails this for 12px text. If a label uses `text-xs`, it must use `text-foreground` or a color that passes AA for small text.
+All text using `text-xs` or smaller must maintain a minimum 4.5:1 contrast ratio against its background. `--muted-foreground` (#a8a29e) on `--card` (#292524) passes AA for 12px text (~6.3:1).
 
 ---
 
@@ -132,7 +119,7 @@ Colors are defined as OKLCH custom properties in `index.css` under `:root` and `
 | `--card` | `oklch(0.216 0.006 56.043)` | `#292524` (Stone 800) | Surface/cards |
 | `--muted` | `oklch(0.268 0.007 34.298)` | Stone 700 ilk | Muted surfaces |
 | `--muted-foreground` | `oklch(0.709 0.01 56.259)` | `#A8A29E` (Stone 400) | Secondary text |
-| `--primary` | `oklch(0.424 0.199 265.638)` | Blue 800 (Indigo) | Brand accent |
+| `--primary` | `oklch(0.424 0.199 265.638)` | Blue 800 | Brand accent |
 | `--primary-foreground` | `oklch(0.97 0.014 254.604)` | Light blue 50 | Text on primary |
 | `--destructive` | `oklch(0.704 0.191 22.216)` | Red 500 | Danger / delete |
 | `--border` | `oklch(1 0 0 / 10%)` | `rgba(255,255,255,0.1)` | Borders |
@@ -147,18 +134,18 @@ Colors are defined as OKLCH custom properties in `index.css` under `:root` and `
 | `--border` | `oklch(0.923 0.003 48.717)` | `#E7E5E4` (Stone 200) | Borders |
 
 ### Primary Accent (Brand/Action)
-*   **Primary Button Default:** `bg-primary` (mapped to `blue-800` / indigo-ish blue)
+*   **Primary Button Default:** `bg-primary` (mapped to `blue-800`)
 *   **Primary Button Hover:** `hover:bg-primary/80`
-*   **Inline Accent (dark mode):** `text-blue-400` — used for links, highlighted text, and interactive elements.
-*   **Hover Left-Border Accent:** `bg-blue-500` — the 1px left-reveal bar.
+*   **Inline Accent:** `text-blue-400` (dark mode) / `text-blue-600` (light mode) — used for links, highlighted text, and interactive elements.
+*   **Hover Left-Border Accent:** `bg-blue-500` — the 1px left-reveal bar on cards and list items. For link/text hover patterns, use `var(--primary)` via the `link-hover` style instead.
 
 ### Semantic Status Colors (Tailwind-based)
-Applied via custom CSS classes (`badge-pending`, `badge-progress`, etc.) using `color-mix()` for translucent backgrounds:
+Applied via Tailwind utility classes (e.g. from `complaintUtils.ts`):
 
-*   **Pending (Жовтий):** Text: `#eab308` (yellow-500), Bg: `color-mix(in oklab, #eab308 10%, transparent)`, Border: `color-mix(in oklab, #a16207 50%, transparent)`. Class: `.badge-pending`
-*   **In Progress / Approved (Синій):** Text: `#3b82f6` (blue-500), Bg: `color-mix(in oklab, #3b82f6 10%, transparent)`, Border: `color-mix(in oklab, #1d4ed8 50%, transparent)`. Class: `.badge-progress`
-*   **Resolved (Зелений):** Text: `#22c55e` (green-500), Bg: `color-mix(in oklab, #22c55e 10%, transparent)`, Border: `color-mix(in oklab, #15803d 50%, transparent)`. Class: `.badge-resolved`
-*   **Urgent / Rejected (Червоний):** Text: `#ef4444` (red-500), Bg: `color-mix(in oklab, #ef4444 10%, transparent)`, Border: `color-mix(in oklab, #b91c1c 50%, transparent)`. Class: `.badge-urgent`
+*   **Pending (Жовтий):** `text-yellow-500 bg-yellow-500/10 border-yellow-700/50`
+*   **In Progress / Approved (Синій):** `text-blue-500 bg-blue-500/10 border-blue-700/50`
+*   **Resolved (Зелений):** `text-green-500 bg-green-500/10 border-green-700/50`
+*   **Urgent / Rejected (Червоний):** `text-red-500 bg-red-500/10 border-red-700/50`
 
 ---
 
@@ -169,17 +156,26 @@ Applied via custom CSS classes (`badge-pending`, `badge-progress`, etc.) using `
 *   **CSS Variable:** `--radius: 0` is set globally in both `:root` and `.dark`.
 *   **Strict Rule:** No rounded corners anywhere. The interface relies entirely on sharp, structural 90-degree angles.
 
+### Surface Opacity Tiers
+`bg-muted` is used at three opacity levels depending on depth. An element should use the lowest opacity tier that provides sufficient visual separation:
+
+| Tier | Usage |
+|---|---|
+| `bg-muted` | Static surfaces needing a visible background fill (tab list, future stepper bars, icon boxes) |
+| `bg-muted/50` | Hover states, lighter surface fills (outline button hover, cross-link cards, table header row) |
+| `bg-muted/30` | Subtle background tints behind content (comment section, skeleton secondary bars) |
+
 ### Buttons
-*   **Primary Action Buttons:** `bg-primary text-primary-foreground hover:bg-primary/80`, bold font weight, square corners, `h-8` default, `h-9` for `lg`, `h-6` for `xs`.
+*   **Primary Action Buttons:** `bg-primary text-primary-foreground hover:bg-primary/80`, `font-semibold`, square corners, `h-8` default, `h-9` for `lg`, `h-6` for `xs`.
 *   **Outline Buttons:** `border-border bg-background hover:bg-muted hover:text-foreground`.
-*   **Ghost Buttons:** Used for icon-only actions, secondary triggers. `hover:bg-muted hover:text-foreground`.
+*   **Ghost Buttons:** Used for icon-only actions, secondary triggers. `text-muted-foreground hover:bg-muted hover:text-foreground`.
 *   **Destructive Buttons:** `bg-destructive/10 text-destructive hover:bg-destructive/20`.
 *   **Focus States:** `focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50`.
 
 ### Cards
-*   **Card base:** `rounded-none bg-card ring-1 ring-foreground/10` with vertical internal gap (`--card-spacing`).
-*   **Ticket-style cards:** `bg-stone-800 border border-stone-700` (dark mode) with the group-hover left-border reveal pattern.
-*   **Card hover:** `hover:border-stone-600 transition-colors` (slight border brightening).
+*   **Card base:** `rounded-none bg-card border border-border` with vertical internal gap (`--card-spacing`).
+*   **Ticket-style cards:** `bg-card border border-border` with the group-hover left-border reveal pattern.
+*   **Card hover:** `hover:border-border/80 transition-colors` (slight border brightening).
 
 ### Inputs
 *   **Base:** `h-8 rounded-none border border-input bg-transparent px-2.5` with `focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50`.
@@ -195,7 +191,7 @@ Used in `TicketCard` to visualize complaint lifecycle. Three stages: "Створ
 *   Rendered as three 1.5-height bars (`h-1.5`) with `gap-0.5`.
 *   Completed stages: `bg-blue-500`.
 *   Current stage: `bg-blue-500 animate-pulse` (for in-progress) or solid `bg-blue-500`.
-*   Future stages: `bg-stone-700`.
+*   Future stages: `bg-muted`.
 
 ### Sparkline
 A minimal bar-chart micro-visualization used in `StatCard` for admin dashboards.
@@ -205,14 +201,14 @@ A minimal bar-chart micro-visualization used in `StatCard` for admin dashboards.
 
 ### Intentional Empty States
 Do not leave dead space when there is no data.
-*   Use `border-dashed` box with muted icon inside a small, centered, square container (`w-12 h-12 border border-stone-600 bg-stone-800`).
+*   Use `border-dashed border-border p-8 text-center` box with a muted icon inside a small centered square container (`w-12 h-12 border border-border bg-card`).
 *   Provide a reassuring heading + description.
-*   Class: `.empty-state` — `border-dashed border-border p-8 text-center`.
+*   Pattern: `border-dashed border-border p-8 text-center`.
 
 ### Skeleton Loading
 Consistent animated skeleton placeholders for async content.
 *   `animate-pulse` on the card container.
-*   Interior bars use `bg-stone-700/50` for prominent elements and `bg-stone-700/30` for secondary lines.
+*   Interior bars use `bg-muted/50` for prominent elements and `bg-muted/30` for secondary lines.
 *   Varying bar widths (`w-3/4`, `w-1/2`, `w-full`) for visual realism.
 
 ---
@@ -242,13 +238,13 @@ The project uses **two icon libraries**:
 
 ### Landing Page (`/`)
 The marketing/landing page for unauthenticated visitors. Auto-redirects logged-in users.
-*   **Sticky nav:** `bg-stone-900/80 backdrop-blur-md sticky top-0 z-50` with `Separator` bottom border.
+*   **Sticky nav:** `bg-background/80 backdrop-blur-md sticky top-0 z-50` with `Separator` bottom border.
 *   **Brand mark:** `Building2` icon + "DormWatch" in `text-blue-500 font-bold text-xl tracking-tight`.
-*   **Nav links:** "Як це працює", "Поширені запитання", "Екстрені контакти" — `text-stone-300` hover to `text-stone-50`.
+*   **Nav links:** "Як це працює", "Поширені запитання", "Екстрені контакти" — `text-muted-foreground` hover to `text-foreground`.
 *   **Hero Section:** Two-column grid (`lg:grid-cols-2`). Left: headline with `text-blue-400` accent span, body text, two CTA buttons. Right: stylized mock-ticket illustration (layered borders with `rotate-3` / `-rotate-2` transforms and opacity stacking, containing skeleton ticket cards with hover left-border reveal).
-*   **Stats Banner:** 4-column grid with `divide-x divide-stone-800`. Large stat numbers (`text-3xl font-bold`) + `label-meta` descriptions.
-*   **Features Grid:** 3-column grid of feature cards. Each card: `bg-stone-800 border border-stone-700 p-8` with icon in `w-12 h-12 border border-stone-600 bg-stone-900` box, group-hover left-border reveal.
-*   **CTA Section:** Centered text + primary button. `bg-stone-900 py-20`.
+*   **Stats Banner:** 4-column grid with `divide-x divide-border`. Large stat numbers (`text-3xl font-bold`) + `text-xs font-normal text-muted-foreground` descriptions.
+*   **Features Grid:** 3-column grid of feature cards. Each card: `bg-card border border-border p-8` with icon in `w-12 h-12 border border-border bg-muted` box, group-hover left-border reveal.
+*   **CTA Section:** Centered text + primary button. `bg-background py-20`.
 
 ### Auth Page (`/auth`)
 Dual-mode form page (login / register) controlled by `?tab=register` query param.
@@ -263,11 +259,11 @@ Dual-mode form page (login / register) controlled by `?tab=register` query param
 Tabbed dashboard for authenticated residents.
 *   **Tabs:** `line` variant with two triggers: "Панель" and "Мої заявки".
 *   **Dashboard tab:**
-    *   Greeting: `text-3xl font-bold text-stone-50` + location with `MapPin` icon.
-    *   **CTA block:** Full-width `bg-blue-800` card with `Wrench` icon in `w-12 h-12 border border-white/20 bg-white/10` box. Arrow icon translates `+x-2` on hover. Contains a gradient overlay that fades in on hover.
+    *   Greeting: `text-3xl font-bold text-foreground` + location with `MapPin` icon.
+    *   **CTA block:** Full-width `bg-primary` card with `Wrench` icon in `w-12 h-12 border border-white/20 bg-white/10` box. Arrow icon translates `+x-2` on hover. Contains a gradient overlay that fades in on hover.
     *   **Active tickets:** 2/3 column. Uses `TicketCard` components (max 5 rendered). "Історія" link to `/dashboard`.
     *   **Community board:** 1/3 column. Uses `CommunityBoard` component with dashed-border empty state + `BellOff` icon.
-*   **Reports tab:** Full list of user's own complaints. Same card pattern as Dashboard feed but with inline vote counts and `Trash2` delete button with `border border-red-400/30 hover:bg-red-400/10`.
+*   **Reports tab:** Full list of user's own complaints. Same card pattern as Dashboard feed but with inline vote counts and `Trash2` delete button with `border border-destructive/30 hover:bg-destructive/10`.
 
 ### Problem Feed (`/dashboard`)
 Public/semi-public view of all approved complaints with filtering and voting.
@@ -282,16 +278,16 @@ Multi-section form for submitting new complaints.
 *   **Back button:** `border border-border hover:border-primary hover:bg-primary/5`.
 *   **Category selector:** 2×2 / 4-column grid of icon+label buttons. Active: `variant="default"`, inactive: `variant="outline"`, `border-2`.
 *   **Priority selector:** 3 outline/default toggle buttons (`Низький / Середній / Високий`), `flex-1`.
-*   **Form fields:** Title, place name, description (`Textarea`, `min-h-36 resize-none`). All with `label-field` above.
+*   **Form fields:** Title, place name, description (`Textarea`, `min-h-36 resize-none`). All with `text-xs font-semibold text-foreground` label above.
 *   **Photo upload:** Square `aspect-square` drop zone with `border-2 border-dashed`. Shows preview with `X` overlay button when photo selected.
 *   **Submit button:** Full-width, button label styling per §3.4.
 
 ### Admin Dashboard (`/admin`)
 Sidebar + main content layout for administrators.
 *   **Sidebar:** `AdminSidebar` component with user identity (initials avatar, name, role), navigation links.
-*   **Header bar:** `h-16 bg-stone-800` with page title + "Експорт даних" (outline) and "Нове замовлення" (primary) buttons.
+*   **Header bar:** `h-16 bg-card` with page title + "Експорт даних" (outline) and "Нове замовлення" (primary) buttons.
 *   **Stat cards:** 3-column grid of `StatCard` components (Очікує / В роботі / Вирішено) with colored sparklines.
-*   **Recent complaints table:** `bg-stone-800 border border-stone-700` container with `Table` component. Rows are clickable, opening `ComplaintSidePanel` (sheet).
+*   **Recent complaints table:** `bg-card border border-border` container with `Table` component. Rows are clickable, opening `ComplaintSidePanel` (sheet).
 
 ---
 
@@ -300,13 +296,13 @@ Sidebar + main content layout for administrators.
 ### TicketCard
 Compact complaint summary used in the User Dashboard.
 *   **Props:** `id`, `title`, `description`, `category`, `date`, `status`, `location?`, `categoryLabel?`.
-*   **Layout:** Category `label-meta` + bullet + date → status badge → title + description → `Separator` → `ProgressStepper` + `#id`.
+*   **Layout:** Category `text-xs font-normal text-muted-foreground` + bullet + date → status badge → title + description → `Separator` → `ProgressStepper` + `#id`.
 *   **Hover:** Group hover reveals `w-1 bg-blue-500` left bar, title shifts to `text-blue-400`.
 
 ### StatCard
 Metric display for admin dashboard.
 *   **Props:** `icon`, `label`, `value`, `sparklineColor?`, `sparklineData?`, `loading?`.
-*   **Layout:** Icon + `label-section` → large `text-3xl font-bold` value → optional sparkline bar chart at bottom (hidden at 20% opacity, revealed to 100% on hover).
+*   **Layout:** Icon + `text-xs font-semibold text-foreground` → large `text-3xl font-bold` value → optional sparkline bar chart at bottom (hidden at 20% opacity, revealed to 100% on hover).
 *   **Skeleton:** Custom `StatCardSkeleton` with `animate-pulse` and mock sparkline bars.
 
 ### CommunityBoard
@@ -315,7 +311,7 @@ Empty-state placeholder for building announcements.
 
 ### CommentSection
 Embedded comment panel that toggles below complaint cards.
-*   Rendered inside a `bg-muted/30` (dashboard) or `bg-stone-900/30` (user page) background.
+*   Rendered inside a `bg-muted/30` background.
 *   Separated from card content by `<Separator dashed />`.
 
 ### LoadingSpinner
@@ -350,29 +346,11 @@ All components override `rounded-none` globally:
 |---|---|
 | `Button` | `rounded-none` on base and all sizes (`xs`, `icon-xs`, `icon-sm`). Sizes: `xs (h-6)`, `sm (h-7)`, `default (h-8)`, `lg (h-9)`, `icon (size-8)`, `icon-xs (size-6)`, `icon-sm (size-7)`, `icon-lg (size-9)`. |
 | `Badge` | `rounded-none`, height `h-5`, `px-2 py-0.5`. |
-| `Card` | `rounded-none`, uses `ring-1 ring-foreground/10` instead of border. `--card-spacing` token. |
+| `Card` | `rounded-none`, uses `border border-border`. `--card-spacing` token. |
 | `Input` | `rounded-none h-8`, dark mode `bg-input/30`. |
 | `Tabs` | `rounded-none` on list and triggers. Line variant uses `::after` pseudo for active underline. |
 | `Separator` | Extended with `dashed?: boolean` prop. When dashed: `border-dashed border-t` (horizontal) or `border-l` (vertical). |
-| `Table` | Standard shadcn with stone-800/700 dark palettes. |
-
-### Custom CSS Component Classes
-Defined in `@layer components` in `index.css`:
-
-| Class | Purpose |
-|---|---|
-
-| `.badge-status` | Base badge styling (px/py, uppercase, tracking, border) |
-| `.badge-pending` | Yellow status badge colors |
-| `.badge-progress` | Blue status badge colors |
-| `.badge-resolved` | Green status badge colors |
-| `.badge-urgent` | Red status badge colors |
-| `.empty-state` | Dashed-border centered container |
-| `.ticket-card` | Card with accent-5% hover background |
-| `.ticket-separator` | Dashed top border using `--border` |
-| `.link-hover` | Left-border + translateX hover pattern |
-| `.auth-field` | Left-border focus indicator for auth inputs |
-| `.animate-fade-in-up` | 0.7s entrance animation (translateY 24px → 0) with `cubic-bezier(0.16, 1, 0.3, 1)`. Respects `prefers-reduced-motion`. |
+| `Table` | Standard shadcn — uses semantic variables (`bg-card`, `bg-muted/50`, `border-border`, `text-muted-foreground`, `text-foreground`). |
 
 ---
 

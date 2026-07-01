@@ -72,15 +72,14 @@ const ComplaintSidePanel = ({
               </span>
             </div>
             <h3 className="text-base font-bold text-stone-50 mb-1">{complaint.title || "Без назви"}</h3>
-            <p className="label-meta">{humanLocation(complaint)}</p>
+            <p className="text-xs font-normal text-muted-foreground">{humanLocation(complaint)}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {categoryLabel && (
-              <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
-                {categoryLabel}
-              </Badge>
-            )}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-stone-400 font-medium">
+              {categoryLabel}
+            </span>
+            <span className="w-1 h-1 bg-stone-600" />
             <Badge
               variant="outline"
               className={priorityBadgeClass(complaint.priority)}
@@ -88,9 +87,9 @@ const ComplaintSidePanel = ({
                 Пріоритет: {priorityLabel(complaint.priority)}
             </Badge>
             {complaint.createdAt && (
-              <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
+              <span className="text-xs text-stone-500 font-medium">
                 {new Date(complaint.createdAt).toLocaleDateString()}
-              </Badge>
+              </span>
             )}
           </div>
 

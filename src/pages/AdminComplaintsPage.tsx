@@ -10,7 +10,7 @@ import {
   fetchEmployees,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
-import CommentSection from "../components/CommentSection";
+import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import TicketCreateForm from "../components/TicketCreateForm";
 import { useUser } from "../context/UserContext";
 import { Badge } from "../components/ui/badge";
@@ -100,7 +100,8 @@ const AdminComplaintsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [ticketSearchQuery, setTicketSearchQuery] = useState("");
 
-  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [selectedForTicket, setSelectedForTicket] = useState<any>(null);
   const [ticketToEdit, setTicketToEdit] = useState<any>(null);
@@ -277,7 +278,9 @@ const AdminComplaintsPage = () => {
                             <h3 className="text-base font-bold text-stone-50 truncate max-w-xl">
                               {p.title || "Без назви"}
                             </h3>
-                            <p className="label-meta mt-1">{humanLocation(p)}</p>
+                            <p className="text-xs font-normal text-muted-foreground mt-1">
+                              {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"} &middot; {humanLocation(p)}
+                            </p>
                           </div>
                           <Badge variant="outline" className={statusBadgeClass(p.status)}>
                             {statusLabel(p.status)}
@@ -285,9 +288,6 @@ const AdminComplaintsPage = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
-                            {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"}
-                          </Badge>
                           <Badge
                             variant="outline"
                             className={priorityBadgeClass(p.priority)}
@@ -295,9 +295,9 @@ const AdminComplaintsPage = () => {
                             Пріоритет: {priorityLabel(p.priority)}
                           </Badge>
                           {p.createdAt && (
-                            <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
+                            <span className="text-xs text-stone-400 font-medium">
                               {new Date(p.createdAt).toLocaleDateString()}
-                            </Badge>
+                            </span>
                           )}
                         </div>
 
@@ -315,7 +315,6 @@ const AdminComplaintsPage = () => {
                           </div>
                         )}
 
-                        <Separator dashed className="border-stone-700 mt-4" />
                         <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4">
                           <div className="flex items-center gap-4">
                             <span className="text-xs text-stone-400 font-medium">
@@ -324,13 +323,14 @@ const AdminComplaintsPage = () => {
                             <Button
                               variant="ghost"
                               size="xs"
-                              onClick={() =>
-                                setOpenCommentsId(openCommentsId === p.id ? null : p.id)
-                              }
+                              onClick={() => {
+                                setSelectedComplaint(p);
+                                setSheetOpen(true);
+                              }}
                               className="text-blue-400 text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
                             >
                               <MessageSquare className="w-3 h-3" strokeWidth={2} />
-                              Коментарі {openCommentsId === p.id ? "▲" : "▼"}
+                              Коментарі
                             </Button>
                           </div>
 
@@ -370,19 +370,6 @@ const AdminComplaintsPage = () => {
                             </Button>
                           </div>
                         </div>
-
-                        {openCommentsId === p.id && (
-                          <>
-                            <Separator dashed className="border-stone-700 mt-4" />
-                            <div className="bg-stone-900/30 p-4">
-                              <CommentSection
-                                complaintId={p.id}
-                                currentUserId={currentUser?.user}
-                                isAdmin={true}
-                              />
-                            </div>
-                          </>
-                        )}
                       </div>
                     </Card>
                   ))}
@@ -505,6 +492,20 @@ const AdminComplaintsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedComplaint && (
+        <ComplaintSidePanel
+          complaint={selectedComplaint}
+          open={sheetOpen}
+          onOpenChange={(open) => {
+            setSheetOpen(open);
+            if (!open) setSelectedComplaint(null);
+          }}
+          onStatusChange={loadComplaints}
+          currentUserId={currentUser?.user}
+          isAdmin={true}
+        />
+      )}
 
       {isTicketModalOpen && selectedForTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">

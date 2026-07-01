@@ -36,7 +36,7 @@ import {
   LogOut,
 } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { isAdminUser } from "@/lib/complaintUtils";
+import { isAdminUser, getUserInitials } from "@/lib/complaintUtils";
 
 const CONTACT_PHONES = {
   commandant: "093 123 45 67",
@@ -149,15 +149,17 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const roomInfo = placeObj ? placeObj.place_name : "Кімната не вказана";
 
   const SERVER_URL = "http://127.0.0.1:8000";
-  let avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.first_name || "Guest"}`;
-  if (user?.photo_url) {
-    const path = user.photo_url;
-    const isAbsolute = path.startsWith("http") || path.startsWith("blob:");
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    avatarUrl = isAbsolute
-      ? path
-      : `${SERVER_URL}${cleanPath.startsWith("/api") ? "" : "/api"}${cleanPath}`;
-  }
+  const userInitials = getUserInitials(user, "U");
+  const photoUrl = user?.photo_url
+    ? (() => {
+        const path = user.photo_url;
+        const isAbsolute = path.startsWith("http") || path.startsWith("blob:");
+        const cleanPath = path.startsWith("/") ? path : `/${path}`;
+        return isAbsolute
+          ? path
+          : `${SERVER_URL}${cleanPath.startsWith("/api") ? "" : "/api"}${cleanPath}`;
+      })()
+    : null;
 
   const isAdmin = isAdminUser(user);
 
@@ -179,17 +181,19 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
         <div className="flex flex-col max-h-[80vh]">
           <div className="flex items-center gap-4 px-5 py-4 border-b border-border bg-card">
-            <div className="w-12 h-12 bg-muted border border-border shrink-0 overflow-hidden">
+            <div className="w-12 h-12 bg-muted border border-border shrink-0 overflow-hidden flex items-center justify-center">
               {loading ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <LoadingSpinner size="sm" />
-                </div>
-              ) : (
+                <LoadingSpinner size="sm" />
+              ) : photoUrl ? (
                 <img
-                  src={avatarUrl}
+                  src={photoUrl}
                   className="w-full h-full object-cover"
                   alt=""
                 />
+              ) : (
+                <span className="text-sm font-bold text-muted-foreground">
+                  {userInitials}
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -240,14 +244,14 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                       <div className="flex items-center gap-4 mb-2">
                         <div className="w-16 h-16 bg-muted border border-border shrink-0 overflow-hidden">
                           <img
-                            src={photoPreview || avatarUrl}
+                            src={photoPreview || photoUrl || undefined}
                             alt="Preview"
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <label className="cursor-pointer">
                           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
-                            <Camera className="w-3 h-3" strokeWidth={2} />
+                            <Camera className="w-3 h-3" strokeWidth={1.5} />
                             Змінити фото
                           </span>
                           <input
@@ -261,7 +265,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="label-field block mb-1">Ім'я</label>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Ім'я</label>
                           <Input
                             name="first_name"
                             value={editForm.first_name}
@@ -272,7 +276,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                           />
                         </div>
                         <div>
-                          <label className="label-field block mb-1">Прізвище</label>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Прізвище</label>
                           <Input
                             name="last_name"
                             value={editForm.last_name}
@@ -285,7 +289,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                       </div>
 
                       <div>
-                        <label className="label-field block mb-1">Email</label>
+                        <label className="text-xs font-semibold text-foreground block mb-1">Email</label>
                         <Input
                           name="email"
                           value={editForm.email}
@@ -320,45 +324,45 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                   ) : (
                     <div className="space-y-4">
                       <div className="space-y-3">
-                        <div className="flex items-center gap-3 py-1.5 px-2 border border-transparent hover:border-l-4 hover:border-l-primary hover:pl-3 transition-all cursor-default">
+                        <div className="flex items-center gap-3 py-1.5 px-2">
                           <div className="w-7 h-7 bg-muted border border-border flex items-center justify-center shrink-0">
                             <User className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
                           </div>
                           <div className="min-w-0">
-                            <p className="label-meta">Ім'я</p>
+                            <p className="text-xs font-normal text-muted-foreground">Ім'я</p>
                             <p className="text-xs font-semibold text-foreground truncate">
                               {user?.first_name || "Не вказано"}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 py-1.5 px-2 border border-transparent hover:border-l-4 hover:border-l-primary hover:pl-3 transition-all cursor-default">
+                        <div className="flex items-center gap-3 py-1.5 px-2">
                           <div className="w-7 h-7 bg-muted border border-border flex items-center justify-center shrink-0">
                             <User className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
                           </div>
                           <div className="min-w-0">
-                            <p className="label-meta">Прізвище</p>
+                            <p className="text-xs font-normal text-muted-foreground">Прізвище</p>
                             <p className="text-xs font-semibold text-foreground truncate">
                               {user?.last_name || "Не вказано"}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 py-1.5 px-2 border border-transparent hover:border-l-4 hover:border-l-primary hover:pl-3 transition-all cursor-default">
+                        <div className="flex items-center gap-3 py-1.5 px-2">
                           <div className="w-7 h-7 bg-muted border border-border flex items-center justify-center shrink-0">
-                            <Building2 className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
+                            <Building2 className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
                           </div>
                           <div className="min-w-0">
-                            <p className="label-meta">Гуртожиток</p>
+                            <p className="text-xs font-normal text-muted-foreground">Гуртожиток</p>
                             <p className="text-xs font-semibold text-foreground truncate">
                               {buildingInfo}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 py-1.5 px-2 border border-transparent hover:border-l-4 hover:border-l-primary hover:pl-3 transition-all cursor-default">
+                        <div className="flex items-center gap-3 py-1.5 px-2">
                           <div className="w-7 h-7 bg-muted border border-border flex items-center justify-center shrink-0">
                             <Home className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
                           </div>
                           <div className="min-w-0">
-                            <p className="label-meta">Кімната</p>
+                            <p className="text-xs font-normal text-muted-foreground">Кімната</p>
                             <p className="text-xs font-semibold text-foreground truncate">
                               {roomInfo}
                             </p>
@@ -396,9 +400,9 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                 <TabsContent value="room" className="mt-0 focus-visible:ring-0 focus-visible:outline-none">
                   <div className="space-y-4">
                     <div className="p-3 bg-muted border border-border">
-                      <p className="label-section mb-1.5">Поточне розміщення</p>
+                      <p className="text-xs font-semibold text-foreground mb-1.5">Поточне розміщення</p>
                       <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-primary" strokeWidth={2} />
+                        <Building2 className="w-4 h-4 text-primary" strokeWidth={1.5} />
                         <p className="text-sm font-bold text-foreground">{buildingInfo}</p>
                         <span className="text-muted-foreground mx-1">&middot;</span>
                         <Home className="w-4 h-4 text-primary" strokeWidth={2} />
@@ -414,7 +418,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                       </p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="label-field block mb-1">Корпус</label>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Корпус</label>
                           <Select
                             value={editForm.building}
                             onValueChange={(value) =>
@@ -434,7 +438,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                           </Select>
                         </div>
                         <div>
-                          <label className="label-field block mb-1">Поверх</label>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Поверх</label>
                           <Input
                             name="floor"
                             type="number"
@@ -446,7 +450,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                           />
                         </div>
                         <div className="col-span-2">
-                          <label className="label-field block mb-1">Кімната</label>
+                          <label className="text-xs font-semibold text-foreground block mb-1">Кімната</label>
                           <Input
                             name="room"
                             value={editForm.room}

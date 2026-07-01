@@ -18,11 +18,11 @@ import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
 import {
+  ChevronUp,
+  ChevronDown,
   Trash2,
   MessageSquare,
   MapPin,
-  ArrowRight,
-  Wrench,
 } from "lucide-react";
 
 const UserPage = () => {
@@ -84,47 +84,60 @@ const UserPage = () => {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-stone-50 tracking-tight">Hello, {firstName}!</h1>
-              <p className="text-stone-400 mt-1 flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-stone-400" strokeWidth={1.5} />
-                {building} &bull; Room {room}
-              </p>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-1 space-y-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-stone-50 tracking-tight">Hello, {firstName}!</h1>
+                  <p className="text-stone-400 mt-1 flex items-center gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-stone-400" strokeWidth={1.5} />
+                    {building} &bull; Room {room}
+                  </p>
+                </div>
 
-            <Link
-              to="/create-report"
-              className="block w-full bg-blue-800 hover:bg-blue-900 border border-blue-700 p-6 mb-8 group/cta relative overflow-hidden transition-all"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-800 to-blue-700 opacity-0 group-hover/cta:opacity-100 transition-opacity" />
-              <div className="flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-6">
-                  <div className="w-12 h-12 border border-white/20 bg-white/10 flex items-center justify-center shrink-0">
-                    <Wrench className="w-6 h-6 text-white" strokeWidth={2} />
+                <div className="space-y-3">
+                  <div className="bg-stone-800 border border-stone-700 p-4">
+                    <p className="text-2xl font-bold text-stone-50">{problems.length}</p>
+                    <p className="text-xs text-stone-400 font-semibold mt-1">Всього заявок</p>
                   </div>
-                  <div className="text-left">
-                    <p className="text-xl font-bold text-white">Повідомити про проблему</p>
-                    <p className="text-blue-100 text-sm mt-1">
-                      Створіть нову заявку на ремонт у вашій кімнаті або загальних зонах.
+                  <div className="bg-stone-800 border border-stone-700 p-4">
+                    <p className="text-2xl font-bold text-green-400">
+                      {problems.filter((p) => p.status === "resolved").length}
                     </p>
+                    <p className="text-xs text-stone-400 font-semibold mt-1">Вирішено</p>
+                  </div>
+                  <div className="bg-stone-800 border border-stone-700 p-4">
+                    <p className="text-2xl font-bold text-yellow-400">
+                      {problems.filter((p) => p.status !== "resolved").length}
+                    </p>
+                    <p className="text-xs text-stone-400 font-semibold mt-1">Активні</p>
                   </div>
                 </div>
-                <ArrowRight className="w-6 h-6 text-white relative z-10 group-hover/cta:translate-x-2 transition-transform" strokeWidth={2} />
-              </div>
-            </Link>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2">
-                <div className="flex items-center justify-between mb-2">
+                <Link
+                  to="/create-report"
+                  className="block w-full bg-primary p-4 text-center text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+                >
+                  + Створити заявку
+                </Link>
+              </div>
+
+              <div className="md:col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-stone-50">Активні заявки</h2>
-                  <Link to="/dashboard" className="text-sm font-semibold text-blue-400 hover:text-blue-500">
+                  <Link to="/dashboard" className="text-sm font-semibold text-primary hover:underline">
                     Історія
                   </Link>
                 </div>
                 <div className="space-y-3">
                   {problems.length === 0 ? (
                     <div className="border border-dashed border-border p-8 text-center">
-                      <p className="text-xs text-stone-400">Немає активних заявок.</p>
+                      <p className="text-xs text-stone-400 mb-3">Немає активних заявок.</p>
+                      <Link
+                        to="/create-report"
+                        className="inline-flex items-center px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
+                      >
+                        Створити першу заявку
+                      </Link>
                     </div>
                   ) : (
                     problems.slice(0, 5).map((p) => (
@@ -141,8 +154,7 @@ const UserPage = () => {
                     ))
                   )}
                 </div>
-              </div>
-              <div>
+
                 <CommunityBoard />
               </div>
             </div>
@@ -167,19 +179,16 @@ const UserPage = () => {
                         голосів
                       </span>
                     </div>
-                    <Separator orientation="vertical" dashed className="border-stone-700" />
+                    <div className="w-px bg-stone-700" />
                     <div className="flex-1 p-5">
                       <div className="flex justify-between items-start mb-3 gap-2">
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className={statusBadgeClass(p.status)}>
                             {statusLabel(p.status)}
                           </Badge>
-                          <Badge variant="outline" className="text-stone-400 border-stone-700 bg-stone-800">
-                            {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Other"}
-                          </Badge>
                         </div>
-                        <span className="label-meta shrink-0">
-                          {new Date(p.createdAt).toLocaleDateString()}
+                        <span className="text-xs font-normal text-muted-foreground shrink-0">
+                          {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Other"} &middot; {new Date(p.createdAt).toLocaleDateString()}
                         </span>
                       </div>
 
@@ -200,8 +209,6 @@ const UserPage = () => {
                         </div>
                       )}
 
-                      <Separator dashed className="border-stone-700 mt-4" />
-
                       <div className="flex items-center justify-between pt-4">
                         <div className="flex items-center gap-4">
                           <span className="text-xs font-semibold text-stone-50">
@@ -218,7 +225,7 @@ const UserPage = () => {
                             className="text-blue-400 text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
                           >
                             <MessageSquare className="w-3 h-3" strokeWidth={2} />
-                            Коментарі {openCommentsId === p.id ? "\u25b2" : "\u25bc"}
+                            Коментарі {openCommentsId === p.id ? <ChevronUp className="w-3 h-3 inline" strokeWidth={2} /> : <ChevronDown className="w-3 h-3 inline" strokeWidth={2} />}
                           </Button>
                         </div>
                         <Button
@@ -234,16 +241,13 @@ const UserPage = () => {
                   </div>
 
                   {openCommentsId === p.id && (
-                    <>
-                      <Separator dashed className="border-stone-700" />
-                      <div className="bg-stone-900/30 p-4">
+                    <div className="bg-stone-900/30 p-4">
                       <CommentSection
                         complaintId={p.id}
                         currentUserId={currentUser?.user}
                         isAdmin={isAdminUser(currentUser)}
                       />
-                      </div>
-                    </>
+                    </div>
                   )}
                 </Card>
               ))}

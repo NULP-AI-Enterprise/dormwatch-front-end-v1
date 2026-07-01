@@ -26,7 +26,7 @@ const AdminSidebar = ({ userName = "Адмін", userRole = "Адміністр�
     <>
       <aside className="hidden md:flex md:flex-col md:w-56 lg:w-64 bg-stone-900 border-r border-stone-700 min-h-screen shrink-0">
         <div className="h-20 px-6 flex items-center border-b border-stone-700">
-          <Link to="/admin" className="flex items-center gap-2 text-blue-500 font-bold text-xl tracking-tight">
+          <Link to="/admin" className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
             <Building2 className="w-6 h-6" strokeWidth={1.5} />
             <span>DormWatch</span>
           </Link>
