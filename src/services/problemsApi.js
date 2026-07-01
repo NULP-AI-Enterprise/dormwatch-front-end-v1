@@ -130,13 +130,21 @@ export async function logoutUser() {
 }
 
 export async function fetchBuildings() {
-  const res = await fetch(`${API_BASE}/buildings/`);
-  return res.json();
+  try {
+    return await fetchJson("/buildings/");
+  } catch (e) {
+    console.warn("Failed to fetch buildings", e);
+    return [];
+  }
 }
 
 export async function fetchPlaces(buildingId) {
-  const res = await fetch(`${API_BASE}/places/?building_id=${buildingId}`);
-  return res.json();
+  try {
+    return await fetchJson(`/places/?building_id=${buildingId}`);
+  } catch (e) {
+    console.warn("Failed to fetch places", e);
+    return [];
+  }
 }
 
 async function fetchJson(path, { method = "GET", body } = {}) {
@@ -302,35 +310,23 @@ export async function fetchMyProblems() {
   return [];
 }
 
-export async function fetchAllComplaints(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-    if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-    const q = params.toString() ? `?${params.toString()}` : "";
-    const data = await fetchJson(`/complaints/${q}`);
-    if (Array.isArray(data)) return data.map(normalizeComplaint).sort(sortByNew);
-  } catch (e) {
-    console.warn("Fetch error:", e);
-  }
-  return [];
+function buildQueryParams(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
+  if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
+  return params.toString() ? `?${params.toString()}` : "";
 }
 
-export async function fetchApprovedComplaints(sort = "new", filters = {}) {
+export async function fetchComplaints({ status, sort = "new", filters = {} } = {}) {
   try {
-    const params = new URLSearchParams();
-    if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-    if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-    const q = params.toString() ? `?${params.toString()}` : "";
+    const q = buildQueryParams(filters);
     const data = await fetchJson(`/complaints/${q}`);
     if (Array.isArray(data)) {
-      const approved = data
-        .map(normalizeComplaint)
-        .filter((c) => c && c.status === "approved");
-      if (sort === "popular")
-        approved.sort((a, b) => b.votesCount - a.votesCount);
-      else approved.sort(sortByNew);
-      return approved;
+      let results = data.map(normalizeComplaint).filter(Boolean);
+      if (status) results = results.filter((c) => c.status === status);
+      if (sort === "popular") results.sort((a, b) => b.votesCount - a.votesCount);
+      else results.sort(sortByNew);
+      return results;
     }
   } catch (e) {
     console.warn("Fetch error:", e);
@@ -338,58 +334,24 @@ export async function fetchApprovedComplaints(sort = "new", filters = {}) {
   return [];
 }
 
+export async function fetchAllComplaints(filters = {}) {
+  return fetchComplaints({ filters });
+}
+
+export async function fetchApprovedComplaints(sort = "new", filters = {}) {
+  return fetchComplaints({ status: "approved", sort, filters });
+}
+
 export async function fetchPendingComplaints(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-    if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-    const q = params.toString() ? `?${params.toString()}` : "";
-    const data = await fetchJson(`/complaints/${q}`);
-    if (Array.isArray(data))
-      return data
-        .map(normalizeComplaint)
-        .filter((c) => c && c.status === "pending")
-        .sort(sortByNew);
-  } catch (e) {
-    console.warn(e);
-  }
-  return [];
+  return fetchComplaints({ status: "pending", filters });
 }
 
 export async function fetchRejectedComplaints(filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-    if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-    const q = params.toString() ? `?${params.toString()}` : "";
-    const data = await fetchJson(`/complaints/${q}`);
-    if (Array.isArray(data))
-      return data
-        .map(normalizeComplaint)
-        .filter((c) => c && c.status === "rejected")
-        .sort(sortByNew);
-  } catch (e) {
-    console.warn(e);
-  }
-  return [];
+  return fetchComplaints({ status: "rejected", filters });
 }
 
 export async function fetchComplaintsByStatus(targetStatus, filters = {}) {
-  try {
-    const params = new URLSearchParams();
-    if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-    if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-    const q = params.toString() ? `?${params.toString()}` : "";
-    const data = await fetchJson(`/complaints/${q}`);
-    if (Array.isArray(data))
-      return data
-        .map(normalizeComplaint)
-        .filter((c) => c && c.status === targetStatus)
-        .sort(sortByNew);
-  } catch (e) {
-    console.warn(e);
-  }
-  return [];
+  return fetchComplaints({ status: targetStatus, filters });
 }
 
 export async function deleteProblem(id) {

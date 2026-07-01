@@ -1,265 +1,414 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import {
+  fetchApprovedComplaints,
+  deleteProblem,
+  voteComplaint,
+  fetchBuildings,
+} from "../services/problemsApi";
+import { resolveImageUrl } from "../services/imageUtils";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronUpIcon, ChevronDownIcon, Message01Icon, Cancel01Icon, SearchIcon, Delete01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogClose,
+} from "../components/ui/dialog";
+import CommentSection from "../components/CommentSection";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { Separator } from "../components/ui/separator";
+import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
+import { useUser } from "../context/UserContext";
+import type { Complaint } from "../lib/types";
+
+const categories = [
+  { id: "all", name: "Всі" },
+  { id: "plumbing", name: "Сантехніка" },
+  { id: "electricity", name: "Електрика" },
+  { id: "furniture", name: "Меблі" },
+  { id: "internet", name: "Інтернет" },
+];
 
 const DashboardPage = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const { user: currentUser } = useUser();
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCorps, setActiveCorps] = useState("all");
+  const [activePriority, setActivePriority] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [problems, setProblems] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const categories = [
-    { id: "all", name: "Всі", emoji: "" },
-    { id: "plumbing", name: "Сантехніка", emoji: "🚿" },
-    { id: "electricity", name: "Електрика", emoji: "💡" },
-    { id: "furniture", name: "Меблі", emoji: "🪑" },
-    { id: "internet", name: "Інтернет", emoji: "🌐" },
-  ];
+  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
 
-  const problems = [
-    {
-      id: 1,
-      category: "plumbing",
-      votes: 124,
-      status: "Розглядається",
-      statusColor: "bg-amber-100 text-amber-700",
-      categoryColor: "bg-blue-100 text-blue-700",
-      location: "Блок Г, 5 поверх",
-      title: "Тече душовий кран у жіночому блоці",
-      description: "Кран не закривається повністю, постійно тече гаряча вода. Це створює вогкість у всьому приміщенні.",
-      image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=600",
-      date: "14.04.2024",
-      comments: 12,
-    },
-    {
-      id: 2,
-      category: "electricity",
-      votes: 86,
-      status: "Терміново",
-      statusColor: "bg-red-100 text-red-700",
-      categoryColor: "bg-yellow-100 text-yellow-700",
-      location: "Блок Б, 3 поверх",
-      title: "Коротке замикання в розетці",
-      description: "Розетка в холі іскрить при підключенні будь-якого приладу. Дуже небезпечно!",
-      date: "15.04.2024",
-      comments: 5,
-    },
-    {
-      id: 3,
-      category: "furniture",
-      votes: 42,
-      status: "Вирішено",
-      statusColor: "bg-emerald-100 text-emerald-700",
-      categoryColor: "bg-purple-100 text-purple-700",
-      location: "Блок А, 2 поверх",
-      title: "Зламані дверцята в кухонній шафі",
-      description: "Дверцята відпали від завісів. Майстер пообіцяв полагодити до кінця тижня.",
-      date: "13.04.2024",
-      comments: 0,
-      resolved: true,
-    },
-    {
-      id: 4,
-      category: "internet",
-      votes: 67,
-      status: "Новий",
-      statusColor: "bg-slate-100 text-slate-600",
-      categoryColor: "bg-green-100 text-green-700",
-      location: "Весь корпус",
-      title: "Повільний інтернет у вечірні години",
-      description: "Після 18:00 швидкість інтернету значно падає. Важко дивитися відео або завантажувати файли.",
-      date: "16.04.2024",
-      comments: 8,
-    },
-  ];
+  const [votedIds, setVotedIds] = useState<number[]>([]);
+  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
 
-  const filteredProblems = activeCategory === "all" 
-    ? problems 
-    : problems.filter(problem => problem.category === activeCategory);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchBuildings().then(setBuildings).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const complaintsData = await fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).catch(() => []);
+        if (Array.isArray(complaintsData)) setProblems(complaintsData);
+      } catch (error) {
+        console.error("Critical dashboard error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [activeCorps, activePriority]);
+
+  const handleDelete = async (id: number) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    try {
+      await deleteProblem(deleteTarget);
+      setProblems((prev) => prev.filter((p) => p.id !== deleteTarget));
+    } catch {
+      setErrorMessage("Помилка при видаленні");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleVote = async (id: number) => {
+    if (votedIds.includes(id)) return;
+
+    setProblems((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, votesCount: p.votesCount + 1 } : p))
+    );
+
+    try {
+      const res = await voteComplaint(id);
+      setProblems((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, votesCount: res.votesCount } : p))
+      );
+      setVotedIds((prev) => [...prev, id]);
+    } catch {
+      setVotedIds((prev) => [...prev, id]);
+      setProblems((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, votesCount: p.votesCount - 1 } : p))
+      );
+    }
+  };
+
+  const filteredProblems = problems.filter((p) => {
+    const matchesCategory = activeCategory === "all" || p.category === activeCategory;
+    const matchesSearch =
+      searchQuery === "" ||
+      (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const admin = isAdminUser(currentUser);
+
+  const canManage = (problem: Complaint) =>
+    admin || currentUser?.user === problem.user_id;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
-    <main className="max-w-6xl mx-auto px-4 py-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
-            Стрічка проблем
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Активні запити мешканців гуртожитку №4
-          </p>
-        </div>
-
-        {/* Category Filtering */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-4 py-2 border rounded-xl text-xs font-bold transition-all ${
-                activeCategory === category.id
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100"
-                  : "bg-white border-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {category.emoji && `${category.emoji} `}{category.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Problems Feed */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {filteredProblems.map((problem) => (
-            <div
-              key={problem.id}
-              className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-8">
-                <div className="flex gap-6">
-                  <div className="flex-shrink-0 flex flex-col items-center gap-1 p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 h-fit">
-                    <svg
-                      className="w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                    <span className="text-lg font-black leading-none">
-                      {problem.votes}
-                    </span>
-                    <span className="text-[8px] font-bold uppercase tracking-tighter opacity-70">
-                      Голосів
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex gap-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${problem.statusColor}`}
-                        >
-                          {problem.status}
-                        </span>
-                        <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${problem.categoryColor}`}
-                        >
-                          {categories.find(cat => cat.id === problem.category)?.name}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">
-                        {problem.location}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2">
-                      {problem.title}
-                    </h3>
-                    <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-                      {problem.description}
-                    </p>
-                    {problem.image && (
-                      <div className="w-full h-48 rounded-2xl overflow-hidden bg-slate-100 mb-6">
-                        <img
-                          src={problem.image}
-                          className="w-full h-full object-cover"
-                          alt="Проблема"
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">
-                        {problem.resolved ? "Завершено" : `Додано ${problem.date}`}
-                      </span>
-                      {problem.comments > 0 && (
-                        <button className="text-indigo-600 text-xs font-bold hover:underline">
-                          {problem.comments} коментарів
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {filteredProblems.length === 0 && (
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-12 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Немає проблем у цій категорії</h3>
-              <p className="text-slate-500 text-sm">Спробуйте вибрати іншу категорію або створити нову заявку.</p>
-            </div>
+    <>
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl bg-background/95 border-border p-0" showCloseButton={false}>
+          <DialogTitle className="sr-only">Image preview</DialogTitle>
+          {previewImage && (
+            <img
+              src={previewImage}
+              className="w-full h-auto max-h-[90vh] object-contain"
+              alt="Full size"
+            />
           )}
-        </div>
+          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-stone-300">
+            <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
 
-        {/* Right Column: Statistics */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-100">
-            <h4 className="text-lg font-bold mb-4">Статистика корпусу №4</h4>
+      <main className="max-w-6xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-8">
+          Стрічка проблем
+        </h1>
+
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 space-y-6">
             <div className="space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="opacity-80">Активні проблеми</span>
-                <span className="font-black">14</span>
+              <div className="relative">
+                <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
+                <Input
+                  placeholder="Пошук заявок..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="opacity-80">Вирішено за тиждень</span>
-                <span className="font-black">6</span>
-              </div>
-              <div className="h-1.5 w-full bg-indigo-400/30 rounded-full mt-4">
-                <div className="h-full w-2/3 bg-white rounded-full"></div>
-              </div>
-              <p className="text-[10px] font-medium opacity-70 mt-2">
-                Ви вирішуєте проблеми швидше, ніж вони з'являються!
-              </p>
+              <Select value={activeCorps} onValueChange={setActiveCorps}>
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Всі гуртожитки" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Всі гуртожитки</SelectItem>
+                  {buildings.map((b) => (
+                    <SelectItem key={b.building_id} value={b.name}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={activePriority} onValueChange={setActivePriority}>
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Всі пріоритети" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Всі пріоритети</SelectItem>
+                  <SelectItem value="low">Низький</SelectItem>
+                  <SelectItem value="medium">Середній</SelectItem>
+                  <SelectItem value="high">Високий</SelectItem>
+                  <SelectItem value="critical">Критичний</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={activeCategory === category.id ? "default" : "outline"}
+                  size="xs"
+                  onClick={() => setActiveCategory(category.id)}
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
+
+            <div className="bg-primary p-6 text-primary-foreground">
+              <h4 className="text-xs font-semibold mb-4">
+                Дії
+              </h4>
+              {admin ? (
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
+                >
+                  <Link to="/admin">Перейти в комендант-центр</Link>
+                </Button>
+              ) : (
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
+                >
+                  <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити нову заявку</Link>
+                </Button>
+              )}
             </div>
           </div>
+          <div className="lg:col-span-2 space-y-4">
+            {filteredProblems.map((problem) => {
+              const hasVoted = votedIds.includes(problem.id);
 
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-            <h4 className="font-bold text-slate-900 mb-4">Потрібна допомога?</h4>
-            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-              Якщо ви не знайшли свою проблему в списку, ви можете створити нову заявку.
-            </p>
-            <Link
-              to="/create-report"
-              className="block w-full py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-800 transition-all text-center"
-            >
-              Створити нову заявку
-            </Link>
-          </div>
+              return (
+                <Card
+                  key={problem.id}
+                  className="border-border shadow-none group relative"
+                >
+                  {canManage(problem) && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => handleDelete(problem.id)}
+                      className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Видалити"
+                    >
+                      <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
+                    </Button>
+                  )}
 
-          {/* Category Statistics */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-            <h4 className="font-bold text-slate-900 mb-4">За категоріями</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-600">🚿 Сантехніка</span>
-                <span className="font-bold text-slate-900">5</span>
+                  <div className="flex">
+                    <div className="flex-shrink-0 p-5 flex flex-col items-center gap-0.5 min-w-16">
+                      <Button
+                        variant={hasVoted ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleVote(problem.id)}
+                        disabled={hasVoted}
+                        className={`flex flex-col items-center gap-0.5 p-2 ${
+                          hasVoted
+                            ? "cursor-default"
+                            : ""
+                        }`}
+                      >
+                        <HugeiconsIcon icon={ChevronUpIcon} className="size-4" strokeWidth={2} />
+                        <span className="text-base font-bold leading-none">
+                          {problem.votesCount || 0}
+                        </span>
+                        <span className="text-xs font-semibold">
+                          {hasVoted ? "Ваш голос" : "Голос"}
+                        </span>
+                      </Button>
+                    </div>
+                    <div className="w-px bg-border" />
+
+                    <div className="flex-1 p-5">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className={statusBadgeClass(problem.status)}>
+                            {statusLabel(problem.status)}
+                          </Badge>
+                        </div>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {categories.find((c) => c.id === problem.category)?.name || problem.category}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.building ? `Корпус ${problem.building}` : ""}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.placeName}
+                        </span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-foreground mb-2">
+                        {problem.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                        {problem.description}
+                      </p>
+
+                      {problem.photoUrl && (
+                        <div
+                          className="w-full h-40 overflow-hidden border border-border mb-4 cursor-zoom-in"
+                          onClick={() => setPreviewImage(resolveImageUrl(problem.photoUrl))}
+                        >
+                          <img
+                            src={resolveImageUrl(problem.thumbnail || problem.photoUrl)}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            alt=""
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-3">
+                        <span className="text-xs font-normal text-muted-foreground">
+                          Додано{" "}
+                          {new Date(problem.createdAt).toLocaleDateString()}
+                        </span>
+                        {canManage(problem) && (
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() =>
+                              setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
+                            }
+                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
+                          >
+                            <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
+                            Коментарі {openCommentsId === problem.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {openCommentsId === problem.id && (
+                    <>
+                      <Separator dashed />
+                      <div className="p-4">
+                      <CommentSection
+                        complaintId={problem.id}
+                        currentUserId={currentUser?.user}
+                        isAdmin={admin}
+                      />
+                      </div>
+                    </>
+                  )}
+                </Card>
+              );
+            })}
+
+            {filteredProblems.length === 0 && (
+              <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
+                  <HugeiconsIcon icon={SearchIcon2} className="size-5" strokeWidth={1.5} />
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Немає заявок за вибраними фільтрами.
+                </p>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => {
+                    setActiveCategory("all");
+                    setActiveCorps("all");
+                    setActivePriority("all");
+                    setSearchQuery("");
+                  }}
+                >
+                  <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+                  Скинути фільтри
+                </Button>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-600">💡 Електрика</span>
-                <span className="font-bold text-slate-900">3</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-600">🪑 Меблі</span>
-                <span className="font-bold text-slate-900">4</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-600">🌐 Інтернет</span>
-                <span className="font-bold text-slate-900">2</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      </div>
+      </main>
 
-      <footer className="bg-white border-t border-slate-100 py-12 text-center mt-12">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-          DormWatch • 2024 • Стрічка проблем
-        </p>
-      </footer>
-    </main>
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити заявку?</AlertDialogTitle>
+            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Видалити</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!errorMessage} onOpenChange={(open) => { if (!open) setErrorMessage(null); }}>
+        <DialogContent>
+          <DialogTitle>Помилка</DialogTitle>
+          <p className="text-sm text-muted-foreground">{errorMessage}</p>
+          <DialogClose asChild>
+            <Button variant="outline" className="mt-2" onClick={() => setErrorMessage(null)}>OK</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

@@ -1,136 +1,131 @@
-// import {
-//   SignedIn,
-//   SignedOut,
-//   SignInButton,
-//   UserButton,
-// } from "@clerk/clerk-react";
+import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { fetchUserProfile, logoutUser } from "../services/problemsApi";
+import { getUserInitials } from "../lib/complaintUtils";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Building03Icon, BellIcon, SettingsIcon, Logout01Icon, AddIcon } from "@hugeicons/core-free-icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { SettingsModal } from "./SettingsModal";
 
 const Header = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [user, setUser] = useState<any>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    fetchUserProfile()
+      .then((u) => setUser(u))
+      .catch(() => {});
+
+    const onProfileUpdate = () => {
+      fetchUserProfile()
+        .then((u) => setUser(u))
+        .catch(() => {});
+    };
+    window.addEventListener("profileUpdated", onProfileUpdate);
+    return () => window.removeEventListener("profileUpdated", onProfileUpdate);
+  }, []);
+
+  const initials = getUserInitials(user, "U");
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2 cursor-pointer">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                ></path>
-              </svg>
-            </div>
-            <span className="text-xl font-bold tracking-tight text-indigo-900">
-              DormWatch
-            </span>
-          </Link>
-          <nav className="hidden md:flex gap-1">
-            <Link
-              to="/"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "hover:bg-slate-100"
-              }`}
-            >
-              Головна
+    <>
+      <nav className="bg-card sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link to="/" className="flex items-center gap-2 text-primary font-bold text-xl">
+              <HugeiconsIcon icon={Building03Icon} className="size-6" strokeWidth={1.5} />
+              <span>DormWatch</span>
             </Link>
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/dashboard"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "hover:bg-slate-100"
-              }`}
-            >
-              Дашборд
-            </Link>
-            {/* Admin link now always visible - Clerk authentication commented out */}
-            <Link
-              to="/admin"
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath === "/admin"
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-indigo-600 hover:bg-indigo-50"
-              }`}
-            >
-              Комендант-центр
-            </Link>
-            {/* COMMENTED OUT - Clerk SignedIn wrapper
-            <SignedIn>
+
+            <div className="hidden md:flex items-center">
               <Link
-                to="/admin"
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  currentPath === "/admin"
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-indigo-600 hover:bg-indigo-50"
+                to="/"
+                className={`px-4 py-5 text-sm font-semibold transition-colors border-b-2 ${
+                  currentPath === "/"
+                    ? "border-blue-500 text-foreground bg-muted/50"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                Комендант-центр
+                Головна
               </Link>
-            </SignedIn>
-            */}
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          {/* Create report button now always visible - Clerk authentication commented out */}
-          <Link
-            to="/create-report"
-            className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-          >
-            + Створити заявку
-          </Link>
-          {/* User account section */}
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-slate-900">
-                Олексій Коваленко
-              </p>
-              <p className="text-[10px] text-slate-500 font-medium tracking-tight">
-                Гуртожиток №4, Кімн. 512
-              </p>
+              <Link
+                to="/dashboard"
+                className={`px-4 py-5 text-sm font-semibold transition-colors border-b-2 ${
+                  currentPath === "/dashboard"
+                    ? "border-blue-500 text-foreground bg-muted/50"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                Дашборд
+              </Link>
+              <Link
+                to="/admin"
+                className={`px-4 py-5 text-sm font-semibold transition-colors border-b-2 ${
+                  currentPath === "/admin"
+                    ? "border-blue-500 text-foreground bg-muted/50"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+              >
+                Адмін-панель
+              </Link>
             </div>
-            <Link to="/account">
-              <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden cursor-pointer hover:ring-2 hover:ring-indigo-200 transition-all">
-                <img
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=DormUser"
-                  alt="Аватар студента"
-                />
-              </div>
-            </Link>
           </div>
 
-          {/* COMMENTED OUT - Clerk authentication components
-          <SignedIn>
-            <Link
-              to="/create-report"
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-            >
-              + Створити заявку
-            </Link>
-            <UserButton />
-          </SignedIn>
-          <SignedOut>
-            <SignInButton>
-              <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-all shadow-md active:scale-95">
-                Увійти
-              </button>
-            </SignInButton>
-          </SignedOut>
-          */}
+          <div className="flex items-center gap-4">
+            <Button asChild variant="default" size="sm" className="gap-2">
+              <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4" strokeWidth={2} />Повідомити</Link>
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
+                <HugeiconsIcon icon={BellIcon} className="size-5" strokeWidth={1.5} />
+              </Button>
+              <Separator orientation="vertical" className="hidden sm:block h-6" />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 pl-2 cursor-pointer hover:opacity-80 transition-opacity outline-none">
+                    <div className="w-8 h-8 bg-muted flex items-center justify-center text-muted-foreground font-semibold text-sm">
+                      {initials}
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    className="text-xs font-semibold cursor-pointer"
+                    onSelect={() => setSettingsOpen(true)}
+                  >
+                    <HugeiconsIcon icon={SettingsIcon} className="size-3.5 mr-2" strokeWidth={1.5} />
+                    Налаштування
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-xs font-semibold text-destructive cursor-pointer"
+                    onSelect={logoutUser}
+                  >
+                    <HugeiconsIcon icon={Logout01Icon} className="size-3.5 mr-2" strokeWidth={2} />
+                    Вийти
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
+        <Separator />
+      </nav>
+
+      <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 };
 

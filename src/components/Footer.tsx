@@ -1,15 +1,34 @@
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Building03Icon } from "@hugeicons/core-free-icons";
+import { Separator } from "./ui/separator";
+import { Link } from "react-router-dom";
+
 const Footer = () => {
   return (
-    <footer className="bg-slate-900 py-16 text-white mt-12">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
+    <footer className="bg-card border-t border-border py-12 text-foreground mt-12 shrink-0">
+      <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-black">DW</div>
-            <span className="text-xl font-bold tracking-tight">DormWatch</span>
+          <div className="flex items-center gap-2 mb-2">
+            <HugeiconsIcon icon={Building03Icon} className="size-5 text-primary" />
+            <span className="text-lg font-bold">DormWatch</span>
           </div>
-          <p className="text-slate-400 text-sm">Система прямої комунікації між студентами та адміністрацією.</p>
+          <p className="text-muted-foreground text-xs">Система прямої комунікації між студентами та адміністрацією.</p>
         </div>
-        <p className="text-indigo-400 font-bold text-sm">support@dormwatch.edu.ua</p>
+
+        <div className="flex gap-6 text-sm text-muted-foreground font-semibold">
+          <a href="#" className="hover:text-foreground transition-colors">Конфіденційність</a>
+          <a href="#" className="hover:text-foreground transition-colors">Умови використання</a>
+          <Link to="/dashboard" className="hover:text-foreground transition-colors">Статус системи</Link>
+        </div>
+
+        <div className="flex flex-col items-center md:items-end gap-1">
+          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-300 font-bold text-sm text-xs transition-colors">
+            support@dormwatch.edu.ua
+          </a>
+          <span className="text-muted-foreground text-xs">
+            &copy; 2025 DormWatch Systems. Всі права захищено.
+          </span>
+        </div>
       </div>
     </footer>
   );
