@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Building2, LayoutDashboard, Users, FileText, Megaphone, Settings } from "lucide-react";
+import { Button } from "./ui/button";
 import { type ReactNode, useState } from "react";
 import { getUserInitials } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
@@ -52,12 +53,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </nav>
 
         <div className="p-4 border-t border-border space-y-4">
-          <button onClick={() => setIsSettingsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors border-l-4 border-transparent text-left">
+          <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-left text-muted-foreground hover:text-foreground">
             <Settings className="w-5 h-5" />
             Налаштування
-          </button>
+          </Button>
 
-          <button onClick={() => setIsSettingsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left">
+          <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50">
             <div className="w-10 h-10 bg-card border border-border flex items-center justify-center text-muted-foreground font-bold text-sm shrink-0">
               {initials}
             </div>
@@ -69,7 +70,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 {placeName}
               </span>
             </div>
-          </button>
+          </Button>
         </div>
       </aside>
 

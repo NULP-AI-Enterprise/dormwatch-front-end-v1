@@ -3,6 +3,7 @@ import { Building2, Bell, ChevronDown } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { isAdminUser, getUserInitials } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
+import { Button } from "./ui/button";
 import { SettingsModal } from "./SettingsModal";
 
 const StudentLayout = ({ children }: { children: ReactNode }) => {
@@ -61,17 +62,17 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 text-muted-foreground hover:text-foreground transition-colors relative">
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
               <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 border border-border" />
-            </button>
+            </Button>
 
-            <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 pl-4 border-l border-border cursor-pointer hover:opacity-80 transition-opacity">
+            <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="gap-2 pl-4 border-l border-border hover:opacity-80">
               <div className="w-8 h-8 bg-background border border-border flex items-center justify-center text-muted-foreground font-bold text-xs">
                 {initials}
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </button>
+            </Button>
           </div>
         </div>
       </nav>

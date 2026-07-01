@@ -143,17 +143,17 @@ const AdminPage = () => {
                     <TableHead className="px-6 py-3 font-semibold">Статус</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="text-base divide-y divide-stone-700">
+                <TableBody className="text-base divide-y divide-border">
                   {loading ? (
                     Array.from({ length: 4 }).map((_, i) => (
                       <TableRow key={i} className="animate-pulse">
                         <TableCell className="px-6 py-4">
-                          <div className="h-5 w-48 bg-muted/50 mb-1" />
-                          <div className="h-4 w-32 bg-muted/30" />
+                          <div className="h-5 w-3/4 bg-muted/50 mb-1" />
+                          <div className="h-4 w-1/2 bg-muted/30" />
                         </TableCell>
-                        <TableCell className="px-6 py-4"><div className="h-5 w-20 bg-muted/50" /></TableCell>
-                        <TableCell className="px-6 py-4"><div className="h-5 w-24 bg-muted/50" /></TableCell>
-                        <TableCell className="px-6 py-4"><div className="h-6 w-16 bg-muted/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-5 w-1/3 bg-muted/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-5 w-1/2 bg-muted/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-6 w-1/4 bg-muted/50" /></TableCell>
                       </TableRow>
                     ))
                   ) : recentComplaints.length === 0 ? (

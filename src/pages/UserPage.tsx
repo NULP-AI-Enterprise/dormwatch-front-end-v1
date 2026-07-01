@@ -25,6 +25,8 @@ import {
   Trash2,
   MessageSquare,
   MapPin,
+  Inbox,
+  FileText,
 } from "lucide-react";
 
 const UserPage = () => {
@@ -129,7 +131,10 @@ const UserPage = () => {
                 </div>
                 <div className="space-y-3">
                   {problems.length === 0 ? (
-                    <div className="border border-dashed border-border p-8 text-center">
+                    <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
+                        <Inbox className="w-5 h-5" strokeWidth={1.5} />
+                      </div>
                       <p className="text-xs text-muted-foreground mb-3">Немає активних заявок.</p>
                       <Button asChild size="xs">
                         <Link to="/create-report">Створити першу заявку</Link>
@@ -159,7 +164,10 @@ const UserPage = () => {
           <TabsContent value="reports">
             <div className="space-y-4">
               {problems.length === 0 && (
-                <div className="border border-dashed border-border p-8 text-center">
+                <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
+                    <FileText className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
                   <p className="text-sm font-bold text-foreground mb-1">Ще немає звернень</p>
                 </div>
               )}
@@ -237,7 +245,7 @@ const UserPage = () => {
                   </div>
 
                   {openCommentsId === p.id && (
-                    <div className="bg-muted/30 p-4">
+                    <div className="p-4">
                       <CommentSection
                         complaintId={p.id}
                         currentUserId={currentUser?.user}

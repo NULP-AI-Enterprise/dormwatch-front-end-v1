@@ -7,7 +7,7 @@ import {
   fetchBuildings,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
-import { ChevronUp, ChevronDown, MessageSquare, X, Search, Trash2 } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, X, Search, Trash2, SearchX } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -359,7 +359,10 @@ const DashboardPage = () => {
             })}
 
             {filteredProblems.length === 0 && (
-              <div className="border border-dashed border-border p-8 text-center">
+              <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
+                  <SearchX className="w-5 h-5" strokeWidth={1.5} />
+                </div>
                 <p className="text-xs text-muted-foreground mb-3">
                   Немає заявок за вибраними фільтрами.
                 </p>

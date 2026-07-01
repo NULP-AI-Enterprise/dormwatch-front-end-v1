@@ -94,7 +94,7 @@ const ComplaintSidePanel = ({
             )}
           </div>
 
-          <Separator className="bg-muted" />
+          <Separator />
 
           <p className="text-xs text-muted-foreground leading-relaxed">{complaint.description || "—"}</p>
 
@@ -108,7 +108,7 @@ const ComplaintSidePanel = ({
             </div>
           )}
 
-          <Separator className="bg-muted" />
+          <Separator />
 
           {isAdmin && (
             <div className="space-y-3">
@@ -148,7 +148,7 @@ const ComplaintSidePanel = ({
                 </Button>
               </div>
 
-              <Separator className="bg-muted" />
+              <Separator />
 
               {!showTicketForm ? (
                 <Button
@@ -171,7 +171,7 @@ const ComplaintSidePanel = ({
             </div>
           )}
 
-          <Separator className="bg-muted" />
+          <Separator />
 
           <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} />
         </div>

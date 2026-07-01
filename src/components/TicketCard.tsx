@@ -29,7 +29,7 @@ const TicketCardSkeleton = () => (
       <div className="h-5 w-3/4 bg-muted/50 mb-2" />
       <div className="h-3 w-full bg-muted/30 mb-1" />
       <div className="h-3 w-2/3 bg-muted/30 mb-4" />
-      <Separator className="bg-muted mb-4" />
+      <Separator className="mb-4" />
       <div className="h-1.5 bg-muted/50 rounded-none" />
     </div>
   </div>
@@ -64,7 +64,7 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
           </p>
         </div>
 
-        <Separator className="bg-muted my-5" />
+        <Separator className="my-5" />
 
         <div className="flex items-center justify-between">
           <div className="flex-1">
