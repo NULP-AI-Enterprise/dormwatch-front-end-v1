@@ -93,7 +93,7 @@ const ComplaintSidePanel = ({
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="max-w-4xl bg-background/95 border-border p-0" showCloseButton={false}>
+        <DialogContent className={`${isAdmin ? "max-w-[90vw] sm:max-w-[90vw]" : "max-w-4xl sm:max-w-4xl"} bg-transparent border-none shadow-none p-0 flex justify-center items-center`} showCloseButton={false}>
           <DialogTitle className="sr-only">Image preview</DialogTitle>
           {previewImage && (
             <img
