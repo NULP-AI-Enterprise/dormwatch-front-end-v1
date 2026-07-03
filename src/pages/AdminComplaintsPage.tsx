@@ -358,7 +358,6 @@ const AdminComplaintsPage = () => {
                             </Badge>
                             <Button
                               variant="ghost"
-                              size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedComplaint(p);
@@ -418,9 +417,7 @@ const AdminComplaintsPage = () => {
                               <>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                    >
+                                    <Button>
                                       <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
                                       Схвалити
                                     </Button>
@@ -441,7 +438,6 @@ const AdminComplaintsPage = () => {
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button
-                                      size="sm"
                                       variant="destructive"
                                     >
                                       <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
@@ -466,9 +462,7 @@ const AdminComplaintsPage = () => {
                             {p.status === "approved" && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                  >
+                                  <Button>
                                     <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
                                     Вирішити
                                   </Button>
@@ -490,7 +484,6 @@ const AdminComplaintsPage = () => {
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
-                                  size="sm"
                                   variant="destructive"
                                 >
                                   <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
@@ -620,7 +613,6 @@ const AdminComplaintsPage = () => {
                               </div>
                             ) : (
                               <Button
-                                size="sm"
                                 onClick={() => openTicketModal(p)}
                               >
                                 <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />

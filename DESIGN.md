@@ -167,7 +167,8 @@ Applied via Tailwind utility classes (e.g. from `complaintUtils.ts`):
 | `bg-muted/30` | Subtle background tints behind content (comment section, skeleton secondary bars) |
 
 ### Buttons
-*   **Primary Action Buttons:** `bg-primary text-primary-foreground hover:bg-primary/80`, `font-semibold`, square corners, `h-8` default, `h-9` for `lg`, `h-6` for `xs`.
+*   **Size:** All buttons across the application must use the `default` normal size. Avoid using `size="sm"` or other custom sizes unless strictly required for a specific layout constraint.
+*   **Primary Action Buttons:** `bg-primary text-primary-foreground hover:bg-primary/80`, `font-semibold`, square corners, `h-8` default.
 *   **Outline Buttons:** `border-border bg-background hover:bg-muted hover:text-foreground`.
 *   **Ghost Buttons:** Used for icon-only actions, secondary triggers. `text-muted-foreground hover:bg-muted hover:text-foreground`.
 *   **Destructive Buttons:** `bg-destructive/10 text-destructive hover:bg-destructive/20`.

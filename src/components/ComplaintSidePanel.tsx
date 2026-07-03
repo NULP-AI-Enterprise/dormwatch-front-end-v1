@@ -201,9 +201,7 @@ const ComplaintSidePanel = ({
                   <>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
-                        >
+                        <Button>
                           <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
                           Схвалити
                         </Button>
@@ -224,7 +222,6 @@ const ComplaintSidePanel = ({
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
-                          size="sm"
                           variant="destructive"
                         >
                           <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
@@ -249,9 +246,7 @@ const ComplaintSidePanel = ({
                 {complaint.status === "approved" && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                      >
+                      <Button>
                         <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
                         Позначити вирішеним
                       </Button>
@@ -273,7 +268,6 @@ const ComplaintSidePanel = ({
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
-                      size="sm"
                       variant="destructive"
                     >
                       <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
@@ -295,7 +289,6 @@ const ComplaintSidePanel = ({
                 </AlertDialog>
                 {!showTicketForm && (
                   <Button
-                    size="sm"
                     variant="outline"
                     onClick={() => setShowTicketForm(true)}
                   >

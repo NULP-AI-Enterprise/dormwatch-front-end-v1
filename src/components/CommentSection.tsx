@@ -110,7 +110,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
-        <Button size="sm" onClick={handleSend}>
+        <Button onClick={handleSend}>
           <HugeiconsIcon icon={Forward01Icon} className="size-3 mr-1" strokeWidth={2} />
           Надіслати
         </Button>
