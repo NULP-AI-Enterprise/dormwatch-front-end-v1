@@ -217,6 +217,10 @@ export const CATEGORY_LABELS = {
   internet: "Інтернет",
 };
 
+/**
+ * @param {any} raw
+ * @returns {any}
+ */
 function normalizeComplaint(raw) {
   if (!raw) return null;
   const nowIso = new Date().toISOString();
@@ -441,6 +445,11 @@ export async function fetchTickets(filters = {}) {
   return [];
 }
 
+/**
+ * @param {any} complaintId
+ * @param {any} employeeId
+ * @param {string | null} [deadline]
+ */
 export async function createTicket(complaintId, employeeId, deadline = null) {
   const payload = {
       complaint: complaintId,
@@ -453,6 +462,11 @@ export async function createTicket(complaintId, employeeId, deadline = null) {
   });
 }
 
+/**
+ * @param {any} ticketId
+ * @param {any} employeeId
+ * @param {string | null} [deadline]
+ */
 export async function updateTicket(ticketId, employeeId, deadline = null) {
   const payload = {};
   if (employeeId !== undefined) payload.user = employeeId;
@@ -502,4 +516,41 @@ export async function changeUserRoom(building, floor, room) {
     },
   });
 }
+
+export async function fetchNotifications() {
+  try {
+    return await fetchJson("/notifications/");
+  } catch (e) {
+    console.warn("Failed to fetch notifications", e);
+    return [];
+  }
+}
+
+export async function markNotificationRead(id) {
+  try {
+    return await fetchJson(`/notifications/${id}/`, {
+      method: "PATCH",
+    });
+  } catch (e) {
+    console.warn(`Failed to mark notification ${id} as read`, e);
+    return null;
+  }
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    return await fetchJson("/notifications/mark-all-read/", {
+      method: "POST",
+    });
+  } catch (e) {
+    console.warn("Failed to mark all notifications as read", e);
+    return null;
+  }
+}
+
+export async function fetchComplaintDetail(id) {
+  const raw = await fetchJson(`/complaints/${id}/`);
+  return normalizeComplaint(raw);
+}
+
 

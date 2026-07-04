@@ -5,7 +5,10 @@ import { Link, useLocation } from "react-router-dom";
 import { fetchUserProfile, logoutUser } from "../services/problemsApi";
 import { getUserInitials } from "../lib/complaintUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon, BellIcon, SettingsIcon, Logout01Icon, AddIcon } from "@hugeicons/core-free-icons";
+import { Building03Icon, SettingsIcon, Logout01Icon, AddIcon } from "@hugeicons/core-free-icons";
+import { NotificationBell } from "./NotificationBell";
+import ComplaintSidePanel from "./ComplaintSidePanel";
+import { isAdminUser } from "../lib/complaintUtils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +23,7 @@ const Header = () => {
   const currentPath = location.pathname;
   const [user, setUser] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
 
   useEffect(() => {
     fetchUserProfile()
@@ -87,9 +91,7 @@ const Header = () => {
             </Button>
 
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
-                <HugeiconsIcon icon={BellIcon} className="size-5" strokeWidth={1.5} />
-              </Button>
+              <NotificationBell onSelectComplaint={setSelectedComplaint} />
               <Separator orientation="vertical" className="hidden sm:block h-6" />
 
               <DropdownMenu>
@@ -125,6 +127,18 @@ const Header = () => {
       </nav>
 
       <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
+      {selectedComplaint && (
+        <ComplaintSidePanel
+          complaint={selectedComplaint}
+          open={!!selectedComplaint}
+          onOpenChange={(open) => {
+            if (!open) setSelectedComplaint(null);
+          }}
+          onStatusChange={() => {}}
+          currentUserId={user?.user}
+          isAdmin={isAdminUser(user)}
+        />
+      )}
     </>
   );
 };

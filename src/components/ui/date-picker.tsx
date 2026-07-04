@@ -1,4 +1,3 @@
-import * as React from "react"
 import { format } from "date-fns"
 import { uk } from "date-fns/locale"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -41,7 +40,6 @@ export function DatePicker({ date, setDate, placeholder = "Оберіть дат
           mode="single"
           selected={date}
           onSelect={setDate}
-          initialFocus
           locale={uk}
         />
       </PopoverContent>
