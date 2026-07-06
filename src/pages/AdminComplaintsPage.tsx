@@ -138,6 +138,24 @@ const AdminComplaintsPage = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [, setEmployees] = useState<Employee[]>([]);
 
+  const [viewedComplaints, setViewedComplaints] = useState<Set<number>>(() => {
+    try {
+      const stored = sessionStorage.getItem('viewedComplaints');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const markAsViewed = (id: number) => {
+    setViewedComplaints(prev => {
+      const newSet = new Set(prev);
+      newSet.add(id);
+      sessionStorage.setItem('viewedComplaints', JSON.stringify([...newSet]));
+      return newSet;
+    });
+  };
+
   const loadComplaints = async () => {
     setLoading(true);
     setErr("");
@@ -357,9 +375,14 @@ const AdminComplaintsPage = () => {
                   filteredComplaints.map((p) => (
                     <Card
                       key={p.id}
-                      className="border-border shadow-none bg-card group hover:bg-muted/50 transition-colors cursor-pointer"
+                      className={`shadow-none group transition-colors cursor-pointer ${
+                        p.status === "pending" && !viewedComplaints.has(p.id as number)
+                          ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
+                          : "border-border bg-card hover:bg-muted/50"
+                      }`}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest('button, [role="dialog"], a')) return;
+                        markAsViewed(p.id as number);
                         setSelectedComplaint(p);
                         setSheetOpen(true);
                       }}
@@ -382,6 +405,7 @@ const AdminComplaintsPage = () => {
                               variant="ghost"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                markAsViewed(p.id as number);
                                 setSelectedComplaint(p);
                                 setSheetOpen(true);
                               }}
