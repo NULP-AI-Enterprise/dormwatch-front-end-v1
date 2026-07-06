@@ -9,6 +9,7 @@ import AuthPage from "./pages/AuthPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StudentLayout from "./components/StudentLayout";
 import AdminLayout from "./components/AdminLayout";
+import AdminTicketsPrintPage from "./pages/AdminTicketsPrintPage";
 
 function App() {
   return (
@@ -60,6 +61,14 @@ function App() {
             <AdminLayout>
               <AdminComplaintsPage />
             </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/tickets/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminTicketsPrintPage />
           </ProtectedRoute>
         }
       />

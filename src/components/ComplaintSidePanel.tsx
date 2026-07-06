@@ -177,7 +177,7 @@ const ComplaintSidePanel = ({
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">{complaint.description || "—"}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed break-all whitespace-pre-wrap">{complaint.description || "—"}</p>
 
           {complaint.photoUrl && (
             <div 

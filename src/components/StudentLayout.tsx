@@ -1,17 +1,20 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon, BellIcon, ChevronDownIcon } from "@hugeicons/core-free-icons";
+import { Building03Icon, ChevronDownIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { isAdminUser, getUserInitials } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
 import { Button } from "./ui/button";
 import { SettingsModal } from "./SettingsModal";
+import { NotificationBell } from "./NotificationBell";
+import ComplaintSidePanel from "./ComplaintSidePanel";
 
 const StudentLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useUser();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
 
   const initials = getUserInitials(user, "Г");
   const admin = isAdminUser(user);
@@ -63,10 +66,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-              <HugeiconsIcon icon={BellIcon} className="size-5" />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-blue-500 border border-border" />
-            </Button>
+            <NotificationBell onSelectComplaint={setSelectedComplaint} />
 
             <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="gap-2 pl-4 border-l border-border hover:opacity-80">
               <div className="w-8 h-8 bg-background border border-border flex items-center justify-center text-muted-foreground font-bold text-xs">
@@ -83,6 +83,18 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
       </main>
 
       <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      {selectedComplaint && (
+        <ComplaintSidePanel
+          complaint={selectedComplaint}
+          open={!!selectedComplaint}
+          onOpenChange={(open) => {
+            if (!open) setSelectedComplaint(null);
+          }}
+          onStatusChange={() => {}}
+          currentUserId={user?.user}
+          isAdmin={admin}
+        />
+      )}
     </div>
   );
 };

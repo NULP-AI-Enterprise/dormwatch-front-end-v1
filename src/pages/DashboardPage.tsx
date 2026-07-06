@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   fetchApprovedComplaints,
   deleteProblem,
-  voteComplaint,
   fetchBuildings,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
@@ -63,7 +62,6 @@ const DashboardPage = () => {
 
   const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
 
-  const [votedIds, setVotedIds] = useState<number[]>([]);
   const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -104,26 +102,7 @@ const DashboardPage = () => {
     }
   };
 
-  const handleVote = async (id: number) => {
-    if (votedIds.includes(id)) return;
 
-    setProblems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, votesCount: p.votesCount + 1 } : p))
-    );
-
-    try {
-      const res = await voteComplaint(id);
-      setProblems((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, votesCount: res.votesCount } : p))
-      );
-      setVotedIds((prev) => [...prev, id]);
-    } catch {
-      setVotedIds((prev) => [...prev, id]);
-      setProblems((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, votesCount: p.votesCount - 1 } : p))
-      );
-    }
-  };
 
   const filteredProblems = problems.filter((p) => {
     const matchesCategory = activeCategory === "all" || p.category === activeCategory;
@@ -246,8 +225,6 @@ const DashboardPage = () => {
           </div>
           <div className="lg:col-span-2 space-y-4">
             {filteredProblems.map((problem) => {
-              const hasVoted = votedIds.includes(problem.id);
-
               return (
                 <Card
                   key={problem.id}
@@ -265,31 +242,7 @@ const DashboardPage = () => {
                     </Button>
                   )}
 
-                  <div className="flex">
-                    <div className="flex-shrink-0 p-5 flex flex-col items-center gap-0.5 min-w-16">
-                      <Button
-                        variant={hasVoted ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleVote(problem.id)}
-                        disabled={hasVoted}
-                        className={`flex flex-col items-center gap-0.5 p-2 ${
-                          hasVoted
-                            ? "cursor-default"
-                            : ""
-                        }`}
-                      >
-                        <HugeiconsIcon icon={ChevronUpIcon} className="size-4" strokeWidth={2} />
-                        <span className="text-base font-bold leading-none">
-                          {problem.votesCount || 0}
-                        </span>
-                        <span className="text-xs font-semibold">
-                          {hasVoted ? "Ваш голос" : "Голос"}
-                        </span>
-                      </Button>
-                    </div>
-                    <div className="w-px bg-border" />
-
-                    <div className="flex-1 p-5">
+                  <div className="p-5">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="outline" className={statusBadgeClass(problem.status)}>
@@ -304,7 +257,7 @@ const DashboardPage = () => {
                       <h3 className="text-lg font-bold text-foreground mb-2">
                         {problem.title}
                       </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
                         {problem.description}
                       </p>
 
@@ -341,7 +294,6 @@ const DashboardPage = () => {
                         )}
                       </div>
                     </div>
-                  </div>
 
                   {openCommentsId === problem.id && (
                     <>

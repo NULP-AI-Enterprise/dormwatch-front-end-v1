@@ -14,8 +14,6 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import LoadingSpinner from "../components/LoadingSpinner";
-
-import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
 import type { Complaint } from "../lib/types";
@@ -178,65 +176,50 @@ const UserPage = () => {
               )}
 
               {problems.map((p) => (
-                <Card key={p.id} className="border-border shadow-none bg-card">
-                  <div className="flex">
-                    <div className="flex-shrink-0 p-5 flex flex-col items-center gap-0.5 min-w-16">
-                      <span className="text-base font-bold text-foreground leading-none">
-                        {p.votesCount || 0}
-                      </span>
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        голосів
+                <Card key={p.id} className="border-border shadow-none bg-card p-5">
+                  <div>
+                    <div className="flex justify-between items-start mb-3 gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className={statusBadgeClass(p.status)}>
+                          {statusLabel(p.status)}
+                        </Badge>
+                      </div>
+                      <span className="text-xs font-normal text-muted-foreground shrink-0">
+                        {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <Separator orientation="vertical" className="bg-border" />
-                    <div className="flex-1 p-5">
-                      <div className="flex justify-between items-start mb-3 gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className={statusBadgeClass(p.status)}>
-                            {statusLabel(p.status)}
-                          </Badge>
-                        </div>
-                        <span className="text-xs font-normal text-muted-foreground shrink-0">
-                          {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
-                        </span>
+
+                    <h3 className="text-sm font-semibold text-foreground mb-2">
+                      {p.title || "Без назви"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
+                      {p.description || "\u2014"}
+                    </p>
+
+                    {p.photoUrl && (
+                      <div className="w-full h-48 overflow-hidden border border-border mb-4">
+                        <img
+                          src={resolveImageUrl(p.thumbnail || p.photoUrl)}
+                          className="w-full h-full object-cover"
+                          alt=""
+                        />
                       </div>
+                    )}
 
-                      <h3 className="text-sm font-semibold text-foreground mb-2">
-                        {p.title || "Без назви"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                        {p.description || "\u2014"}
-                      </p>
-
-                      {p.photoUrl && (
-                        <div className="w-full h-48 overflow-hidden border border-border mb-4">
-                          <img
-                            src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-                            className="w-full h-full object-cover"
-                            alt=""
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-4">
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs font-semibold text-foreground">
-                            {typeof p.votesCount === "number"
-                              ? `${p.votesCount} голосів`
-                              : "0 голосів"}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() =>
-                              setOpenCommentsId(openCommentsId === p.id ? null : p.id)
-                            }
-                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                          >
-                            <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                            Коментарі {openCommentsId === p.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                          </Button>
-                        </div>
+                    <div className="flex items-center justify-between pt-4">
+                      <div className="flex items-center gap-4">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() =>
+                            setOpenCommentsId(openCommentsId === p.id ? null : p.id)
+                          }
+                          className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
+                        >
+                          <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
+                          Коментарі {openCommentsId === p.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
+                        </Button>
+                      </div>
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -247,7 +230,6 @@ const UserPage = () => {
                         </Button>
                       </div>
                     </div>
-                  </div>
 
                   {openCommentsId === p.id && (
                     <div className="p-4">

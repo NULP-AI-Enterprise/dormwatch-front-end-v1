@@ -59,7 +59,7 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
           <h3 className="text-sm font-semibold text-foreground group-hover/ticket:text-primary transition-colors">
             {title}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed break-all whitespace-pre-wrap">
             {description}
           </p>
         </div>

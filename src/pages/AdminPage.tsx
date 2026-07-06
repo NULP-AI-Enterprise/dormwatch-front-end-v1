@@ -4,9 +4,11 @@ import {
   fetchAllComplaints,
 } from "../services/problemsApi";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
+import { NotificationBell } from "../components/NotificationBell";
 import { StatCard, StatCardSkeleton } from "../components/StatCard";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { ExportTicketsModal } from "../components/ExportTicketsModal";
 import { Separator } from "../components/ui/separator";
 import {
   Table,
@@ -28,14 +30,19 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const init = async () => {
+    const data = await fetchAllComplaints();
+    setComplaints(data);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const init = async () => {
-      const data = await fetchAllComplaints();
-      setComplaints(data);
-      setLoading(false);
-    };
     init();
+    
+    window.addEventListener("adminComplaintUpdated", init);
+    return () => window.removeEventListener("adminComplaintUpdated", init);
   }, []);
 
   const pendingCount = complaints.filter((c) => c.status === "pending").length;
@@ -61,10 +68,15 @@ const AdminPage = () => {
       <header className="h-16 bg-card flex items-center justify-between px-6 lg:px-8 shrink-0">
           <h1 className="text-2xl font-bold text-foreground">Інформаційна панель</h1>
           <div className="flex items-center gap-3">
+            <NotificationBell onSelectComplaint={(c) => {
+              setSelectedComplaint(c);
+              setSheetOpen(true);
+            }} />
             <Button
               variant="outline"
               size="default"
               className="gap-2"
+              onClick={() => setIsExportModalOpen(true)}
             >
               <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
               Експорт даних
@@ -174,7 +186,7 @@ const AdminPage = () => {
                           <p className="font-semibold text-foreground">
                             {c.title}
                           </p>
-                          <p className="text-sm text-muted-foreground mt-0.5">
+                          <p className="text-sm text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">
                             {c.description}
                           </p>
                         </TableCell>
@@ -207,6 +219,11 @@ const AdminPage = () => {
         onStatusChange={handleRefresh}
         currentUserId={currentUser?.user}
         isAdmin={true}
+      />
+
+      <ExportTicketsModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
       />
     </div>
   );

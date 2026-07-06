@@ -1,6 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Building03Icon } from "@hugeicons/core-free-icons";
-import { Separator } from "./ui/separator";
 import { Link } from "react-router-dom";
 
 const Footer = () => {

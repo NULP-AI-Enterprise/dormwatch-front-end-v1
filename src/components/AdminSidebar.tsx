@@ -3,7 +3,6 @@ import { cn } from "../lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DashboardSquare01Icon, ClipboardIcon, GroupIcon, Megaphone01Icon, SettingsIcon, Logout01Icon, Building03Icon } from "@hugeicons/core-free-icons";
 import { logoutUser } from "../services/problemsApi";
-import { Separator } from "./ui/separator";
 import { SettingsModal } from "./SettingsModal";
 import { useState } from "react";
 

@@ -14,6 +14,7 @@ import {
 import { resolveImageUrl } from "../services/imageUtils";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import TicketCreateForm from "../components/TicketCreateForm";
+import { NotificationBell } from "../components/NotificationBell";
 import { useUser } from "../context/UserContext";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -53,8 +54,10 @@ import {
   CancelCircleIcon,
   AddIcon,
   MoreHorizontalIcon,
+  Download01Icon,
 } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket, Employee } from "../lib/types";
+import { ExportTicketsModal } from "../components/ExportTicketsModal";
 
 const categoryOptions = [
   { id: "all", name: "Всі категорії" },
@@ -132,6 +135,7 @@ const AdminComplaintsPage = () => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [selectedForTicket, setSelectedForTicket] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [, setEmployees] = useState<Employee[]>([]);
 
   const loadComplaints = async () => {
@@ -155,6 +159,9 @@ const AdminComplaintsPage = () => {
 
   useEffect(() => {
     loadComplaints();
+    
+    window.addEventListener("adminComplaintUpdated", loadComplaints);
+    return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
 
   const [tab, setTab] = useState<"requests" | "tickets">("requests");
@@ -245,7 +252,7 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
       <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="flex items-center">
+          <div className="flex items-center justify-between pr-6">
             <TabsList variant="line" className="h-auto bg-transparent">
               <TabsTrigger value="requests" className="px-5 py-3 text-xs font-semibold">
                 Скарги
@@ -254,6 +261,21 @@ const AdminComplaintsPage = () => {
                 Тікети
               </TabsTrigger>
             </TabsList>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9"
+                onClick={() => setIsExportModalOpen(true)}
+              >
+                <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+                Експорт даних
+              </Button>
+              <NotificationBell onSelectComplaint={(c) => {
+                setSelectedComplaint(c);
+                setSheetOpen(true);
+              }} />
+            </div>
           </div>
           <Separator />
 
@@ -385,7 +407,7 @@ const AdminComplaintsPage = () => {
                           )}
                         </div>
 
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
                           {p.description || "—"}
                         </p>
 
@@ -585,7 +607,7 @@ const AdminComplaintsPage = () => {
                               </Badge>
                               <span className="text-xs text-muted-foreground">{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{p.description}</p>
+                            <p className="text-xs text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">{p.description}</p>
 
                             {ticket ? (
                               <div className="bg-primary/5 p-3 border border-primary/10 relative group/ticket">
@@ -673,6 +695,11 @@ const AdminComplaintsPage = () => {
           </div>
         </div>
       )}
+
+      <ExportTicketsModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+      />
     </>
   );
 };
