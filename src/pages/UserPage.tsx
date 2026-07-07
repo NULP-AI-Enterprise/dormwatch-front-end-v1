@@ -5,13 +5,12 @@ import {
   deleteProblem,
   fetchCategories,
 } from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { TicketCard } from "../components/TicketCard";
+import ComplaintCard from "../components/ComplaintCard";
 import CommunityBoard from "../components/CommunityBoard";
 import CommentSection from "../components/CommentSection";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -23,15 +22,11 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
+import { isAdminUser } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
 import type { Complaint } from "../lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  Delete01Icon,
-  Message01Icon,
   MapPinIcon,
   InboxIcon,
   File01Icon,
@@ -294,75 +289,34 @@ const UserPage = () => {
               )}
 
               {filteredProblems.map((p) => (
-                <Card key={p.id} className="border-border shadow-none bg-card p-5">
-                  <div>
-                    <div className="flex justify-between items-start mb-3 gap-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className={statusBadgeClass(p.status)}>
-                          {statusLabel(p.status)}
-                        </Badge>
-                      </div>
-                      <span className="text-xs font-normal text-muted-foreground shrink-0">
-                        {p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    <h3
-                      className="text-sm font-semibold text-foreground mb-2 cursor-pointer hover:underline"
-                      onClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
-                    >
-                      {p.title || "Без назви"}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                      {p.description || "\u2014"}
-                    </p>
-
-                    {p.photoUrl && (
-                      <div className="w-full h-48 overflow-hidden border border-border mb-4">
-                        <img
-                          src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-                          className="w-full h-full object-cover"
-                          alt=""
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() =>
-                            setOpenCommentsId(openCommentsId === p.id ? null : p.id)
-                          }
-                          className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                        >
-                          <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                          Коментарі {openCommentsId === p.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                        </Button>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => onDelete(p.id)}
-                        className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
-                      >
-                        <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {openCommentsId === p.id && (
-                    <div className="p-4">
-                      <CommentSection
-                        complaintId={p.id}
-                        currentUserId={currentUser?.user}
-                        isAdmin={isAdminUser(currentUser)}
-                        complaintAuthorId={p.user_id}
-                      />
-                    </div>
-                  )}
-                </Card>
+                <ComplaintCard
+                  key={p.id}
+                  complaint={p}
+                  bodyPadding="p-5"
+                  titleClass="text-sm font-semibold"
+                  metaVariant="date"
+                  descriptionFallback={"\u2014"}
+                  onTitleClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
+                  showPhoto
+                  photoHeight="h-48"
+                  footerClassName="flex items-center justify-between pt-4"
+                  commentsMode="inline"
+                  commentsSide="left"
+                  commentsOpen={openCommentsId === p.id}
+                  onCommentToggle={() =>
+                    setOpenCommentsId(openCommentsId === p.id ? null : p.id)
+                  }
+                  commentsContent={
+                    <CommentSection
+                      complaintId={p.id}
+                      currentUserId={currentUser?.user}
+                      isAdmin={isAdminUser(currentUser)}
+                      complaintAuthorId={p.user_id}
+                    />
+                  }
+                  showDelete
+                  onDelete={onDelete}
+                />
               ))}
               </div>
             </div>

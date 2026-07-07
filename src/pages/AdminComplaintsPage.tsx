@@ -13,12 +13,11 @@ import {
   fetchEmployees,
   fetchJson,
 } from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
+import ComplaintCard from "../components/ComplaintCard";
 import TicketSidePanel from "../components/TicketSidePanel";
 import { NotificationBell } from "../components/NotificationBell";
 import { useUser } from "../context/UserContext";
-import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
@@ -31,17 +30,6 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -50,18 +38,11 @@ import {
 import LoadingSpinner from "../components/LoadingSpinner";
 
 import { Separator } from "../components/ui/separator";
-import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SearchIcon,
-  Delete01Icon,
-  EditIcon,
   Cancel01Icon,
   InboxIcon,
-  CheckmarkCircleIcon,
-  CancelCircleIcon,
-  AddIcon,
-  MoreHorizontalIcon,
   Download01Icon,
 } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket, Employee } from "../lib/types";
@@ -438,180 +419,31 @@ const AdminComplaintsPage = () => {
                 {!loading &&
                   !err &&
                   filteredComplaints.map((p) => (
-                    <Card
+                    <ComplaintCard
                       key={p.id}
-                      className="border-border shadow-none bg-card group hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('button, [role="dialog"], a')) return;
+                      complaint={p}
+                      headerLayout="detail"
+                      cardClassName="group hover:bg-muted/50 transition-colors cursor-pointer"
+                      onCardClick={() => {
                         setSelectedComplaint(p);
                         setSheetOpen(true);
                       }}
-                    >
-                      <div className="p-6">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground truncate max-w-xl">
-                              {p.title || "Без назви"}
-                            </h3>
-                            <p className="text-xs font-normal text-muted-foreground mt-1">
-                              {p.category || "Категорія"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={statusBadgeClass(p.status)}>
-                              {statusLabel(p.status)}
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedComplaint(p);
-                                setSheetOpen(true);
-                              }}
-                              className="text-muted-foreground"
-                            >
-                              <HugeiconsIcon icon={MoreHorizontalIcon} className="size-4 mr-1.5" />
-                              Деталі
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge
-                            variant="outline"
-                            className={priorityBadgeClass(p.priority)}
-                          >
-                            Пріоритет: {priorityLabel(p.priority)}
-                          </Badge>
-                          {p.createdAt && (
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              {new Date(p.createdAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                          {p.description || "—"}
-                        </p>
-
-                        {p.photoUrl && (
-                          <div 
-                            className="w-full h-44 overflow-hidden border border-border mb-4 cursor-zoom-in"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewImage(resolveImageUrl(p.photoUrl as string));
-                            }}
-                          >
-                            <img
-                              src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-                              alt=""
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                          </div>
-                        )}
-
-                        <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4">
-                          <div className="flex items-center gap-4">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              ID: {p.id}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {p.status === "pending" && (
-                              <>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button>
-                                      <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                      Схвалити
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Схвалити скаргу?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Ви впевнені, що хочете схвалити цю скаргу? Вона перейде в статус "Активно".
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleChangeStatus(p.id, "approved")}>Схвалити</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="destructive"
-                                    >
-                                      <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                      Відхилити
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Відхилити скаргу?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Ви впевнені, що хочете відхилити цю скаргу? Вона перейде в статус "Відхилено".
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleChangeStatus(p.id, "rejected")} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Відхилити</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
-                            )}
-                            {p.status === "approved" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button>
-                                    <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                    Вирішити
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Позначити як вирішену?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Ви впевнені, що проблема була успішно вирішена? Скарга перейде в статус "Вирішено".
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleChangeStatus(p.id, "resolved")}>Вирішити</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                >
-                                  <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
-                                  Видалити
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Видалити скаргу?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Ви впевнені, що хочете видалити цю скаргу? Цю дію неможливо скасувати.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemove(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Видалити</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
+                      showDetails
+                      onDetails={() => {
+                        setSelectedComplaint(p);
+                        setSheetOpen(true);
+                      }}
+                      showPriority
+                      descriptionFallback={"\u2014"}
+                      showPhoto
+                      photoZoom
+                      photoHeight="h-44"
+                      onPhotoPreview={setPreviewImage}
+                      footerLeft="id"
+                      showAdminActions
+                      onStatusChange={handleChangeStatus}
+                      onAdminDelete={handleRemove}
+                    />
                   ))}
               </div>
             </div>
@@ -690,61 +522,15 @@ const AdminComplaintsPage = () => {
                     {filteredTickets.map((p) => {
                       const ticket = tickets.find((t) => t.complaint === p.id);
                       return (
-                        <Card key={p.id} className="border-border shadow-none bg-card">
-                          <div className="p-6">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-sm font-semibold text-foreground">
-                                {p.title || "Без назви"}
-                              </h4>
-                              <Badge
-                                variant="outline"
-                                className={priorityBadgeClass(p.priority)}
-                              >
-                                {priorityLabel(p.priority)}
-                              </Badge>
-                            </div>
-                            <div className="flex gap-2 mb-3 items-center">
-                              <Badge variant="outline" className="text-muted-foreground border-border bg-card">
-                                {p.category || "Категорія"}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">{p.description}</p>
-
-                            {ticket ? (
-                              <div className="bg-primary/5 p-3 border border-primary/10 relative group/ticket">
-                                <p className="text-xs font-semibold text-primary">
-                                  Тікет створено (ID: {ticket.ticket_id})
-                                </p>
-                                {ticket.user && (
-                                  <p className="text-xs text-primary/80 mt-1">
-                                    Виконавець: {ticket.user.first_name} {ticket.user.last_name}
-                                  </p>
-                                )}
-                                {ticket.deadline && (
-                                  <p className="text-xs text-primary/70 mt-1">
-                                    Дедлайн: {new Date(ticket.deadline).toLocaleDateString()}
-                                  </p>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => openTicketSheet(p, ticket)}
-                                  className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
-                                >
-                                  <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={() => openTicketSheet(p)}
-                              >
-                                <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
-                                Створити тікет
-                              </Button>
-                            )}
-                          </div>
-                        </Card>
+                        <ComplaintCard
+                          key={p.id}
+                          complaint={p}
+                          variant="compact"
+                          showPriority
+                          showTicketControls
+                          ticket={ticket}
+                          onTicketAction={openTicketSheet}
+                        />
                       );
                     })}
                   </div>

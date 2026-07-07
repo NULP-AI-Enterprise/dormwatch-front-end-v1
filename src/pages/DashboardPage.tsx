@@ -6,11 +6,8 @@ import {
   fetchBuildings,
   fetchCategories,
 } from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronUpIcon, ChevronDownIcon, Message01Icon, Cancel01Icon, SearchIcon, Delete01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { Cancel01Icon, SearchIcon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -38,9 +35,9 @@ import {
 } from "../components/ui/dialog";
 import CommentSection from "../components/CommentSection";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
+import ComplaintCard from "../components/ComplaintCard";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { Separator } from "../components/ui/separator";
-import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
+import { isAdminUser } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
 import type { Complaint } from "../lib/types";
 
@@ -250,102 +247,39 @@ const DashboardPage = () => {
           </div>
           <div className="lg:col-span-2 space-y-4">
             {filteredProblems.map((problem) => {
+              const manage = canManage(problem);
               return (
-                <Card
+                <ComplaintCard
                   key={problem.id}
-                  className="border-border shadow-none group relative"
-                >
-                  {canManage(problem) && (
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => handleDelete(problem.id)}
-                      className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Видалити"
-                    >
-                      <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-                    </Button>
-                  )}
-
-                  <div className="p-5">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className={statusBadgeClass(problem.status)}>
-                            {statusLabel(problem.status)}
-                          </Badge>
-                        </div>
-                        <span className="text-xs font-normal text-muted-foreground">
-                          {problem.category}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.building ? `Корпус ${problem.building}` : ""}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.placeName}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-bold text-foreground mb-2">
-                        {problem.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                        {problem.description}
-                      </p>
-
-                      {problem.photoUrl && (
-                        <div
-                          className="w-full h-40 overflow-hidden border border-border mb-4 cursor-zoom-in"
-                          onClick={() => setPreviewImage(resolveImageUrl(problem.photoUrl))}
-                        >
-                          <img
-                            src={resolveImageUrl(problem.thumbnail || problem.photoUrl)}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            alt=""
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-3">
-                        <span className="text-xs font-normal text-muted-foreground">
-                          Додано{" "}
-                          {new Date(problem.createdAt).toLocaleDateString()}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {canManage(problem) && (
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              onClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
-                              className="text-xs font-semibold hover:underline p-0 h-auto"
-                            >
-                              Деталі
-                            </Button>
-                          )}
-                          {canManage(problem) && (
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              onClick={() =>
-                                setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
-                              }
-                              className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                            >
-                              <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                              Коментарі {openCommentsId === problem.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                  {openCommentsId === problem.id && (
-                    <>
-                      <Separator dashed />
-                      <div className="p-4">
-                      <CommentSection
-                        complaintId={problem.id}
-                        currentUserId={currentUser?.user}
-                        isAdmin={admin}
-                        complaintAuthorId={problem.user_id}
-                      />
-                      </div>
-                    </>
-                  )}
-                </Card>
+                  complaint={problem}
+                  bodyPadding="p-5"
+                  titleClass="text-lg font-bold"
+                  footerClassName="flex items-center justify-between pt-3"
+                  showPhoto
+                  photoZoom
+                  photoHeight="h-40"
+                  onPhotoPreview={setPreviewImage}
+                  footerLeft="added-date"
+                  showDetails={manage}
+                  onDetails={() => { setSelectedProblem(problem); setSheetOpen(true); }}
+                  commentsMode={manage ? "inline" : "hidden"}
+                  commentsOpen={openCommentsId === problem.id}
+                  commentsSeparator
+                  onCommentToggle={() =>
+                    setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
+                  }
+                  commentsContent={
+                    <CommentSection
+                      complaintId={problem.id}
+                      currentUserId={currentUser?.user}
+                      isAdmin={admin}
+                      complaintAuthorId={problem.user_id}
+                    />
+                  }
+                  showDelete={manage}
+                  deleteHoverReveal
+                  onDelete={handleDelete}
+                />
               );
             })}
 
