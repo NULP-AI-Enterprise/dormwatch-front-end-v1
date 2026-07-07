@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon, DashboardSquare01Icon, GroupIcon, File01Icon, Megaphone01Icon, SettingsIcon } from "@hugeicons/core-free-icons";
+import { Building03Icon, DashboardSquare01Icon, GroupIcon, File01Icon, SettingsIcon } from "@hugeicons/core-free-icons";
 import { Button } from "./ui/button";
 import { type ReactNode, useState } from "react";
 import { getUserInitials } from "../lib/complaintUtils";
@@ -20,7 +20,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={GroupIcon} className="size-5" /> },
     { name: "Всі скарги", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
-    { name: "Оголошення", path: "#", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
   ];
 
   return (

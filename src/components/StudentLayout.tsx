@@ -48,7 +48,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                Дашборд
+                Всі заявки
               </Link>
               {admin && (
                 <Link

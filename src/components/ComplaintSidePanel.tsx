@@ -85,6 +85,7 @@ const ComplaintSidePanel = ({
   }, [editPhotoFile]);
 
   useEffect(() => {
+    if (!complaint) return;
     setEditTitle(complaint.title);
     setEditDescription(complaint.description);
     setEditCategory(complaint.category);

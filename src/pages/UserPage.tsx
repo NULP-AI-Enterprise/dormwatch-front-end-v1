@@ -8,7 +8,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { TicketCard } from "../components/TicketCard";
 import ComplaintCard from "../components/ComplaintCard";
-import CommunityBoard from "../components/CommunityBoard";
 import CommentSection from "../components/CommentSection";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import { Button } from "../components/ui/button";
@@ -199,8 +198,6 @@ const UserPage = () => {
                     ))
                   )}
                 </div>
-
-                <CommunityBoard />
               </div>
             </div>
           </TabsContent>

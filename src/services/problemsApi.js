@@ -494,27 +494,6 @@ export async function deleteComment(commentId) {
   await fetchJson(`/comments/${commentId}/`, { method: "DELETE" });
 }
 
-export async function updateUserProfile(data) {
-  const formData = new FormData();
-  if (data.first_name) formData.append("first_name", data.first_name);
-  if (data.last_name) formData.append("last_name", data.last_name);
-  if (data.email) formData.append("email", data.email);
-  if (data.photoFile instanceof File) formData.append("photo_url", data.photoFile);
-
-  return await fetchJson("/profile/", { method: "PATCH", body: formData });
-}
-
-export async function changeUserRoom(building, floor, room) {
-  return await fetchJson("/profile/change-room/", {
-    method: "PATCH",
-    body: {
-      building_number: parseInt(building),
-      floor_number: parseInt(floor),
-      room_number: String(room),
-    },
-  });
-}
-
 export async function fetchNotifications() {
   try {
     return await fetchJson("/notifications/");

@@ -70,7 +70,7 @@ const Header = () => {
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
               >
-                Дашборд
+                Всі заявки
               </Link>
               <Link
                 to="/admin"
