@@ -4,7 +4,6 @@ import {
   fetchTickets,
   fetchAllComplaints,
   fetchEmployees,
-  CATEGORY_LABELS,
 } from "@/services/problemsApi";
 import { priorityLabel } from "@/lib/complaintUtils";
 import type { Complaint, Employee, Ticket } from "@/lib/types";
@@ -251,7 +250,7 @@ const AdminTicketsPrintPage = () => {
                             <div className="text-xs text-gray-500 break-words whitespace-pre-wrap mt-1 print-description">{t.complaintDetail?.description || "Без опису"}</div>
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
-                            {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category || "Інше"}
+                            {category || "Інше"}
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
                             {t.complaintDetail?.placeName || "Не вказано"}

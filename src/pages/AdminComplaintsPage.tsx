@@ -7,9 +7,10 @@ import {
   fetchApprovedComplaints,
   updateComplaintStatus,
   deleteProblem,
-  CATEGORY_LABELS,
+  fetchCategories,
   fetchTickets,
   fetchEmployees,
+  fetchJson,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
@@ -58,14 +59,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket, Employee } from "../lib/types";
 import { ExportTicketsModal } from "../components/ExportTicketsModal";
-
-const categoryOptions = [
-  { id: "all", name: "Всі категорії" },
-  { id: "plumbing", name: "Сантехніка" },
-  { id: "electricity", name: "Електрика" },
-  { id: "furniture", name: "Меблі" },
-  { id: "internet", name: "Інтернет" },
-];
 
 const statusOptions = [
   { id: "pending", name: "Очікує" },
@@ -138,6 +131,44 @@ const AdminComplaintsPage = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
+  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryError, setCategoryError] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
+
+  const categoryOptions = useMemo(
+    () => [
+      { id: "all", name: "Всі категорії" },
+      ...categories.map((cat) => ({ id: cat.name, name: cat.name })),
+    ],
+    [categories]
+  );
+
+  const loadCategories = async () => {
+    const data = await fetchCategories();
+    setCategories(data);
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    setSavingCategory(true);
+    setCategoryError("");
+    try {
+      await fetchJson("/admin/categories/", {
+        method: "POST",
+        body: { name },
+      });
+      setNewCategoryName("");
+      await loadCategories();
+    } catch (err) {
+      setCategoryError("Не вдалося додати категорію");
+      console.warn("Failed to add category", err);
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
   const loadComplaints = async () => {
     setLoading(true);
     setErr("");
@@ -159,7 +190,8 @@ const AdminComplaintsPage = () => {
 
   useEffect(() => {
     loadComplaints();
-    
+    loadCategories();
+
     window.addEventListener("adminComplaintUpdated", loadComplaints);
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
@@ -326,6 +358,35 @@ const AdminComplaintsPage = () => {
                         placeholder="Оберіть дату"
                       />
                     </div>
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                      Нова категорія
+                    </h4>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Назва..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleAddCategory();
+                        }}
+                        className="text-xs"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddCategory}
+                        disabled={savingCategory || !newCategoryName.trim()}
+                      >
+                        Додати
+                      </Button>
+                    </div>
+                    {categoryError && (
+                      <p className="text-xs font-semibold text-destructive mt-2">
+                        {categoryError}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -371,7 +432,7 @@ const AdminComplaintsPage = () => {
                               {p.title || "Без назви"}
                             </h3>
                             <p className="text-xs font-normal text-muted-foreground mt-1">
-                              {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}
+                              {p.category || "Категорія"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -603,7 +664,7 @@ const AdminComplaintsPage = () => {
                             </div>
                             <div className="flex gap-2 mb-3 items-center">
                               <Badge variant="outline" className="text-muted-foreground border-border bg-card">
-                                {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"}
+                                {p.category || "Категорія"}
                               </Badge>
                               <span className="text-xs text-muted-foreground">{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}</span>
                             </div>

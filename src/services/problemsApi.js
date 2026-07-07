@@ -148,7 +148,13 @@ export async function fetchPlaces(buildingId) {
 }
 
 export async function fetchCategories() {
-  return fetchJson("/categories/");
+  try {
+    const data = await fetchJson("/categories/");
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.warn("Failed to fetch categories", e);
+    return [];
+  }
 }
 
 /**
@@ -218,13 +224,6 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
   return await res.json();
 }
 
-export const CATEGORY_LABELS = {
-  plumbing: "Сантехніка",
-  electricity: "Електрика",
-  furniture: "Меблі",
-  internet: "Інтернет",
-};
-
 /**
  * @param {any} raw
  * @returns {any}
@@ -263,7 +262,7 @@ function normalizeComplaint(raw) {
     id: raw.id ?? raw.complaint_id ?? Date.now(),
     title: raw.title ?? "Без назви",
     description: raw.description ?? "",
-    category: raw.category?.name ?? raw.category ?? "plumbing",
+    category: raw.category?.name ?? raw.category ?? "Категорія",
     building: safeBuilding,
     room: safeRoom,
     placeName: safeRoom,

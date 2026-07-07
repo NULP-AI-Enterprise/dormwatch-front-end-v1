@@ -4,6 +4,7 @@ import {
   fetchApprovedComplaints,
   deleteProblem,
   fetchBuildings,
+  fetchCategories,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -43,14 +44,6 @@ import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtil
 import { useUser } from "../context/UserContext";
 import type { Complaint } from "../lib/types";
 
-const categories = [
-  { id: "all", name: "Всі" },
-  { id: "plumbing", name: "Сантехніка" },
-  { id: "electricity", name: "Електрика" },
-  { id: "furniture", name: "Меблі" },
-  { id: "internet", name: "Інтернет" },
-];
-
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -64,6 +57,7 @@ const DashboardPage = () => {
   const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
 
   const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
+  const [categories, setCategories] = useState<Array<{category_id: number, name: string}>>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -73,6 +67,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchBuildings().then(setBuildings).catch(() => {});
+    fetchCategories().then(setCategories).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -211,12 +206,19 @@ const DashboardPage = () => {
               </Select>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button
+                variant={activeCategory === "all" ? "default" : "outline"}
+                size="xs"
+                onClick={() => setActiveCategory("all")}
+              >
+                Всі
+              </Button>
               {categories.map((category) => (
                 <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
+                  key={category.category_id}
+                  variant={activeCategory === category.name ? "default" : "outline"}
                   size="xs"
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => setActiveCategory((prev) => prev === category.name ? "all" : category.name)}
                 >
                   {category.name}
                 </Button>
@@ -273,7 +275,7 @@ const DashboardPage = () => {
                           </Badge>
                         </div>
                         <span className="text-xs font-normal text-muted-foreground">
-                          {categories.find((c) => c.id === problem.category)?.name || problem.category}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.building ? `Корпус ${problem.building}` : ""}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.placeName}
+                          {problem.category}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.building ? `Корпус ${problem.building}` : ""}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.placeName}
                         </span>
                       </div>
 

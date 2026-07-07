@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { format } from "date-fns";
-import { createTicket, updateTicket, CATEGORY_LABELS } from "../services/problemsApi";
+import { createTicket, updateTicket } from "../services/problemsApi";
 import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
 import type { Complaint, Ticket } from "../lib/types";
 
@@ -49,8 +49,7 @@ const TicketSidePanel = ({
 
   if (!complaint) return null;
 
-  const categoryLabel =
-    CATEGORY_LABELS[complaint.category as keyof typeof CATEGORY_LABELS] || complaint.category;
+  const categoryLabel = complaint.category;
 
   const handleSave = async () => {
     setSaving(true);

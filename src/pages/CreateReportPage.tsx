@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem, fetchUserProfile } from "../services/problemsApi";
+import { createProblem, fetchUserProfile, fetchCategories } from "../services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Camera01Icon, DropletsIcon, BoltIcon, ArmchairIcon, WifiIcon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
+import { ArrowLeft01Icon, Camera01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-
-const categories = [
-  { id: "plumbing", label: "Сантехніка", Icon: DropletsIcon },
-  { id: "electricity", label: "Електрика", Icon: BoltIcon },
-  { id: "furniture", label: "Меблі", Icon: ArmchairIcon },
-  { id: "internet", label: "Інтернет", Icon: WifiIcon },
-];
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState("plumbing");
+  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -33,6 +34,13 @@ const CreateReportPage = () => {
       if (user?.place?.place_name) {
         setFormData((prev) => ({ ...prev, placeName: user.place.place_name }));
       }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchCategories().then((data) => {
+      setCategories(data);
+      if (data.length > 0) setSelectedCategory((prev) => prev || data[0].name);
     }).catch(() => {});
   }, []);
 
@@ -66,6 +74,10 @@ const CreateReportPage = () => {
     }
     if (!formData.description.trim()) {
       setError("Опиши проблему.");
+      return;
+    }
+    if (!selectedCategory) {
+      setError("Оберіть категорію.");
       return;
     }
 
@@ -110,35 +122,18 @@ const CreateReportPage = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
           <label className="text-xs font-semibold text-foreground block mb-4">Що трапилось?</label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {categories.map((category) => {
-              const isActive = selectedCategory === category.id;
-              return (
-                <Button
-                  key={category.id}
-                  type="button"
-                  variant={isActive ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className="p-4 h-auto flex flex-col items-center gap-2 transition-all"
-                >
-                   <HugeiconsIcon
-                    icon={category.Icon}
-                    className={`size-6 ${
-                      isActive ? "text-primary-foreground" : "text-muted-foreground"
-                    }`}
-                    strokeWidth={2}
-                  />
-                  <span
-                    className={`text-xs font-semibold ${
-                      isActive ? "text-primary-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {category.label}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Оберіть категорію" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category.category_id} value={category.name}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">

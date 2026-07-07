@@ -21,7 +21,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, AddIcon } from "@hugeicons/core-free-icons";
 import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
-import { CATEGORY_LABELS } from "../services/problemsApi";
 import { useUser } from "../context/UserContext";
 
 const AdminPage = () => {
@@ -191,7 +190,7 @@ const AdminPage = () => {
                           </p>
                         </TableCell>
                         <TableCell className="px-6 py-4 text-xs text-muted-foreground font-semibold">
-                          {CATEGORY_LABELS[c.category as keyof typeof CATEGORY_LABELS] || c.category}
+                          {c.category}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-sm text-muted-foreground">
                           {new Date(c.createdAt).toLocaleDateString()}

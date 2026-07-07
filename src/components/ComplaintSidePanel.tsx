@@ -32,7 +32,7 @@ import {
   DialogClose,
 } from "./ui/dialog";
 import { resolveImageUrl } from "../services/imageUtils";
-import { CATEGORY_LABELS, updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "../services/problemsApi";
+import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "../services/problemsApi";
 import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete01Icon, Ticket01Icon, CheckmarkCircleIcon, CancelCircleIcon, Cancel01Icon, Camera01Icon } from "@hugeicons/core-free-icons";
@@ -171,8 +171,7 @@ const ComplaintSidePanel = ({
     setIsEditing(false);
   };
 
-  const categoryLabel =
-    CATEGORY_LABELS[complaint.category as keyof typeof CATEGORY_LABELS] || complaint.category;
+  const categoryLabel = complaint.category;
 
   return (
     <>

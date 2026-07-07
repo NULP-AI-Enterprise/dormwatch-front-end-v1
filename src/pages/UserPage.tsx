@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   fetchMyProblems,
   deleteProblem,
-  CATEGORY_LABELS,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -173,7 +172,7 @@ const UserPage = () => {
                         category={p.category}
                         date={new Date(p.createdAt).toLocaleDateString()}
                         status={p.status}
-                        categoryLabel={CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS]}
+                        categoryLabel={p.category}
                       />
                     ))
                   )}
@@ -205,7 +204,7 @@ const UserPage = () => {
                         </Badge>
                       </div>
                       <span className="text-xs font-normal text-muted-foreground shrink-0">
-                        {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
+                        {p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
                       </span>
                     </div>
 
