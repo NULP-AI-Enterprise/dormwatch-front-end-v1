@@ -8,6 +8,7 @@ import {
   updateComplaintStatus,
   deleteProblem,
   fetchCategories,
+  fetchBuildings,
   fetchTickets,
   fetchEmployees,
   fetchJson,
@@ -22,6 +23,13 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +48,6 @@ import {
   DialogClose,
 } from "../components/ui/dialog";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 
 import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
@@ -60,54 +67,13 @@ import {
 import type { Complaint, Ticket, Employee } from "../lib/types";
 import { ExportTicketsModal } from "../components/ExportTicketsModal";
 
-const statusOptions = [
-  { id: "pending", name: "Очікує" },
-  { id: "approved", name: "Активно" },
-  { id: "rejected", name: "Відхилено" },
-  { id: "resolved", name: "Вирішено" },
-];
-
-const ticketStatusOptions = [
-  { id: "all", name: "Всі" },
-  { id: "not_created", name: "Без тікета" },
-  { id: "created", name: "З тікетом" },
-];
-
-function FilterRadioGroup({
-  options,
-  value,
-  onChange,
-}: {
-  options: { id: string; name: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <RadioGroup value={value} onValueChange={onChange} className="space-y-1">
-      {options.map((opt) => (
-        <label
-          key={opt.id}
-          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-            value === opt.id
-              ? "border-l-blue-500 bg-primary/5 text-foreground"
-              : "border-l-transparent text-muted-foreground hover:border-l-stone-500 hover:text-foreground"
-          }`}
-        >
-          <RadioGroupItem value={opt.id} id={`filter-${opt.id}`} className="w-3.5 h-3.5 accent-blue-500" />
-          <span className="text-xs font-semibold cursor-pointer">
-            {opt.name}
-          </span>
-        </label>
-      ))}
-    </RadioGroup>
-  );
-}
-
 const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
   const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedBuilding, setSelectedBuilding] = useState("all");
+  const [selectedPriority, setSelectedPriority] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -132,17 +98,10 @@ const AdminComplaintsPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [buildings, setBuildings] = useState<Array<{ building_id: number; name: string }>>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
-
-  const categoryOptions = useMemo(
-    () => [
-      { id: "all", name: "Всі категорії" },
-      ...categories.map((cat) => ({ id: cat.name, name: cat.name })),
-    ],
-    [categories]
-  );
 
   const loadCategories = async () => {
     const data = await fetchCategories();
@@ -191,6 +150,7 @@ const AdminComplaintsPage = () => {
   useEffect(() => {
     loadComplaints();
     loadCategories();
+    fetchBuildings().then(setBuildings).catch(() => {});
 
     window.addEventListener("adminComplaintUpdated", loadComplaints);
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
@@ -236,14 +196,18 @@ const AdminComplaintsPage = () => {
         const statusOk = selectedStatus === "all" || p.status === selectedStatus;
         const categoryOk =
           selectedCategory === "all" || p.category === selectedCategory;
+        const buildingOk =
+          selectedBuilding === "all" || p.building === selectedBuilding;
+        const priorityOk =
+          selectedPriority === "all" || p.priority === selectedPriority;
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
         const dateOk = !selectedDate || new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd');
-        return statusOk && categoryOk && searchOk && dateOk;
+        return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
-    [complaints, selectedStatus, selectedCategory, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategory, selectedBuilding, selectedPriority, searchQuery, selectedDate]
   );
 
   const filteredTickets = useMemo(
@@ -329,22 +293,80 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус
                     </h4>
-                    <FilterRadioGroup
-                      options={[{ id: "all", name: "Всі" }, ...statusOptions]}
-                      value={selectedStatus}
-                      onChange={setSelectedStatus}
-                    />
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Статус" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі</SelectItem>
+                        <SelectItem value="pending">Очікує</SelectItem>
+                        <SelectItem value="approved">Активно</SelectItem>
+                        <SelectItem value="rejected">Відхилено</SelectItem>
+                        <SelectItem value="resolved">Вирішено</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                      Гуртожиток
+                    </h4>
+                    <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Всі гуртожитки" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі гуртожитки</SelectItem>
+                        {buildings.map((b) => (
+                          <SelectItem key={b.building_id} value={b.name}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                      Пріоритет
+                    </h4>
+                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Всі пріоритети" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі пріоритети</SelectItem>
+                        <SelectItem value="low">Низький</SelectItem>
+                        <SelectItem value="medium">Середній</SelectItem>
+                        <SelectItem value="high">Високий</SelectItem>
+                        <SelectItem value="critical">Критичний</SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <FilterRadioGroup
-                      options={categoryOptions}
-                      value={selectedCategory}
-                      onChange={setSelectedCategory}
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={selectedCategory === "all" ? "default" : "outline"}
+                        size="xs"
+                        onClick={() => setSelectedCategory("all")}
+                      >
+                        Всі
+                      </Button>
+                      {categories.map((cat) => (
+                        <Button
+                          key={cat.category_id}
+                          variant={selectedCategory === cat.name ? "default" : "outline"}
+                          size="xs"
+                          onClick={() => setSelectedCategory(selectedCategory === cat.name ? "all" : cat.name)}
+                        >
+                          {cat.name}
+                        </Button>
+                      ))}
+                    </div>
 
                     <Separator className="my-4" />
 
@@ -613,22 +635,41 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус тікету
                     </h4>
-                    <FilterRadioGroup
-                      options={ticketStatusOptions}
-                      value={ticketStatus}
-                      onChange={setTicketStatus}
-                    />
+                    <Select value={ticketStatus} onValueChange={setTicketStatus}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Статус тікету" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі</SelectItem>
+                        <SelectItem value="not_created">Без тікета</SelectItem>
+                        <SelectItem value="created">З тікетом</SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <FilterRadioGroup
-                      options={categoryOptions}
-                      value={ticketCategory}
-                      onChange={setTicketCategory}
-                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={ticketCategory === "all" ? "default" : "outline"}
+                        size="xs"
+                        onClick={() => setTicketCategory("all")}
+                      >
+                        Всі
+                      </Button>
+                      {categories.map((cat) => (
+                        <Button
+                          key={cat.category_id}
+                          variant={ticketCategory === cat.name ? "default" : "outline"}
+                          size="xs"
+                          onClick={() => setTicketCategory(ticketCategory === cat.name ? "all" : cat.name)}
+                        >
+                          {cat.name}
+                        </Button>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>

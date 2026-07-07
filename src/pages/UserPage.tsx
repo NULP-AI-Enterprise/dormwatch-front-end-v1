@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   fetchMyProblems,
   deleteProblem,
+  fetchCategories,
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -12,7 +13,15 @@ import CommentSection from "../components/CommentSection";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
 import { useUser } from "../context/UserContext";
@@ -27,6 +36,7 @@ import {
   InboxIcon,
   File01Icon,
   AddIcon,
+  SearchIcon,
 } from "@hugeicons/core-free-icons";
 
 const UserPage = () => {
@@ -38,6 +48,12 @@ const UserPage = () => {
 
   const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterSearch, setFilterSearch] = useState("");
 
   const fetchProblems = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -53,7 +69,18 @@ const UserPage = () => {
 
   useEffect(() => {
     fetchProblems();
+    fetchCategories().then(setCategories).catch(() => {});
   }, []);
+
+  const filteredProblems = problems.filter((p) => {
+    const matchesSearch = !filterSearch ||
+      (p.title || "").toLowerCase().includes(filterSearch.toLowerCase()) ||
+      (p.description || "").toLowerCase().includes(filterSearch.toLowerCase());
+    const matchesStatus = filterStatus === "all" || p.status === filterStatus;
+    const matchesCategory = filterCategory === "all" || p.category === filterCategory;
+    const matchesPriority = filterPriority === "all" || p.priority === filterPriority;
+    return matchesSearch && matchesStatus && matchesCategory && matchesPriority;
+  });
 
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
@@ -184,7 +211,70 @@ const UserPage = () => {
           </TabsContent>
 
           <TabsContent value="reports">
-            <div className="space-y-4">
+            <div className="grid lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-1 space-y-4">
+                <Card className="border-border shadow-none bg-card">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="relative">
+                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
+                      <Input
+                        placeholder="Пошук заявок..."
+                        value={filterSearch}
+                        onChange={(e) => setFilterSearch(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Статус" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі</SelectItem>
+                        <SelectItem value="pending">Очікує</SelectItem>
+                        <SelectItem value="approved">Активно</SelectItem>
+                        <SelectItem value="rejected">Відхилено</SelectItem>
+                        <SelectItem value="resolved">Вирішено</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={filterPriority} onValueChange={setFilterPriority}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Всі пріоритети" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі пріоритети</SelectItem>
+                        <SelectItem value="low">Низький</SelectItem>
+                        <SelectItem value="medium">Середній</SelectItem>
+                        <SelectItem value="high">Високий</SelectItem>
+                        <SelectItem value="critical">Критичний</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={filterCategory === "all" ? "default" : "outline"}
+                        size="xs"
+                        onClick={() => setFilterCategory("all")}
+                      >
+                        Всі
+                      </Button>
+                      {categories.map((cat) => (
+                        <Button
+                          key={cat.category_id}
+                          variant={filterCategory === cat.name ? "default" : "outline"}
+                          size="xs"
+                          onClick={() => setFilterCategory(filterCategory === cat.name ? "all" : cat.name)}
+                        >
+                          {cat.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-3 space-y-4">
               {problems.length === 0 && (
                 <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
                   <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
@@ -194,7 +284,16 @@ const UserPage = () => {
                 </div>
               )}
 
-              {problems.map((p) => (
+              {problems.length > 0 && filteredProblems.length === 0 && (
+                <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
+                    <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Немає заявок за вибраними фільтрами.</p>
+                </div>
+              )}
+
+              {filteredProblems.map((p) => (
                 <Card key={p.id} className="border-border shadow-none bg-card p-5">
                   <div>
                     <div className="flex justify-between items-start mb-3 gap-2">
@@ -265,6 +364,7 @@ const UserPage = () => {
                   )}
                 </Card>
               ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
