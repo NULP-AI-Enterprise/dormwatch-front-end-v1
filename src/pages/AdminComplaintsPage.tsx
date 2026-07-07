@@ -161,7 +161,7 @@ const AdminComplaintsPage = () => {
   useEffect(() => {
     if (tab === "tickets") {
       loadTickets();
-      fetchApprovedComplaints("new").then(setApprovedForTickets);
+      fetchApprovedComplaints().then(setApprovedForTickets);
       fetchEmployees().then(setEmployees);
     }
   }, [tab]);

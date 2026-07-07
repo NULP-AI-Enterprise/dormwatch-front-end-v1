@@ -74,7 +74,7 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).catch(() => []);
+        const complaintsData = await fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).catch(() => []);
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
       } catch (error) {
         console.error("Critical dashboard error:", error);
@@ -90,7 +90,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const handler = () => {
-      fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).then((data) => {
+      fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
         const fresh = data.filter(Boolean) as Complaint[];
         setProblems(fresh);
         const current = selectedProblemRef.current;
@@ -382,7 +382,7 @@ const DashboardPage = () => {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={() => {
-            fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).then((data) => {
+            fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
               const fresh = data.filter(Boolean) as Complaint[];
               setProblems(fresh);
               const updated = fresh.find((c) => c.id === selectedProblem.id);

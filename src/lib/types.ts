@@ -21,7 +21,6 @@ export interface Complaint {
   thumbnail: string | null;
   status: string;
   priority: string;
-  votesCount: number;
   createdAt: string;
   user_id: number | null;
 }

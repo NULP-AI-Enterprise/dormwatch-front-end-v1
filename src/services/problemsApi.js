@@ -271,7 +271,6 @@ function normalizeComplaint(raw) {
     thumbnail: raw.thumbnail ?? null,
     status: status,
     priority: raw.priority ?? "medium",
-    votesCount: Number(raw.votesCount || raw.counter || 0),
     createdAt: raw.created_at || raw.createdAt || nowIso,
     user_id: raw.user?.id || raw.user?.user || raw.user || null,
   };
@@ -328,15 +327,14 @@ function buildQueryParams(filters = {}) {
   return params.toString() ? `?${params.toString()}` : "";
 }
 
-export async function fetchComplaints({ status, sort = "new", filters = {} } = {}) {
+export async function fetchComplaints({ status, filters = {} } = {}) {
   try {
     const q = buildQueryParams(filters);
     const data = await fetchJson(`/complaints/${q}`);
     if (Array.isArray(data)) {
       let results = data.map(normalizeComplaint).filter(Boolean);
       if (status) results = results.filter((c) => c.status === status);
-      if (sort === "popular") results.sort((a, b) => b.votesCount - a.votesCount);
-      else results.sort(sortByNew);
+      results.sort(sortByNew);
       return results;
     }
   } catch (e) {
@@ -349,8 +347,8 @@ export async function fetchAllComplaints(filters = {}) {
   return fetchComplaints({ filters });
 }
 
-export async function fetchApprovedComplaints(sort = "new", filters = {}) {
-  return fetchComplaints({ status: "approved", sort, filters });
+export async function fetchApprovedComplaints(filters = {}) {
+  return fetchComplaints({ status: "approved", filters });
 }
 
 export async function fetchPendingComplaints(filters = {}) {
@@ -398,13 +396,6 @@ export async function updateComplaintPriority(id, newPriority) {
 
 export async function approveComplaint(id) {
   return updateComplaintStatus(id, "approved");
-}
-
-export async function voteComplaint(id) {
-  const res = await fetchJson(`/complaints/${id}/counter/`, {
-    method: "PATCH",
-  });
-  return { id, votesCount: res.counter };
 }
 
 export async function fetchComments(complaintId) {

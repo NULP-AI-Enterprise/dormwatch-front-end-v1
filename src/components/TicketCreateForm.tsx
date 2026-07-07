@@ -37,7 +37,7 @@ const TicketCreateForm = ({ onClose, onSaved, editTicket, fixedComplaintId }: Ti
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchApprovedComplaints("new").then(setComplaints);
+    fetchApprovedComplaints().then(setComplaints);
     fetchEmployees().then(setEmployees);
   }, []);
 
