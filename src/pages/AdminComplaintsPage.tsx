@@ -13,7 +13,7 @@ import {
 } from "../services/problemsApi";
 import { resolveImageUrl } from "../services/imageUtils";
 import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import TicketCreateForm from "../components/TicketCreateForm";
+import TicketSidePanel from "../components/TicketSidePanel";
 import { NotificationBell } from "../components/NotificationBell";
 import { useUser } from "../context/UserContext";
 import { Badge } from "../components/ui/badge";
@@ -132,11 +132,11 @@ const AdminComplaintsPage = () => {
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [selectedForTicket, setSelectedForTicket] = useState<Complaint | null>(null);
+  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const loadComplaints = async () => {
     setLoading(true);
@@ -192,10 +192,10 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const openTicketModal = (complaint: Complaint, ticket?: Ticket) => {
-    setSelectedForTicket(complaint);
+  const openTicketSheet = (complaint: Complaint, ticket?: Ticket) => {
+    setSelectedTicketComplaint(complaint);
     setTicketToEdit(ticket || null);
-    setIsTicketModalOpen(true);
+    setTicketSheetOpen(true);
   };
 
   const filteredComplaints = useMemo(
@@ -337,7 +337,7 @@ const AdminComplaintsPage = () => {
                   </div>
                 )}
                 {!loading && err && (
-                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-bold">
+                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-semibold">
                     {err}
                   </div>
                 )}
@@ -347,7 +347,7 @@ const AdminComplaintsPage = () => {
                     <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
                       <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
                     </div>
-                    <p className="text-sm font-bold text-foreground mb-1">Скарг не знайдено</p>
+                    <p className="text-sm font-semibold text-foreground mb-1">Скарг не знайдено</p>
                     <p className="text-xs text-muted-foreground">Жодна скарга не відповідає поточним фільтрам.</p>
                   </div>
                 )}
@@ -540,7 +540,7 @@ const AdminComplaintsPage = () => {
                 <Card className="border-border shadow-none bg-card">
                   <CardContent className="p-4">
                     <div className="relative mb-4">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" strokeWidth={2} />
+                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
                       <Input
                         placeholder="Пошук тікетів..."
                         value={ticketSearchQuery}
@@ -573,13 +573,13 @@ const AdminComplaintsPage = () => {
               </div>
 
               <div className="lg:col-span-3 space-y-6">
-                <h3 className="text-sm font-bold text-foreground">
+                <h3 className="text-sm font-semibold text-foreground">
                   Тікети для підтверджених заявок
                 </h3>
                 {filteredTickets.length === 0 ? (
                   <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <HugeiconsIcon icon={InboxIcon} className="w-5 h-5" strokeWidth={1.5} />
+                      <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
                     </div>
                     <p className="text-xs text-muted-foreground">Жодна заявка не відповідає фільтрам.</p>
                   </div>
@@ -591,7 +591,7 @@ const AdminComplaintsPage = () => {
                         <Card key={p.id} className="border-border shadow-none bg-card">
                           <div className="p-6">
                             <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-sm font-bold text-foreground">
+                              <h4 className="text-sm font-semibold text-foreground">
                                 {p.title || "Без назви"}
                               </h4>
                               <Badge
@@ -611,7 +611,7 @@ const AdminComplaintsPage = () => {
 
                             {ticket ? (
                               <div className="bg-primary/5 p-3 border border-primary/10 relative group/ticket">
-                                <p className="text-xs font-bold text-primary">
+                                <p className="text-xs font-semibold text-primary">
                                   Тікет створено (ID: {ticket.ticket_id})
                                 </p>
                                 {ticket.user && (
@@ -627,7 +627,7 @@ const AdminComplaintsPage = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon-xs"
-                                  onClick={() => openTicketModal(p, ticket)}
+                                  onClick={() => openTicketSheet(p, ticket)}
                                   className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
                                 >
                                   <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
@@ -635,7 +635,7 @@ const AdminComplaintsPage = () => {
                               </div>
                             ) : (
                               <Button
-                                onClick={() => openTicketModal(p)}
+                                onClick={() => openTicketSheet(p)}
                               >
                                 <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
                                 Створити тікет
@@ -667,33 +667,22 @@ const AdminComplaintsPage = () => {
         />
       )}
 
-      {isTicketModalOpen && selectedForTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="bg-card w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border shadow-lg p-6">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-base font-bold text-foreground">
-                {ticketToEdit ? "Редагувати тікет" : "Створити тікет"}
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => setIsTicketModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} className="size-5" strokeWidth={2} />
-              </Button>
-            </div>
-            <TicketCreateForm
-              fixedComplaintId={selectedForTicket.id as number}
-              onClose={() => setIsTicketModalOpen(false)}
-              onSaved={() => {
-                setIsTicketModalOpen(false);
-                loadTickets();
-              }}
-              editTicket={ticketToEdit}
-            />
-          </div>
-        </div>
+      {selectedTicketComplaint && (
+        <TicketSidePanel
+          complaint={selectedTicketComplaint}
+          ticket={ticketToEdit}
+          open={ticketSheetOpen}
+          onOpenChange={(open) => {
+            setTicketSheetOpen(open);
+            if (!open) {
+              setSelectedTicketComplaint(null);
+              setTicketToEdit(null);
+            }
+          }}
+          employees={employees}
+          allTickets={tickets}
+          onTicketChange={loadTickets}
+        />
       )}
 
       <ExportTicketsModal
