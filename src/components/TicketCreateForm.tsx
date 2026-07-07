@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
 import {
   Select,
@@ -7,12 +7,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, AddIcon, SaveIcon } from "@hugeicons/core-free-icons";
-import { fetchApprovedComplaints, fetchEmployees, createTicket, updateTicket } from "../services/problemsApi";
-import type { Complaint, Employee, Ticket } from "../lib/types";
-import { DatePicker } from "./ui/date-picker";
+import { fetchApprovedComplaints, fetchEmployees, createTicket, updateTicket } from "@/services/problemsApi";
+import type { Complaint, Employee, Ticket } from "@/lib/types";
+import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 
 interface TicketCreateFormProps {

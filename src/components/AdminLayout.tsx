@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon, DashboardSquare01Icon, GroupIcon, File01Icon, SettingsIcon } from "@hugeicons/core-free-icons";
-import { Button } from "./ui/button";
+import { DashboardSquare01Icon, GroupIcon, File01Icon, SettingsIcon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
 import { type ReactNode, useState } from "react";
-import { getUserInitials } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import { SettingsModal } from "./SettingsModal";
+import { useUser } from "@/context/UserContext";
+import { SettingsModal } from "@/components/SettingsModal";
+import Logo from "@/components/Logo";
+import UserAvatar from "@/components/UserAvatar";
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -13,7 +14,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const initials = getUserInitials(user, "AD");
   const placeName = user?.place?.place_name || "Головний офіс";
 
   const navItems = [
@@ -26,10 +26,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     <div className="min-h-screen flex flex-col md:flex-row bg-background bg-dot-grid relative">
       <aside className="w-full md:w-64 bg-background border-r border-border flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
         <div className="h-20 px-6 flex items-center border-b border-border">
-          <Link to="/admin" className="flex items-center gap-3 text-primary font-bold text-xl hover:text-primary/80 transition-colors">
-            <HugeiconsIcon icon={Building03Icon} className="size-6" />
-            <span>DormWatch</span>
-          </Link>
+          <Logo to="/admin" className="gap-3" />
         </div>
 
         <nav className="flex-1 py-6 px-4 space-y-2">
@@ -59,9 +56,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </Button>
 
           <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50">
-            <div className="w-10 h-10 bg-card border border-border flex items-center justify-center text-muted-foreground font-bold text-sm shrink-0">
-              {initials}
-            </div>
+            <UserAvatar user={user} size="md" fallback="AD" />
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-bold text-foreground truncate">
                 {user ? `${user.first_name} ${user.last_name}` : "Адмін"}

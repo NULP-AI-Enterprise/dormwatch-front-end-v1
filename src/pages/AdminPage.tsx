@@ -2,25 +2,24 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchAllComplaints,
-  fetchBuildings,
   fetchCategories,
-} from "../services/problemsApi";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import { NotificationBell } from "../components/NotificationBell";
-import { StatCard, StatCardSkeleton } from "../components/StatCard";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
+} from "@/services/problemsApi";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { NotificationBell } from "@/components/NotificationBell";
+import { StatCard, StatCardSkeleton } from "@/components/StatCard";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
-import { ExportTicketsModal } from "../components/ExportTicketsModal";
-import { Separator } from "../components/ui/separator";
+} from "@/components/ui/select";
+import { ExportTicketsModal } from "@/components/ExportTicketsModal";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableHeader,
@@ -28,22 +27,24 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from "../components/ui/table";
+} from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, AddIcon, SearchIcon } from "@hugeicons/core-free-icons";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
+import { formatDate } from "@/lib/dateUtils";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const AdminPage = () => {
   const { user: currentUser } = useUser();
-  const [complaints, setComplaints] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  const [buildings, setBuildings] = useState<Array<{ building_id: number; name: string }>>([]);
-  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const buildings = useBuildings();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -59,7 +60,6 @@ const AdminPage = () => {
 
   useEffect(() => {
     init();
-    fetchBuildings().then(setBuildings).catch(() => {});
     fetchCategories().then(setCategories).catch(() => {});
 
     window.addEventListener("adminComplaintUpdated", init);
@@ -85,7 +85,7 @@ const AdminPage = () => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
 
-  const handleRowClick = (complaint: any) => {
+  const handleRowClick = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setSheetOpen(true);
   };
@@ -118,17 +118,20 @@ const AdminPage = () => {
               className="gap-2"
               onClick={() => {
                 setSelectedComplaint({
-                  id: "new",
+                  id: "new" as unknown as number,
                   title: "",
                   description: "",
                   category: "",
                   status: "pending",
                   building: "",
+                  room: "",
                   placeName: "",
+                  floor: "",
                   priority: "medium",
                   createdAt: "",
                   photoUrl: null,
                   thumbnail: null,
+                  user_id: null,
                 });
                 setSheetOpen(true);
               }}
@@ -303,12 +306,10 @@ const AdminPage = () => {
                           {c.category}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                          {new Date(c.createdAt).toLocaleDateString()}
+                          {formatDate(c.createdAt)}
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <Badge variant="outline" className={statusBadgeClass(c.status)}>
-                            {statusLabel(c.status)}
-                          </Badge>
+                          <StatusBadge status={c.status} />
                         </TableCell>
                       </TableRow>
                     ))
@@ -320,16 +321,18 @@ const AdminPage = () => {
           </div>
         </div>
 
-      <ComplaintSidePanel
-        complaint={selectedComplaint}
-        open={sheetOpen}
-        onOpenChange={(open) => {
-          setSheetOpen(open);
-        }}
-        onStatusChange={handleRefresh}
-        currentUserId={currentUser?.user}
-        isAdmin={true}
-      />
+      {selectedComplaint && (
+        <ComplaintSidePanel
+          complaint={selectedComplaint}
+          open={sheetOpen}
+          onOpenChange={(open) => {
+            setSheetOpen(open);
+          }}
+          onStatusChange={handleRefresh}
+          currentUserId={currentUser?.user}
+          isAdmin={true}
+        />
+      )}
 
       <ExportTicketsModal
         open={isExportModalOpen}

@@ -3,14 +3,14 @@ import { uk } from "date-fns/locale"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Calendar01Icon } from "@hugeicons/core-free-icons"
 
-import { cn } from "../../lib/utils"
-import { Button } from "./button"
-import { Calendar } from "./calendar"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "./popover"
+} from "@/components/ui/popover"
 
 interface DatePickerProps {
   date: Date | undefined
@@ -24,14 +24,14 @@ export function DatePicker({ date, setDate, placeholder = "Оберіть дат
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant={"outline"}
+          variant="outline"
+          data-empty={!date}
           className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground",
+            "w-full justify-start text-left data-[empty=true]:text-muted-foreground",
             className
           )}
         >
-          <HugeiconsIcon icon={Calendar01Icon} className="mr-2 h-4 w-4" />
+          <HugeiconsIcon icon={Calendar01Icon} className="mr-2 size-4" strokeWidth={2} />
           {date ? format(date, "PPP", { locale: uk }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>

@@ -1,15 +1,15 @@
 import { Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import UserPage from "./pages/UserPage";
-import AdminPage from "./pages/AdminPage";
-import AdminComplaintsPage from "./pages/AdminComplaintsPage";
-import CreateReportPage from "./pages/CreateReportPage";
-import DashboardPage from "./pages/DashboardPage";
-import AuthPage from "./pages/AuthPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import StudentLayout from "./components/StudentLayout";
-import AdminLayout from "./components/AdminLayout";
-import AdminTicketsPrintPage from "./pages/AdminTicketsPrintPage";
+import HomePage from "@/pages/HomePage";
+import UserPage from "@/pages/UserPage";
+import AdminPage from "@/pages/AdminPage";
+import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
+import CreateReportPage from "@/pages/CreateReportPage";
+import DashboardPage from "@/pages/DashboardPage";
+import AuthPage from "@/pages/AuthPage";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import StudentLayout from "@/components/StudentLayout";
+import AdminLayout from "@/components/AdminLayout";
+import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
 
 function App() {
   return (

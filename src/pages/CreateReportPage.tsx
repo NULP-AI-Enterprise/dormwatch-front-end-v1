@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem, fetchUserProfile, fetchCategories } from "../services/problemsApi";
+import { createProblem, fetchUserProfile, fetchCategories } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Camera01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
+import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import PhotoUploadField from "@/components/PhotoUploadField";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
+} from "@/components/ui/select";
+import type { CategoryOption } from "@/lib/types";
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [formData, setFormData] = useState({
     title: "",
@@ -51,8 +53,7 @@ const CreateReportPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = (file: File | null) => {
     if (file) {
       setPhotoFile(file);
       setPreviewUrl(URL.createObjectURL(file));
@@ -219,22 +220,11 @@ const CreateReportPage = () => {
                 </Button>
               </div>
             ) : (
-              <label className="w-full aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
-                <HugeiconsIcon
-                  icon={Camera01Icon}
-                  className="size-8 text-muted-foreground mb-3"
-                  strokeWidth={2}
-                />
-                <p className="text-xs font-normal text-muted-foreground">
-                  Натисніть, щоб додати фото
-                </p>
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </label>
+              <PhotoUploadField
+                onFileSelect={handleFileSelect}
+                label="Натисніть, щоб додати фото"
+                aspectSquare
+              />
             )}
           </div>
         </div>

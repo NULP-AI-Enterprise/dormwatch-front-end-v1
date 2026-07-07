@@ -1,42 +1,34 @@
 import { useState, useEffect, useRef } from "react";
-import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "./ui/sheet";
-import CommentSection from "./CommentSection";
-import TicketCreateForm from "./TicketCreateForm";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Separator } from "./ui/separator";
+import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
+import CommentSection from "@/components/CommentSection";
+import TicketCreateForm from "@/components/TicketCreateForm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "./ui/alert-dialog";
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "./ui/dialog";
-import { resolveImageUrl } from "../services/imageUtils";
-import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "../services/problemsApi";
-import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
+} from "@/components/ui/dialog";
+import { resolveImageUrl } from "@/services/imageUtils";
+import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "@/services/problemsApi";
+import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
+import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import PhotoUploadField from "@/components/PhotoUploadField";
+import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon, Ticket01Icon, CheckmarkCircleIcon, CancelCircleIcon, Cancel01Icon, Camera01Icon } from "@hugeicons/core-free-icons";
-import type { Complaint } from "../lib/types";
+import { Ticket01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -67,7 +59,7 @@ const ComplaintSidePanel = ({
   const [editPriority, setEditPriority] = useState("");
   const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Array<{category_id: number, name: string}>>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -208,9 +200,7 @@ const ComplaintSidePanel = ({
         <div className="space-y-4 px-4 py-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Badge variant="outline" className={statusBadgeClass(complaint.status)}>
-                {statusLabel(complaint.status)}
-              </Badge>
+              <StatusBadge status={complaint.status} />
               <span className="text-xs font-semibold text-muted-foreground">
                 {String(complaint.id) !== "new" && `#${complaint.id}`}
               </span>
@@ -285,16 +275,11 @@ const ComplaintSidePanel = ({
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Badge
-                    variant="outline"
-                    className={priorityBadgeClass(complaint.priority)}
-                  >
-                      Пріоритет: {priorityLabel(complaint.priority)}
-                  </Badge>
+                  <PriorityBadge priority={complaint.priority} prefix />
                 )}
                 {complaint.createdAt && (
                   <span className="text-xs text-muted-foreground font-semibold">
-                    {new Date(complaint.createdAt).toLocaleDateString()}
+                    {formatDate(complaint.createdAt)}
                   </span>
                 )}
               </>
@@ -323,25 +308,10 @@ const ComplaintSidePanel = ({
                   />
                 </div>
               )}
-              <label className="w-full border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
-                <HugeiconsIcon
-                  icon={Camera01Icon}
-                  className="size-6 text-muted-foreground mb-2"
-                  strokeWidth={2}
-                />
-                <p className="text-xs font-normal text-muted-foreground">
-                  {editPhotoFile ? editPhotoFile.name : "Натисніть, щоб замінити фото"}
-                </p>
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setEditPhotoFile(file);
-                  }}
-                />
-              </label>
+              <PhotoUploadField
+                onFileSelect={setEditPhotoFile}
+                label={editPhotoFile ? editPhotoFile.name : "Натисніть, щоб замінити фото"}
+              />
             </div>
           ) : (
             complaint.photoUrl && (
@@ -380,96 +350,11 @@ const ComplaintSidePanel = ({
           {isAdmin && (
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                {complaint.status === "pending" && (
-                  <>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button>
-                          <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                          Схвалити
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Схвалити скаргу?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Ви впевнені, що хочете схвалити цю скаргу? Вона перейде в статус "Активно".
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleStatusChange("approved")}>Схвалити</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="destructive"
-                        >
-                          <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                          Відхилити
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Відхилити скаргу?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Ви впевнені, що хочете відхилити цю скаргу? Вона перейде в статус "Відхилено".
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleStatusChange("rejected")} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Відхилити</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </>
-                )}
-                {complaint.status === "approved" && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button>
-                        <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                        Позначити вирішеним
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Позначити як вирішену?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Ви впевнені, що проблема була успішно вирішена? Скарга перейде в статус "Вирішено".
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleStatusChange("resolved")}>Вирішити</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                    >
-                      <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
-                      Видалити
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Видалити скаргу?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Ви впевнені, що хочете видалити цю скаргу? Цю дію неможливо скасувати.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Видалити</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <ComplaintAdminActions
+                  complaint={complaint}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDelete}
+                />
                 {!showTicketForm && (
                   <Button
                     variant="outline"

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+import { API_BASE } from "@/services/apiConfig";
 
 let accessToken = null;
 
@@ -320,10 +320,14 @@ export async function fetchMyProblems() {
   return [];
 }
 
-function buildQueryParams(filters = {}) {
+// Build a `?a=1&b=2` query string from `filters`, restricted to `keys`.
+// Skips missing/empty values and the sentinel "all"; prefixes "?" when non-empty.
+function buildQueryParams(filters = {}, keys = ["corps", "priority"]) {
   const params = new URLSearchParams();
-  if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-  if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
+  for (const key of keys) {
+    const value = filters[key];
+    if (value && value !== "all") params.append(key, value);
+  }
   return params.toString() ? `?${params.toString()}` : "";
 }
 
@@ -349,18 +353,6 @@ export async function fetchAllComplaints(filters = {}) {
 
 export async function fetchApprovedComplaints(filters = {}) {
   return fetchComplaints({ status: "approved", filters });
-}
-
-export async function fetchPendingComplaints(filters = {}) {
-  return fetchComplaints({ status: "pending", filters });
-}
-
-export async function fetchRejectedComplaints(filters = {}) {
-  return fetchComplaints({ status: "rejected", filters });
-}
-
-export async function fetchComplaintsByStatus(targetStatus, filters = {}) {
-  return fetchComplaints({ status: targetStatus, filters });
 }
 
 export async function deleteProblem(id) {
@@ -394,10 +386,6 @@ export async function updateComplaintPriority(id, newPriority) {
   return { id, priority: newPriority };
 }
 
-export async function approveComplaint(id) {
-  return updateComplaintStatus(id, "approved");
-}
-
 export async function fetchComments(complaintId) {
   try {
     const data = await fetchJson(`/complaints/${complaintId}/comments/`);
@@ -428,13 +416,8 @@ export async function fetchEmployees() {
 
 export async function fetchTickets(filters = {}) {
   try {
-      const params = new URLSearchParams();
-      if (filters.worker && filters.worker !== 'all') params.append('worker', filters.worker);
-      if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-      if (filters.date_from) params.append('date_from', filters.date_from);
-      if (filters.date_to) params.append('date_to', filters.date_to);
-      const q = params.toString() ? `?${params.toString()}` : "";
-      
+      const q = buildQueryParams(filters, ["worker", "priority", "date_from", "date_to"]);
+
       const data = await fetchJson(`/tickets/${q}`);
       if (Array.isArray(data)) return data;
   } catch (e) {

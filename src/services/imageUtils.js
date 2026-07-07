@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+import { API_BASE } from "@/services/apiConfig";
 
 export function resolveImageUrl(path) {
   if (!path) return null;

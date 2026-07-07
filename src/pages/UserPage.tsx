@@ -4,26 +4,29 @@ import {
   fetchMyProblems,
   deleteProblem,
   fetchCategories,
-} from "../services/problemsApi";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { TicketCard } from "../components/TicketCard";
-import ComplaintCard from "../components/ComplaintCard";
-import CommentSection from "../components/CommentSection";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import { Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Input } from "../components/ui/input";
+} from "@/services/problemsApi";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TicketCard } from "@/components/TicketCard";
+import ComplaintCard from "@/components/ComplaintCard";
+import CommentSection from "@/components/CommentSection";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { isAdminUser } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import type { Complaint } from "../lib/types";
+} from "@/components/ui/select";
+import PageSpinner from "@/components/PageSpinner";
+import EmptyState from "@/components/EmptyState";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { formatDate } from "@/lib/dateUtils";
+import { useCommentToggle } from "@/hooks/useCommentToggle";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MapPinIcon,
@@ -38,12 +41,12 @@ const UserPage = () => {
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
+  const comments = useCommentToggle();
 
   const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
@@ -108,11 +111,7 @@ const UserPage = () => {
   const room = currentUser?.room || "";
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
@@ -174,15 +173,15 @@ const UserPage = () => {
                 </div>
                 <div className="space-y-3">
                   {problems.length === 0 ? (
-                    <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                        <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3">Немає активних заявок.</p>
-                      <Button asChild size="xs">
-                        <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити першу заявку</Link>
-                      </Button>
-                    </div>
+                    <EmptyState
+                      icon={InboxIcon}
+                      title="Немає активних заявок."
+                      action={
+                        <Button asChild size="xs">
+                          <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити першу заявку</Link>
+                        </Button>
+                      }
+                    />
                   ) : (
                     problems.slice(0, 5).map((p) => (
                       <TicketCard
@@ -191,7 +190,7 @@ const UserPage = () => {
                         title={p.title}
                         description={p.description}
                         category={p.category}
-                        date={new Date(p.createdAt).toLocaleDateString()}
+                        date={formatDate(p.createdAt)}
                         status={p.status}
                         categoryLabel={p.category}
                       />
@@ -268,21 +267,14 @@ const UserPage = () => {
 
               <div className="lg:col-span-3 space-y-4">
               {problems.length === 0 && (
-                <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                    <HugeiconsIcon icon={File01Icon} className="size-5" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-sm font-bold text-foreground mb-1">Ще немає звернень</p>
-                </div>
+                <EmptyState icon={File01Icon} title="Ще немає звернень" />
               )}
 
               {problems.length > 0 && filteredProblems.length === 0 && (
-                <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                    <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Немає заявок за вибраними фільтрами.</p>
-                </div>
+                <EmptyState
+                  icon={InboxIcon}
+                  title="Немає заявок за вибраними фільтрами."
+                />
               )}
 
               {filteredProblems.map((p) => (
@@ -299,10 +291,8 @@ const UserPage = () => {
                   footerClassName="flex items-center justify-between pt-4"
                   commentsMode="inline"
                   commentsSide="left"
-                  commentsOpen={openCommentsId === p.id}
-                  onCommentToggle={() =>
-                    setOpenCommentsId(openCommentsId === p.id ? null : p.id)
-                  }
+                  commentsOpen={comments.isOpen(p.id)}
+                  onCommentToggle={() => comments.toggle(p.id)}
                   commentsContent={
                     <CommentSection
                       complaintId={p.id}

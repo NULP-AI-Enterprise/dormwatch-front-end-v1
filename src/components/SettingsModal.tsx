@@ -1,4 +1,3 @@
-import { useEffect, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { fetchUserProfile, logoutUser } from "@/services/problemsApi";
+import { logoutUser } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AiPhone01Icon,
@@ -18,8 +17,9 @@ import {
   Briefcase01Icon,
   Logout01Icon,
 } from "@hugeicons/core-free-icons";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { isAdminUser, getUserInitials } from "@/lib/complaintUtils";
+import UserAvatar from "@/components/UserAvatar";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { useUser } from "@/context/UserContext";
 
 const CONTACT_PHONES = {
   commandant: "093 123 45 67",
@@ -32,39 +32,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchUserProfile();
-      setUser(data);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      loadProfile();
-    }
-  }, [open, loadProfile]);
-
-  const SERVER_URL = "http://127.0.0.1:8000";
-  const userInitials = getUserInitials(user, "U");
-  const photoUrl = user?.photo_url
-    ? (() => {
-        const path = user.photo_url;
-        const isAbsolute = path.startsWith("http") || path.startsWith("blob:");
-        const cleanPath = path.startsWith("/") ? path : `/${path}`;
-        return isAbsolute
-          ? path
-          : `${SERVER_URL}${cleanPath.startsWith("/api") ? "" : "/api"}${cleanPath}`;
-      })()
-    : null;
+  const { user } = useUser();
 
   const isAdmin = isAdminUser(user);
 
@@ -86,21 +54,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
         <div className="flex flex-col max-h-[80vh]">
           <div className="flex items-center gap-4 px-5 py-4 border-b border-border bg-card">
-            <div className="w-12 h-12 bg-muted border border-border shrink-0 overflow-hidden flex items-center justify-center">
-              {loading ? (
-                <LoadingSpinner size="sm" />
-              ) : photoUrl ? (
-                <img
-                  src={photoUrl}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-              ) : (
-                <span className="text-sm font-bold text-muted-foreground">
-                  {userInitials}
-                </span>
-              )}
-            </div>
+            <UserAvatar user={user} size="lg" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <p className="text-sm font-bold text-foreground truncate">

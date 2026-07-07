@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { DatePicker } from "../components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import {
   fetchAllComplaints,
@@ -8,36 +8,37 @@ import {
   updateComplaintStatus,
   deleteProblem,
   fetchCategories,
-  fetchBuildings,
   fetchTickets,
   fetchEmployees,
   fetchJson,
-} from "../services/problemsApi";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import ComplaintCard from "../components/ComplaintCard";
-import TicketSidePanel from "../components/TicketSidePanel";
-import { NotificationBell } from "../components/NotificationBell";
-import { useUser } from "../context/UserContext";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+} from "@/services/problemsApi";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import ComplaintCard from "@/components/ComplaintCard";
+import TicketSidePanel from "@/components/TicketSidePanel";
+import EmptyState from "@/components/EmptyState";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useUser } from "@/context/UserContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "../components/ui/dialog";
-import LoadingSpinner from "../components/LoadingSpinner";
+} from "@/components/ui/dialog";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
-import { Separator } from "../components/ui/separator";
+import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   SearchIcon,
@@ -45,8 +46,8 @@ import {
   InboxIcon,
   Download01Icon,
 } from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket, Employee } from "../lib/types";
-import { ExportTicketsModal } from "../components/ExportTicketsModal";
+import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
+import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -78,8 +79,8 @@ const AdminComplaintsPage = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
-  const [categories, setCategories] = useState<Array<{ category_id: number; name: string }>>([]);
-  const [buildings, setBuildings] = useState<Array<{ building_id: number; name: string }>>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const buildings = useBuildings();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
@@ -131,7 +132,6 @@ const AdminComplaintsPage = () => {
   useEffect(() => {
     loadComplaints();
     loadCategories();
-    fetchBuildings().then(setBuildings).catch(() => {});
 
     window.addEventListener("adminComplaintUpdated", loadComplaints);
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
@@ -407,13 +407,11 @@ const AdminComplaintsPage = () => {
                 )}
 
                 {!loading && !err && filteredComplaints.length === 0 && (
-                  <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-semibold text-foreground mb-1">Скарг не знайдено</p>
-                    <p className="text-xs text-muted-foreground">Жодна скарга не відповідає поточним фільтрам.</p>
-                  </div>
+                  <EmptyState
+                    icon={InboxIcon}
+                    title="Скарг не знайдено"
+                    subtitle="Жодна скарга не відповідає поточним фільтрам."
+                  />
                 )}
 
                 {!loading &&
@@ -511,12 +509,10 @@ const AdminComplaintsPage = () => {
                   Тікети для підтверджених заявок
                 </h3>
                 {filteredTickets.length === 0 ? (
-                  <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Жодна заявка не відповідає фільтрам.</p>
-                  </div>
+                  <EmptyState
+                    icon={InboxIcon}
+                    title="Жодна заявка не відповідає фільтрам."
+                  />
                 ) : (
                   <div className="grid lg:grid-cols-2 gap-4">
                     {filteredTickets.map((p) => {

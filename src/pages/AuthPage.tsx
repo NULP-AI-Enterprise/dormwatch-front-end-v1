@@ -3,11 +3,11 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { loginUser, registerUser, fetchBuildings, fetchPlaces } from "../services/problemsApi";
-import { Card, CardContent } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { loginUser, registerUser, fetchPlaces } from "@/services/problemsApi";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Building03Icon,
@@ -23,7 +23,9 @@ import {
   FormMessage,
   FormDescription,
   useFormField,
-} from "../components/ui/form";
+} from "@/components/ui/form";
+import { useBuildings } from "@/hooks/useBuildings";
+import type { Place } from "@/lib/types";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
@@ -111,8 +113,8 @@ const AuthPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
-  const [places, setPlaces] = useState<Array<{place_id: number, place_name: string}>>([]);
+  const buildings = useBuildings();
+  const [places, setPlaces] = useState<Place[]>([]);
   const [placesLoading, setPlacesLoading] = useState(false);
 
   const loginForm = useForm<LoginData>({
@@ -130,10 +132,6 @@ const AuthPage = () => {
   });
 
   const regBuildingId = registerForm.watch("building_id");
-
-  useEffect(() => {
-    fetchBuildings().then(setBuildings).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (!regBuildingId) {

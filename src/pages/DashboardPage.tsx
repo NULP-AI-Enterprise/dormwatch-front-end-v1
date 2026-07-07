@@ -3,20 +3,19 @@ import { Link } from "react-router-dom";
 import {
   fetchApprovedComplaints,
   deleteProblem,
-  fetchBuildings,
   fetchCategories,
-} from "../services/problemsApi";
+} from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, SearchIcon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,20 +25,23 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "../components/ui/dialog";
-import CommentSection from "../components/CommentSection";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import ComplaintCard from "../components/ComplaintCard";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { isAdminUser } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import type { Complaint } from "../lib/types";
+} from "@/components/ui/dialog";
+import CommentSection from "@/components/CommentSection";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import ComplaintCard from "@/components/ComplaintCard";
+import PageSpinner from "@/components/PageSpinner";
+import EmptyState from "@/components/EmptyState";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useCommentToggle } from "@/hooks/useCommentToggle";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
@@ -51,10 +53,10 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
+  const comments = useCommentToggle();
 
-  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
-  const [categories, setCategories] = useState<Array<{category_id: number, name: string}>>([]);
+  const buildings = useBuildings();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -63,7 +65,6 @@ const DashboardPage = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
-    fetchBuildings().then(setBuildings).catch(() => {});
     fetchCategories().then(setCategories).catch(() => {});
   }, []);
 
@@ -134,11 +135,7 @@ const DashboardPage = () => {
     admin || currentUser?.user === problem.user_id;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
@@ -263,11 +260,9 @@ const DashboardPage = () => {
                   showDetails={manage}
                   onDetails={() => { setSelectedProblem(problem); setSheetOpen(true); }}
                   commentsMode={manage ? "inline" : "hidden"}
-                  commentsOpen={openCommentsId === problem.id}
+                  commentsOpen={comments.isOpen(problem.id)}
                   commentsSeparator
-                  onCommentToggle={() =>
-                    setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
-                  }
+                  onCommentToggle={() => comments.toggle(problem.id)}
                   commentsContent={
                     <CommentSection
                       complaintId={problem.id}
@@ -284,27 +279,25 @@ const DashboardPage = () => {
             })}
 
             {filteredProblems.length === 0 && (
-              <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                  <HugeiconsIcon icon={SearchIcon2} className="size-5" strokeWidth={1.5} />
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Немає заявок за вибраними фільтрами.
-                </p>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={() => {
-                    setActiveCategory("all");
-                    setActiveCorps("all");
-                    setActivePriority("all");
-                    setSearchQuery("");
-                  }}
-                >
-                  <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
-                  Скинути фільтри
-                </Button>
-              </div>
+              <EmptyState
+                icon={SearchIcon2}
+                title="Немає заявок за вибраними фільтрами."
+                action={
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      setActiveCategory("all");
+                      setActiveCorps("all");
+                      setActivePriority("all");
+                      setSearchQuery("");
+                    }}
+                  >
+                    <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+                    Скинути фільтри
+                  </Button>
+                }
+              />
             )}
           </div>
         </div>

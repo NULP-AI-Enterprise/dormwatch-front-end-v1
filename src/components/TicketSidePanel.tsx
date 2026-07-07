@@ -1,20 +1,19 @@
 import { useState, useEffect } from "react";
-import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "./ui/sheet";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import { DatePicker } from "./ui/date-picker";
+import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "@/components/ui/select";
 import { format } from "date-fns";
-import { createTicket, updateTicket } from "../services/problemsApi";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
-import type { Complaint, Ticket } from "../lib/types";
+import { createTicket, updateTicket } from "@/services/problemsApi";
+import { StatusBadge } from "@/components/StatusBadge";
+import type { Complaint, Ticket } from "@/lib/types";
 
 interface TicketSidePanelProps {
   complaint: Complaint | null;
@@ -84,9 +83,7 @@ const TicketSidePanel = ({
           {/* Complaint summary (read-only) */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Badge variant="outline" className={statusBadgeClass(complaint.status)}>
-                {statusLabel(complaint.status)}
-              </Badge>
+              <StatusBadge status={complaint.status} />
               <span className="text-xs text-muted-foreground font-semibold">
                 {categoryLabel}
               </span>

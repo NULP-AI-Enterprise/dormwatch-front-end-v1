@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { BellIcon } from "@hugeicons/core-free-icons";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   fetchNotifications,
   markNotificationRead,
   markAllNotificationsRead,
   fetchComplaintDetail,
-} from "../services/problemsApi";
-import type { Complaint } from "../lib/types";
+} from "@/services/problemsApi";
+import type { Complaint } from "@/lib/types";
 
 interface NotificationBellProps {
   onSelectComplaint?: (complaint: Complaint) => void;

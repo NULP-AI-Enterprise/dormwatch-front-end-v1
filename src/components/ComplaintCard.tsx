@@ -1,19 +1,8 @@
 import type { ReactNode } from "react";
-import { Card } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "./ui/alert-dialog";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ChevronUpIcon,
@@ -23,18 +12,13 @@ import {
   EditIcon,
   AddIcon,
   MoreHorizontalIcon,
-  CheckmarkCircleIcon,
-  CancelCircleIcon,
 } from "@hugeicons/core-free-icons";
-import { resolveImageUrl } from "../services/imageUtils";
-import {
-  statusBadgeClass,
-  statusLabel,
-  priorityBadgeClass,
-  priorityLabel,
-} from "../lib/complaintUtils";
+import { resolveImageUrl } from "@/services/imageUtils";
+import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
-import type { Complaint, Ticket } from "../lib/types";
+import type { Complaint, Ticket } from "@/lib/types";
 
 interface ComplaintCardProps {
   complaint: Complaint;
@@ -146,11 +130,7 @@ const ComplaintCard = ({
             <h4 className="text-sm font-semibold text-foreground">
               {p.title || "Без назви"}
             </h4>
-            {showPriority && (
-              <Badge variant="outline" className={priorityBadgeClass(p.priority)}>
-                {priorityLabel(p.priority)}
-              </Badge>
-            )}
+            {showPriority && <PriorityBadge priority={p.priority} />}
           </div>
           <div className="flex gap-2 mb-3 items-center">
             <Badge variant="outline" className="text-muted-foreground border-border bg-card">
@@ -179,7 +159,7 @@ const ComplaintCard = ({
                 )}
                 {ticket.deadline && (
                   <p className="text-xs text-primary/70 mt-1">
-                    Дедлайн: {new Date(ticket.deadline).toLocaleDateString()}
+                    Дедлайн: {formatDate(ticket.deadline)}
                   </p>
                 )}
                 <Button
@@ -210,7 +190,7 @@ const ComplaintCard = ({
       <>
         {p.category || ""}
         <Dot className="mx-1.5" />
-        {new Date(p.createdAt).toLocaleDateString()}
+        {formatDate(p.createdAt)}
       </>
     ) : headerLayout === "detail" ? (
       <>
@@ -230,11 +210,7 @@ const ComplaintCard = ({
       </>
     );
 
-  const statusBadge = (
-    <Badge variant="outline" className={statusBadgeClass(p.status)}>
-      {statusLabel(p.status)}
-    </Badge>
-  );
+  const statusBadge = <StatusBadge status={p.status} />;
 
   const commentButton = commentsMode === "inline" && (
     <Button
@@ -331,12 +307,10 @@ const ComplaintCard = ({
 
         {showPriority && (
           <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="outline" className={priorityBadgeClass(p.priority)}>
-              Пріоритет: {priorityLabel(p.priority)}
-            </Badge>
+            <PriorityBadge priority={p.priority} prefix />
             {p.createdAt && (
               <span className="text-xs text-muted-foreground font-semibold">
-                {new Date(p.createdAt).toLocaleDateString()}
+                {formatDate(p.createdAt)}
               </span>
             )}
           </div>
@@ -377,7 +351,7 @@ const ComplaintCard = ({
           <div className="flex items-center gap-4">
             {footerLeft === "added-date" && (
               <span className="text-xs font-normal text-muted-foreground">
-                Додано {new Date(p.createdAt).toLocaleDateString()}
+                Додано {formatDate(p.createdAt)}
               </span>
             )}
             {footerLeft === "id" && (
@@ -409,108 +383,11 @@ const ComplaintCard = ({
               </Button>
             )}
             {showAdminActions && (
-              <>
-                {p.status === "pending" && (
-                  <>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button>
-                          <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                          Схвалити
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Схвалити скаргу?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Ви впевнені, що хочете схвалити цю скаргу? Вона перейде в статус "Активно".
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onStatusChange?.(p.id, "approved")}>
-                            Схвалити
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                          <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                          Відхилити
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Відхилити скаргу?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Ви впевнені, що хочете відхилити цю скаргу? Вона перейде в статус "Відхилено".
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => onStatusChange?.(p.id, "rejected")}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Відхилити
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </>
-                )}
-                {p.status === "approved" && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button>
-                        <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                        Вирішити
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Позначити як вирішену?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Ви впевнені, що проблема була успішно вирішена? Скарга перейде в статус "Вирішено".
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onStatusChange?.(p.id, "resolved")}>
-                          Вирішити
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
-                      Видалити
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Видалити скаргу?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Ви впевнені, що хочете видалити цю скаргу? Цю дію неможливо скасувати.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onAdminDelete?.(p.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Видалити
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
+              <ComplaintAdminActions
+                complaint={p}
+                onStatusChange={(status) => onStatusChange?.(p.id, status)}
+                onDelete={() => onAdminDelete?.(p.id)}
+              />
             )}
           </div>
         </div>

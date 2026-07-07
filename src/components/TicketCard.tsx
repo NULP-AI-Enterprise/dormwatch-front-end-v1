@@ -1,6 +1,6 @@
-import ProgressStepper from "./ProgressStepper";
-import { Separator } from "./ui/separator";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
+import ProgressStepper from "@/components/ProgressStepper";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface TicketCardProps {
   id: number;
@@ -50,9 +50,7 @@ const TicketCard = ({ id, title, description, category, date, status, location, 
             <span className="w-1 h-1 bg-border" />
             <span className="text-xs text-muted-foreground">{date}</span>
           </div>
-          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(status)}`}>
-            {statusLabel(status)}
-          </span>
+          <StatusBadge status={status} />
         </div>
 
         <div>
