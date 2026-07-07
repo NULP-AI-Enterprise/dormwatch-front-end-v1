@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchApprovedComplaints,
@@ -36,6 +36,7 @@ import {
   DialogClose,
 } from "../components/ui/dialog";
 import CommentSection from "../components/CommentSection";
+import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { Separator } from "../components/ui/separator";
 import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
@@ -67,6 +68,9 @@ const DashboardPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   useEffect(() => {
     fetchBuildings().then(setBuildings).catch(() => {});
   }, []);
@@ -84,6 +88,25 @@ const DashboardPage = () => {
       }
     };
     loadData();
+  }, [activeCorps, activePriority]);
+
+  const selectedProblemRef = useRef(selectedProblem);
+  selectedProblemRef.current = selectedProblem;
+
+  useEffect(() => {
+    const handler = () => {
+      fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).then((data) => {
+        const fresh = data.filter(Boolean) as Complaint[];
+        setProblems(fresh);
+        const current = selectedProblemRef.current;
+        if (current) {
+          const updated = fresh.find((c) => c.id === current.id);
+          if (updated) setSelectedProblem(updated);
+        }
+      }).catch(() => {});
+    };
+    window.addEventListener("complaintUpdated", handler);
+    return () => window.removeEventListener("complaintUpdated", handler);
   }, [activeCorps, activePriority]);
 
   const handleDelete = async (id: number) => {
@@ -279,19 +302,31 @@ const DashboardPage = () => {
                           Додано{" "}
                           {new Date(problem.createdAt).toLocaleDateString()}
                         </span>
-                        {canManage(problem) && (
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() =>
-                              setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
-                            }
-                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                          >
-                            <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                            Коментарі {openCommentsId === problem.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {canManage(problem) && (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
+                              className="text-xs font-semibold hover:underline p-0 h-auto"
+                            >
+                              Деталі
+                            </Button>
+                          )}
+                          {canManage(problem) && (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() =>
+                                setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
+                              }
+                              className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
+                            >
+                              <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
+                              Коментарі {openCommentsId === problem.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -338,6 +373,24 @@ const DashboardPage = () => {
           </div>
         </div>
       </main>
+
+      {selectedProblem && (
+        <ComplaintSidePanel
+          complaint={selectedProblem}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          onStatusChange={() => {
+            fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).then((data) => {
+              const fresh = data.filter(Boolean) as Complaint[];
+              setProblems(fresh);
+              const updated = fresh.find((c) => c.id === selectedProblem.id);
+              if (updated) setSelectedProblem(updated);
+            }).catch(() => {});
+          }}
+          currentUserId={currentUser?.user}
+          isAdmin={admin}
+        />
+      )}
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>

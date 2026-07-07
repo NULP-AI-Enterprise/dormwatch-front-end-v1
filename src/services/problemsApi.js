@@ -147,7 +147,15 @@ export async function fetchPlaces(buildingId) {
   }
 }
 
-async function fetchJson(path, { method = "GET", body } = {}) {
+export async function fetchCategories() {
+  return fetchJson("/categories/");
+}
+
+/**
+ * @param {string} path
+ * @param {{ method?: string, body?: any }} [options]
+ */
+export async function fetchJson(path, { method = "GET", body } = {}) {
   // Build headers INSIDE a function so they always pick up the
   // current (potentially refreshed) access token — no stale closure.
   const buildHeaders = () => {

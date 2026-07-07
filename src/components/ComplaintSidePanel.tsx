@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "./ui/sheet";
 import CommentSection from "./CommentSection";
 import TicketCreateForm from "./TicketCreateForm";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
 import { Separator } from "./ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,25 +25,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { resolveImageUrl } from "../services/imageUtils";
-import { CATEGORY_LABELS, updateComplaintStatus, deleteProblem, updateComplaintPriority } from "../services/problemsApi";
-import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon, Ticket01Icon, CheckmarkCircleIcon, CancelCircleIcon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import type { Complaint } from "../lib/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
 } from "./ui/dialog";
+import { resolveImageUrl } from "../services/imageUtils";
+import { CATEGORY_LABELS, updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "../services/problemsApi";
+import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Delete01Icon, Ticket01Icon, CheckmarkCircleIcon, CancelCircleIcon, Cancel01Icon, Camera01Icon } from "@hugeicons/core-free-icons";
+import type { Complaint } from "../lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -44,6 +46,8 @@ interface ComplaintSidePanelProps {
   currentUserId?: number | string;
   isAdmin: boolean;
 }
+
+const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"];
 
 const ComplaintSidePanel = ({
   complaint,
@@ -55,24 +59,64 @@ const ComplaintSidePanel = ({
 }: ComplaintSidePanelProps) => {
   const [showTicketForm, setShowTicketForm] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const isPrioritySelectOpen = React.useRef(false);
+  const isPrioritySelectOpen = useRef(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editPriority, setEditPriority] = useState("");
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Array<{category_id: number, name: string}>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories).catch(() => setCategories([{ category_id: 0, name: "Помилка завантаження" }]));
+  }, []);
+
+  useEffect(() => {
+    if (!editPhotoFile) {
+      setEditPhotoPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(editPhotoFile);
+    setEditPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [editPhotoFile]);
+
+  useEffect(() => {
+    setEditTitle(complaint.title);
+    setEditDescription(complaint.description);
+    setEditCategory(complaint.category);
+    setEditPriority(complaint.priority);
+    setEditPhotoFile(null);
+    setIsEditing(false);
+  }, [complaint]);
 
   if (!complaint) return null;
+
+  const isOwner = String(currentUserId) === String(complaint.user_id);
+  const canEdit = isAdmin || (isOwner && complaint.status === "pending");
 
   const handleStatusChange = async (newStatus: string) => {
     try {
       await updateComplaintStatus(complaint.id, newStatus);
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
+      setError("Не вдалось змінити статус");
       console.warn('Failed to change complaint status', err);
     }
   };
 
   const handlePriorityChange = async (newPriority: string) => {
+    setEditPriority(newPriority);
     try {
       await updateComplaintPriority(complaint.id, newPriority);
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
+      setError("Не вдалось змінити пріоритет");
       console.warn('Failed to change complaint priority', err);
     }
   };
@@ -80,11 +124,51 @@ const ComplaintSidePanel = ({
   const handleDelete = async () => {
     try {
       await deleteProblem(complaint.id);
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
       onOpenChange(false);
     } catch (err) {
+      setError("Не вдалось видалити заявку");
       console.warn('Failed to delete complaint', err);
     }
+  };
+
+  const handleSave = async () => {
+    const formData = new FormData();
+    formData.append("title", editTitle);
+    formData.append("description", editDescription);
+    formData.append("category_name", editCategory);
+    formData.append("priority", editPriority);
+    if (editPhotoFile) formData.append("photo_url", editPhotoFile);
+
+    try {
+      if (isAdmin) {
+        await fetchJson(`/admin/complaints/${complaint.id}/status/`, {
+          method: "PATCH",
+          body: formData,
+        });
+      } else {
+        await fetchJson(`/me/complaints/${complaint.id}/`, {
+          method: "PATCH",
+          body: formData,
+        });
+      }
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
+      onStatusChange();
+      onOpenChange(false);
+    } catch (err) {
+      setError("Не вдалось зберегти зміни");
+      console.warn('Failed to save complaint', err);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditTitle(complaint.title);
+    setEditDescription(complaint.description);
+    setEditCategory(complaint.category);
+    setEditPriority(complaint.priority);
+    setEditPhotoFile(null);
+    setIsEditing(false);
   };
 
   const categoryLabel =
@@ -131,65 +215,164 @@ const ComplaintSidePanel = ({
                 {String(complaint.id) !== "new" && `#${complaint.id}`}
               </span>
             </div>
-            <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
+            {isEditing ? (
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Назва заявки"
+              />
+            ) : (
+              <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
+            )}
             <p className="text-xs font-normal text-muted-foreground">{complaint.building ? `Корпус ${complaint.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName || "?"}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground font-semibold">
-              {categoryLabel}
-            </span>
-            <span className="w-1 h-1 bg-border" />
-            {isAdmin ? (
-              <Select 
-                value={complaint.priority} 
-                onValueChange={handlePriorityChange}
-                onOpenChange={(isOpen) => {
-                  if (!isOpen) {
-                    setTimeout(() => { isPrioritySelectOpen.current = false; }, 150);
-                  } else {
-                    isPrioritySelectOpen.current = true;
-                  }
-                }}
-              >
-                <SelectTrigger className={`h-6 text-xs px-2 py-0 font-semibold border ${priorityBadgeClass(complaint.priority)}`}>
-                  <SelectValue placeholder="Пріоритет" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Низький</SelectItem>
-                  <SelectItem value="medium">Середній</SelectItem>
-                  <SelectItem value="high">Високий</SelectItem>
-                  <SelectItem value="critical">Критичний</SelectItem>
-                </SelectContent>
-              </Select>
+            {isEditing ? (
+              <div className="w-full space-y-2">
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Категорія" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.category_id} value={cat.name}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={editPriority} onValueChange={setEditPriority}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Пріоритет" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {priorityLabel(p)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             ) : (
-              <Badge
-                variant="outline"
-                className={priorityBadgeClass(complaint.priority)}
-              >
-                  Пріоритет: {priorityLabel(complaint.priority)}
-              </Badge>
-            )}
-            {complaint.createdAt && (
-              <span className="text-xs text-muted-foreground font-semibold">
-                {new Date(complaint.createdAt).toLocaleDateString()}
-              </span>
+              <>
+                <span className="text-xs text-muted-foreground font-semibold">
+                  {categoryLabel}
+                </span>
+                <span className="w-1 h-1 bg-border" />
+                {isAdmin ? (
+                  <Select 
+                    value={complaint.priority} 
+                    onValueChange={handlePriorityChange}
+                    onOpenChange={(isOpen) => {
+                      if (!isOpen) {
+                        setTimeout(() => { isPrioritySelectOpen.current = false; }, 150);
+                      } else {
+                        isPrioritySelectOpen.current = true;
+                      }
+                    }}
+                  >
+                    <SelectTrigger className={`h-6 text-xs px-2 py-0 font-semibold border ${priorityBadgeClass(complaint.priority)}`}>
+                      <SelectValue placeholder="Пріоритет" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {priorityLabel(p)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className={priorityBadgeClass(complaint.priority)}
+                  >
+                      Пріоритет: {priorityLabel(complaint.priority)}
+                  </Badge>
+                )}
+                {complaint.createdAt && (
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    {new Date(complaint.createdAt).toLocaleDateString()}
+                  </span>
+                )}
+              </>
             )}
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed break-all whitespace-pre-wrap">{complaint.description || "—"}</p>
+          {isEditing ? (
+            <Textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Опис заявки"
+              className="min-h-24 resize-none"
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground leading-relaxed break-all whitespace-pre-wrap">{complaint.description || "—"}</p>
+          )}
 
-          {complaint.photoUrl && (
-            <div 
-              className="w-full h-44 overflow-hidden border border-border cursor-zoom-in"
-              onClick={() => setPreviewImage(resolveImageUrl(complaint.photoUrl as string))}
-            >
-              <img
-                src={resolveImageUrl(complaint.thumbnail || complaint.photoUrl)}
-                alt=""
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-              />
+          {isEditing ? (
+            <div className="space-y-2">
+              {(editPhotoPreview || complaint.photoUrl) && (
+                <div className="w-full h-32 overflow-hidden border border-border">
+                  <img
+                    src={editPhotoPreview || resolveImageUrl(complaint.thumbnail || complaint.photoUrl)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <label className="w-full border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+                <HugeiconsIcon
+                  icon={Camera01Icon}
+                  className="size-6 text-muted-foreground mb-2"
+                  strokeWidth={2}
+                />
+                <p className="text-xs font-normal text-muted-foreground">
+                  {editPhotoFile ? editPhotoFile.name : "Натисніть, щоб замінити фото"}
+                </p>
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setEditPhotoFile(file);
+                  }}
+                />
+              </label>
             </div>
+          ) : (
+            complaint.photoUrl && (
+              <div 
+                className="w-full h-44 overflow-hidden border border-border cursor-zoom-in"
+                onClick={() => setPreviewImage(resolveImageUrl(complaint.photoUrl as string))}
+              >
+                <img
+                  src={resolveImageUrl(complaint.thumbnail || complaint.photoUrl)}
+                  alt=""
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            )
+          )}
+
+          {error && (
+            <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+          )}
+
+          {isEditing && (
+            <div className="flex gap-2">
+              <Button onClick={handleSave}>Зберегти</Button>
+              <Button variant="outline" onClick={handleCancel}>Скасувати</Button>
+            </div>
+          )}
+
+          {canEdit && !isEditing && (
+            <Button variant="ghost" onClick={() => { setError(null); setIsEditing(true); }}>
+              Редагувати
+            </Button>
           )}
 
           <Separator />

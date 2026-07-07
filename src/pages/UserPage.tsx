@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchMyProblems,
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { TicketCard } from "../components/TicketCard";
 import CommunityBoard from "../components/CommunityBoard";
 import CommentSection from "../components/CommentSection";
+import ComplaintSidePanel from "../components/ComplaintSidePanel";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -36,22 +37,41 @@ const UserPage = () => {
 
   const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
 
+  const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const fetchProblems = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await fetchMyProblems();
+      setProblems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to fetch user data", e);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let alive = true;
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchMyProblems();
-        if (!alive) return;
-        setProblems(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error("Failed to fetch user data", e);
-      } finally {
-        if (alive) setLoading(false);
+    fetchProblems();
+  }, []);
+
+  const selectedProblemRef = useRef(selectedProblem);
+  selectedProblemRef.current = selectedProblem;
+
+  useEffect(() => {
+    const handler = async () => {
+      const data = await fetchMyProblems();
+      const fresh = Array.isArray(data) ? data : [];
+      setProblems(fresh);
+      const current = selectedProblemRef.current;
+      if (current) {
+        const updated = fresh.find((c) => c.id === current.id);
+        if (updated) setSelectedProblem(updated);
       }
     };
-    loadData();
-    return () => { alive = false; };
+    window.addEventListener("complaintUpdated", handler);
+    return () => window.removeEventListener("complaintUpdated", handler);
   }, []);
 
   const onDelete = async (id: number) => {
@@ -76,7 +96,7 @@ const UserPage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <><div className="max-w-5xl mx-auto px-4 py-10">
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList variant="line" className="mb-8">
             <TabsTrigger value="dashboard" className="text-xs font-semibold">
@@ -189,7 +209,10 @@ const UserPage = () => {
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-semibold text-foreground mb-2">
+                    <h3
+                      className="text-sm font-semibold text-foreground mb-2 cursor-pointer hover:underline"
+                      onClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
+                    >
                       {p.title || "Без назви"}
                     </h3>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
@@ -220,16 +243,16 @@ const UserPage = () => {
                           Коментарі {openCommentsId === p.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
                         </Button>
                       </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => onDelete(p.id)}
-                          className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
-                        >
-                          <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => onDelete(p.id)}
+                        className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+                      >
+                        <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
+                      </Button>
                     </div>
+                  </div>
 
                   {openCommentsId === p.id && (
                     <div className="p-4">
@@ -247,6 +270,20 @@ const UserPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+        {selectedProblem && (
+          <ComplaintSidePanel
+            complaint={selectedProblem}
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            onStatusChange={() => {
+              fetchProblems();
+            }}
+            currentUserId={currentUser?.user}
+            isAdmin={isAdminUser(currentUser)}
+          />
+        )}
+    </>
   );
 };
 
