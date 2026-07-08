@@ -6,20 +6,18 @@ import {
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
-import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  FilterSearchInput,
+  StatusFilterSelect,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
 import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -31,7 +29,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, SearchIcon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
@@ -121,79 +119,24 @@ const AdminPage = () => {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-        <div className="flex-1 overflow-auto p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-4 gap-8">
+        <div className="flex-1 overflow-auto p-6">
+          <div className="mx-auto grid lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-4">
               <Card className="border-border shadow-none bg-card">
                 <CardContent className="space-y-4">
-                  <div className="relative">
-                    <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                    <Input
-                      placeholder="Пошук заявок..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-
-                  <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Статус" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Всі</SelectItem>
-                      <SelectItem value="pending">Очікує</SelectItem>
-                      <SelectItem value="approved">Активно</SelectItem>
-                      <SelectItem value="rejected">Відхилено</SelectItem>
-                      <SelectItem value="resolved">Вирішено</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={filterBuilding} onValueChange={setFilterBuilding}>
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Всі гуртожитки" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Всі гуртожитки</SelectItem>
-                      {buildings.map((b) => (
-                        <SelectItem key={b.building_id} value={b.name}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={filterPriority} onValueChange={setFilterPriority}>
-                    <SelectTrigger className="w-full h-8 text-xs">
-                      <SelectValue placeholder="Всі пріоритети" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Всі пріоритети</SelectItem>
-                      {PRIORITY_OPTIONS.map((p) => (
-                        <SelectItem key={p} value={p}>{priorityLabel(p)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={filterCategory === "all" ? "default" : "outline"}
-                      size="xs"
-                      onClick={() => setFilterCategory("all")}
-                    >
-                      Всі
-                    </Button>
-                    {categories.map((cat) => (
-                      <Button
-                        key={cat.category_id}
-                        variant={filterCategory === cat.name ? "default" : "outline"}
-                        size="xs"
-                        onClick={() => setFilterCategory(filterCategory === cat.name ? "all" : cat.name)}
-                      >
-                        {cat.name}
-                      </Button>
-                    ))}
-                  </div>
+                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+                  <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
+                  <BuildingFilterSelect
+                    value={filterBuilding}
+                    onValueChange={setFilterBuilding}
+                    buildings={buildings}
+                  />
+                  <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
+                  <CategoryFilterButtons
+                    value={filterCategory}
+                    onChange={setFilterCategory}
+                    categories={categories}
+                  />
                 </CardContent>
               </Card>
             </div>

@@ -16,7 +16,13 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
 import TicketSidePanel from "@/components/TicketSidePanel";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
-import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
+import {
+  FilterSearchInput,
+  StatusFilterSelect,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
 import EmptyState from "@/components/EmptyState";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useBuildings } from "@/hooks/useBuildings";
@@ -43,7 +49,6 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  SearchIcon,
   Cancel01Icon,
   InboxIcon,
   Download01Icon,
@@ -269,92 +274,47 @@ const AdminComplaintsPage = () => {
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
                   <CardContent>
-                    <div className="relative mb-4">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                      <Input
-                        placeholder="Пошук скарг..."
+                    <div className="mb-4">
+                      <FilterSearchInput
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8"
+                        onChange={setSearchQuery}
+                        placeholder="Пошук скарг..."
                       />
                     </div>
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус
                     </h4>
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Статус" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі</SelectItem>
-                        <SelectItem value="pending">Очікує</SelectItem>
-                        <SelectItem value="approved">Активно</SelectItem>
-                        <SelectItem value="rejected">Відхилено</SelectItem>
-                        <SelectItem value="resolved">Вирішено</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <StatusFilterSelect value={selectedStatus} onValueChange={setSelectedStatus} />
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Гуртожиток
                     </h4>
-                    <Select value={selectedBuilding} onValueChange={setSelectedBuilding}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Всі гуртожитки" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі гуртожитки</SelectItem>
-                        {buildings.map((b) => (
-                          <SelectItem key={b.building_id} value={b.name}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <BuildingFilterSelect
+                      value={selectedBuilding}
+                      onValueChange={setSelectedBuilding}
+                      buildings={buildings}
+                    />
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Пріоритет
                     </h4>
-                    <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Всі пріоритети" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі пріоритети</SelectItem>
-                        {PRIORITY_OPTIONS.map((p) => (
-                          <SelectItem key={p} value={p}>{priorityLabel(p)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <PriorityFilterSelect value={selectedPriority} onValueChange={setSelectedPriority} />
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant={selectedCategory === "all" ? "default" : "outline"}
-                        size="xs"
-                        onClick={() => setSelectedCategory("all")}
-                      >
-                        Всі
-                      </Button>
-                      {categories.map((cat) => (
-                        <Button
-                          key={cat.category_id}
-                          variant={selectedCategory === cat.name ? "default" : "outline"}
-                          size="xs"
-                          onClick={() => setSelectedCategory(selectedCategory === cat.name ? "all" : cat.name)}
-                        >
-                          {cat.name}
-                        </Button>
-                      ))}
-                    </div>
+                    <CategoryFilterButtons
+                      value={selectedCategory}
+                      onChange={setSelectedCategory}
+                      categories={categories}
+                    />
 
                     <Separator className="my-4" />
 
@@ -459,13 +419,11 @@ const AdminComplaintsPage = () => {
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
                   <CardContent>
-                    <div className="relative mb-4">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                      <Input
-                        placeholder="Пошук тікетів..."
+                    <div className="mb-4">
+                      <FilterSearchInput
                         value={ticketSearchQuery}
-                        onChange={(e) => setTicketSearchQuery(e.target.value)}
-                        className="pl-8"
+                        onChange={setTicketSearchQuery}
+                        placeholder="Пошук тікетів..."
                       />
                     </div>
 
@@ -488,25 +446,11 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant={ticketCategory === "all" ? "default" : "outline"}
-                        size="xs"
-                        onClick={() => setTicketCategory("all")}
-                      >
-                        Всі
-                      </Button>
-                      {categories.map((cat) => (
-                        <Button
-                          key={cat.category_id}
-                          variant={ticketCategory === cat.name ? "default" : "outline"}
-                          size="xs"
-                          onClick={() => setTicketCategory(ticketCategory === cat.name ? "all" : cat.name)}
-                        >
-                          {cat.name}
-                        </Button>
-                      ))}
-                    </div>
+                    <CategoryFilterButtons
+                      value={ticketCategory}
+                      onChange={setTicketCategory}
+                      categories={categories}
+                    />
                   </CardContent>
                 </Card>
               </div>

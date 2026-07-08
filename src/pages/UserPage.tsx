@@ -12,14 +12,12 @@ import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  FilterSearchInput,
+  StatusFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
@@ -33,7 +31,6 @@ import {
   InboxIcon,
   File01Icon,
   AddIcon,
-  SearchIcon,
 } from "@hugeicons/core-free-icons";
 
 const UserPage = () => {
@@ -206,61 +203,14 @@ const UserPage = () => {
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
                   <CardContent className="space-y-4">
-                    <div className="relative">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                      <Input
-                        placeholder="Пошук заявок..."
-                        value={filterSearch}
-                        onChange={(e) => setFilterSearch(e.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
-
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Статус" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі</SelectItem>
-                        <SelectItem value="pending">Очікує</SelectItem>
-                        <SelectItem value="approved">Активно</SelectItem>
-                        <SelectItem value="rejected">Відхилено</SelectItem>
-                        <SelectItem value="resolved">Вирішено</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={filterPriority} onValueChange={setFilterPriority}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Всі пріоритети" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі пріоритети</SelectItem>
-                        <SelectItem value="low">Низький</SelectItem>
-                        <SelectItem value="medium">Середній</SelectItem>
-                        <SelectItem value="high">Високий</SelectItem>
-                        <SelectItem value="critical">Критичний</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant={filterCategory === "all" ? "default" : "outline"}
-                        size="xs"
-                        onClick={() => setFilterCategory("all")}
-                      >
-                        Всі
-                      </Button>
-                      {categories.map((cat) => (
-                        <Button
-                          key={cat.category_id}
-                          variant={filterCategory === cat.name ? "default" : "outline"}
-                          size="xs"
-                          onClick={() => setFilterCategory(filterCategory === cat.name ? "all" : cat.name)}
-                        >
-                          {cat.name}
-                        </Button>
-                      ))}
-                    </div>
+                    <FilterSearchInput value={filterSearch} onChange={setFilterSearch} />
+                    <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
+                    <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
+                    <CategoryFilterButtons
+                      value={filterCategory}
+                      onChange={setFilterCategory}
+                      categories={categories}
+                    />
                   </CardContent>
                 </Card>
               </div>

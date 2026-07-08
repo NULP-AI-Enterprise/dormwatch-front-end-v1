@@ -6,16 +6,14 @@ import {
   fetchCategories,
 } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, SearchIcon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  FilterSearchInput,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -164,60 +162,19 @@ const DashboardPage = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
             <div className="space-y-4">
-              <div className="relative">
-                <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                <Input
-                  placeholder="Пошук заявок..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={activeCorps} onValueChange={setActiveCorps}>
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Всі гуртожитки" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Всі гуртожитки</SelectItem>
-                  {buildings.map((b) => (
-                    <SelectItem key={b.building_id} value={b.name}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={activePriority} onValueChange={setActivePriority}>
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Всі пріоритети" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Всі пріоритети</SelectItem>
-                  <SelectItem value="low">Низький</SelectItem>
-                  <SelectItem value="medium">Середній</SelectItem>
-                  <SelectItem value="high">Високий</SelectItem>
-                  <SelectItem value="critical">Критичний</SelectItem>
-                </SelectContent>
-              </Select>
+              <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+              <BuildingFilterSelect
+                value={activeCorps}
+                onValueChange={setActiveCorps}
+                buildings={buildings}
+              />
+              <PriorityFilterSelect value={activePriority} onValueChange={setActivePriority} />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={activeCategory === "all" ? "default" : "outline"}
-                size="xs"
-                onClick={() => setActiveCategory("all")}
-              >
-                Всі
-              </Button>
-              {categories.map((category) => (
-                <Button
-                  key={category.category_id}
-                  variant={activeCategory === category.name ? "default" : "outline"}
-                  size="xs"
-                  onClick={() => setActiveCategory((prev) => prev === category.name ? "all" : category.name)}
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
+            <CategoryFilterButtons
+              value={activeCategory}
+              onChange={setActiveCategory}
+              categories={categories}
+            />
 
             <div className="bg-primary p-6 text-primary-foreground">
               <h4 className="text-xs font-semibold mb-4">

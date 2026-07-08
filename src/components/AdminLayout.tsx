@@ -58,7 +58,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </nav>
 
         <div className="p-4 border-t border-border">
-          <Button variant="ghost" onClick={() => setIsProfileOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-2">
+          <Button variant="ghost" onClick={() => setIsProfileOpen(true)} className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-2">
             <UserAvatar user={user} size="md" fallback="AD" />
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-bold text-foreground truncate">
@@ -74,7 +74,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-20 bg-card flex items-center justify-between px-6 lg:px-8 shrink-0 border-b border-border">
+        <header className="h-20 bg-card flex items-center justify-between px-6 shrink-0 border-b border-border">
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">{headerActions}</div>
         </header>

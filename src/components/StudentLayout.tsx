@@ -67,7 +67,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           <div className="flex items-center gap-4">
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
 
-            <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="gap-2 pl-4 border-l border-border hover:opacity-80">
+            <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="h-auto gap-2 py-1.5">
               <UserAvatar user={user} size="sm" fallback="Г" />
               <HugeiconsIcon icon={ChevronDownIcon} className="size-4 text-muted-foreground" />
             </Button>
