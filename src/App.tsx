@@ -3,6 +3,7 @@ import HomePage from "@/pages/HomePage";
 import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
+import AdminSettingsPage from "@/pages/AdminSettingsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AuthPage from "@/pages/AuthPage";
@@ -62,6 +63,16 @@ function App() {
           <ProtectedRoute requireAdmin>
             <AdminLayout>
               <AdminComplaintsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminLayout>
+              <AdminSettingsPage />
             </AdminLayout>
           </ProtectedRoute>
         }

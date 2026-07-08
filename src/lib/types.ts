@@ -1,6 +1,8 @@
 export interface Building {
   building_id: number;
   name: string;
+  // Present in the buildings API payload; only surfaced/edited in admin settings.
+  address?: string;
 }
 
 // A selectable room/place within a building. Kept distinct from Building on
@@ -70,6 +72,8 @@ export interface UserProfile {
   };
   photo_url?: string | null;
   place?: {
+    place_id?: number;
     place_name: string;
+    building?: Building;
   };
 }

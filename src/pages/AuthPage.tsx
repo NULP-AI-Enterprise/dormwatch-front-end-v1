@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { loginUser, registerUser, fetchPlaces } from "@/services/problemsApi";
+import { loginUser, registerUser } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   useFormField,
 } from "@/components/ui/form";
 import { useBuildings } from "@/hooks/useBuildings";
+import PlaceCombobox from "@/components/PlaceCombobox";
 import type { Place } from "@/lib/types";
 
 const loginSchema = z.object({
@@ -114,8 +115,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
 
   const buildings = useBuildings();
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [placesLoading, setPlacesLoading] = useState(false);
+  const [regPlace, setRegPlace] = useState<Place | null>(null);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -133,17 +133,11 @@ const AuthPage = () => {
 
   const regBuildingId = registerForm.watch("building_id");
 
+  // Reset the picked room whenever the building changes (the room list is
+  // scoped to a building). PlaceCombobox self-fetches, so no manual load here.
   useEffect(() => {
-    if (!regBuildingId) {
-      setPlaces([]);
-      return;
-    }
-    setPlacesLoading(true);
+    setRegPlace(null);
     registerForm.setValue("place_id", "");
-    fetchPlaces(regBuildingId)
-      .then(setPlaces)
-      .catch(() => setPlaces([]))
-      .finally(() => setPlacesLoading(false));
   }, [regBuildingId, registerForm]);
 
   const handleLogin = async (data: LoginData) => {
@@ -280,18 +274,15 @@ const AuthPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Кімната</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={placesLoading}>
-                          <SelectField className="w-full">
-                            <SelectValue placeholder={placesLoading ? "Завантаження..." : "Оберіть кімнату"} />
-                          </SelectField>
-                          <SelectContent>
-                            {places.map((p) => (
-                              <SelectItem key={p.place_id} value={String(p.place_id)}>
-                                {p.place_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <PlaceCombobox
+                          buildingId={Number(regBuildingId)}
+                          value={regPlace}
+                          onChange={(p) => {
+                            setRegPlace(p);
+                            field.onChange(String(p.place_id));
+                          }}
+                          placeholder="Оберіть кімнату..."
+                        />
                         <FormMessage />
                       </FormItem>
                     )}

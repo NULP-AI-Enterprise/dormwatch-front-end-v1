@@ -16,7 +16,7 @@ import {
   StatusFilterSelect,
   BuildingFilterSelect,
   PriorityFilterSelect,
-  CategoryFilterButtons,
+  CategoryFilterCombobox,
 } from "@/components/ComplaintFilters";
 import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 import { Separator } from "@/components/ui/separator";
@@ -50,7 +50,7 @@ const AdminPage = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterBuilding, setFilterBuilding] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
 
   const init = async () => {
     const data = await fetchAllComplaints();
@@ -77,7 +77,7 @@ const AdminPage = () => {
     const statusOk = filterStatus === "all" || c.status === filterStatus;
     const buildingOk = filterBuilding === "all" || c.building === filterBuilding;
     const priorityOk = filterPriority === "all" || c.priority === filterPriority;
-    const categoryOk = filterCategory === "all" || c.category === filterCategory;
+    const categoryOk = filterCategories.length === 0 || filterCategories.includes(c.category);
     return searchOk && statusOk && buildingOk && priorityOk && categoryOk;
   });
 
@@ -132,9 +132,9 @@ const AdminPage = () => {
                     buildings={buildings}
                   />
                   <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
-                  <CategoryFilterButtons
-                    value={filterCategory}
-                    onChange={setFilterCategory}
+                  <CategoryFilterCombobox
+                    value={filterCategories}
+                    onChange={setFilterCategories}
                     categories={categories}
                   />
                 </CardContent>

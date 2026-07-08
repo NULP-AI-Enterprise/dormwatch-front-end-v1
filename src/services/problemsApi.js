@@ -157,6 +157,71 @@ export async function fetchCategories() {
   }
 }
 
+// ── Reference-data CRUD (admin settings + resident room creation) ──
+
+export async function createCategory(name) {
+  return await fetchJson("/admin/categories/", {
+    method: "POST",
+    body: { name },
+  });
+}
+
+export async function updateCategory(id, name) {
+  return await fetchJson(`/admin/categories/${id}/`, {
+    method: "PATCH",
+    body: { name },
+  });
+}
+
+// Non-destructive: returns { detached_complaints }.
+export async function deleteCategory(id) {
+  return await fetchJson(`/admin/categories/${id}/`, { method: "DELETE" });
+}
+
+export async function createBuilding(name, address) {
+  return await fetchJson("/admin/buildings/", {
+    method: "POST",
+    body: { name, address },
+  });
+}
+
+export async function updateBuilding(id, { name, address }) {
+  const body = {};
+  if (name !== undefined) body.name = name;
+  if (address !== undefined) body.address = address;
+  return await fetchJson(`/admin/buildings/${id}/`, {
+    method: "PATCH",
+    body,
+  });
+}
+
+// On 409 (building has rooms), fetchJson throws with the JSON body as the
+// message — callers JSON.parse(err.message) to read `places_count`.
+export async function deleteBuilding(id, { force = false } = {}) {
+  const q = force ? "?force=true" : "";
+  return await fetchJson(`/admin/buildings/${id}/${q}`, { method: "DELETE" });
+}
+
+// Returns the full Place (with place_id) — powers the combobox "create room".
+export async function createPlace(buildingId, placeName) {
+  return await fetchJson("/places/", {
+    method: "POST",
+    body: { building_id: buildingId, place_name: placeName },
+  });
+}
+
+export async function updatePlace(id, placeName) {
+  return await fetchJson(`/admin/places/${id}/`, {
+    method: "PATCH",
+    body: { place_name: placeName },
+  });
+}
+
+// Non-destructive: returns { detached_complaints }.
+export async function deletePlace(id) {
+  return await fetchJson(`/admin/places/${id}/`, { method: "DELETE" });
+}
+
 /**
  * @param {string} path
  * @param {{ method?: string, body?: any }} [options]
@@ -290,7 +355,10 @@ export async function fetchUserProfile() {
 
 export async function createProblem(problem) {
   const formData = new FormData();
-  if (problem.place_name) {
+  // Prefer place_id (emitted by PlaceCombobox); fall back to free-text name.
+  if (problem.place_id) {
+    formData.append("place_id", problem.place_id);
+  } else if (problem.place_name) {
     formData.append("place_name", problem.place_name);
   }
   formData.append("category", problem.category);

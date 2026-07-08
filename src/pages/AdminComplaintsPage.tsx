@@ -10,7 +10,6 @@ import {
   fetchCategories,
   fetchTickets,
   fetchEmployees,
-  fetchJson,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
@@ -21,14 +20,13 @@ import {
   StatusFilterSelect,
   BuildingFilterSelect,
   PriorityFilterSelect,
-  CategoryFilterButtons,
+  CategoryFilterCombobox,
 } from "@/components/ComplaintFilters";
 import EmptyState from "@/components/EmptyState";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -60,14 +58,14 @@ const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
   const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [ticketStatus, setTicketStatus] = useState("all");
-  const [ticketCategory, setTicketCategory] = useState("all");
+  const [ticketCategories, setTicketCategories] = useState<string[]>([]);
 
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [approvedForTickets, setApprovedForTickets] = useState<Complaint[]>([]);
@@ -88,33 +86,10 @@ const AdminComplaintsPage = () => {
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const buildings = useBuildings();
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [categoryError, setCategoryError] = useState("");
-  const [savingCategory, setSavingCategory] = useState(false);
 
   const loadCategories = async () => {
     const data = await fetchCategories();
     setCategories(data);
-  };
-
-  const handleAddCategory = async () => {
-    const name = newCategoryName.trim();
-    if (!name) return;
-    setSavingCategory(true);
-    setCategoryError("");
-    try {
-      await fetchJson("/admin/categories/", {
-        method: "POST",
-        body: { name },
-      });
-      setNewCategoryName("");
-      await loadCategories();
-    } catch (err) {
-      setCategoryError("Не вдалося додати категорію");
-      console.warn("Failed to add category", err);
-    } finally {
-      setSavingCategory(false);
-    }
   };
 
   const loadComplaints = async () => {
@@ -183,7 +158,7 @@ const AdminComplaintsPage = () => {
       complaints.filter((p) => {
         const statusOk = selectedStatus === "all" || p.status === selectedStatus;
         const categoryOk =
-          selectedCategory === "all" || p.category === selectedCategory;
+          selectedCategories.length === 0 || selectedCategories.includes(p.category);
         const buildingOk =
           selectedBuilding === "all" || p.building === selectedBuilding;
         const priorityOk =
@@ -195,14 +170,14 @@ const AdminComplaintsPage = () => {
         const dateOk = !selectedDate || new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd');
         return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
-    [complaints, selectedStatus, selectedCategory, selectedBuilding, selectedPriority, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
   );
 
   const filteredTickets = useMemo(
     () =>
       approvedForTickets.filter((p) => {
         const categoryOk =
-          ticketCategory === "all" || p.category === ticketCategory;
+          ticketCategories.length === 0 || ticketCategories.includes(p.category);
         const searchOk =
           ticketSearchQuery === "" ||
           (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
@@ -213,7 +188,7 @@ const AdminComplaintsPage = () => {
         else if (ticketStatus === "not_created") statusOk = !hasTicket;
         return categoryOk && searchOk && statusOk;
       }),
-    [approvedForTickets, tickets, ticketCategory, ticketStatus, ticketSearchQuery]
+    [approvedForTickets, tickets, ticketCategories, ticketStatus, ticketSearchQuery]
   );
 
   const headerActions = useMemo(
@@ -310,9 +285,9 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <CategoryFilterButtons
-                      value={selectedCategory}
-                      onChange={setSelectedCategory}
+                    <CategoryFilterCombobox
+                      value={selectedCategories}
+                      onChange={setSelectedCategories}
                       categories={categories}
                     />
 
@@ -328,35 +303,6 @@ const AdminComplaintsPage = () => {
                         placeholder="Оберіть дату"
                       />
                     </div>
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
-                      Нова категорія
-                    </h4>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Назва..."
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleAddCategory();
-                        }}
-                        className="text-xs"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAddCategory}
-                        disabled={savingCategory || !newCategoryName.trim()}
-                      >
-                        Додати
-                      </Button>
-                    </div>
-                    {categoryError && (
-                      <p className="text-xs font-semibold text-destructive mt-2">
-                        {categoryError}
-                      </p>
-                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -446,9 +392,9 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <CategoryFilterButtons
-                      value={ticketCategory}
-                      onChange={setTicketCategory}
+                    <CategoryFilterCombobox
+                      value={ticketCategories}
+                      onChange={setTicketCategories}
                       categories={categories}
                     />
                   </CardContent>

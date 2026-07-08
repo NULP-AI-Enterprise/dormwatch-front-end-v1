@@ -15,17 +15,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CategoryOption } from "@/lib/types";
+import PlaceCombobox from "@/components/PlaceCombobox";
+import type { CategoryOption, Place } from "@/lib/types";
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [buildingId, setBuildingId] = useState<number | undefined>(undefined);
+  const [place, setPlace] = useState<Place | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     priority: "low",
-    placeName: "",
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -34,8 +36,12 @@ const CreateReportPage = () => {
 
   useEffect(() => {
     fetchUserProfile().then((user) => {
-      if (user?.place?.place_name) {
-        setFormData((prev) => ({ ...prev, placeName: user.place.place_name }));
+      setBuildingId(user?.place?.building?.building_id);
+      if (user?.place?.place_id && user?.place?.place_name) {
+        setPlace({
+          place_id: user.place.place_id,
+          place_name: user.place.place_name,
+        });
       }
     }).catch(() => {});
   }, []);
@@ -90,12 +96,13 @@ const CreateReportPage = () => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         priority: formData.priority,
-        place_name: formData.placeName?.trim() || undefined,
+        place_id: place?.place_id,
         photoFile: photoFile,
       });
       navigate("/");
-    } catch (err: any) {
-      setError(`Не вдалось створити заявку: ${err.message}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Не вдалось створити заявку: ${msg}`);
     } finally {
       setSubmitting(false);
     }
@@ -174,14 +181,22 @@ const CreateReportPage = () => {
               <label className="text-xs font-semibold text-foreground block mb-2">
                 Місце проблеми
               </label>
-              <Input
-                type="text"
-                name="placeName"
-                value={formData.placeName}
-                onChange={handleInputChange}
-                placeholder="Напр. кімната 404, коридор 3 поверху..."
-                maxLength={100}
-              />
+              {buildingId ? (
+                <PlaceCombobox
+                  buildingId={buildingId}
+                  value={place}
+                  onChange={setPlace}
+                  allowCreate
+                  placeholder="Пошук або створення кімнати..."
+                />
+              ) : (
+                <Input
+                  type="text"
+                  value=""
+                  disabled
+                  placeholder="Спочатку вкажіть гуртожиток у профілі"
+                />
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Опис проблеми</label>

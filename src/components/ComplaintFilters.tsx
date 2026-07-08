@@ -5,6 +5,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
@@ -143,5 +154,53 @@ export function CategoryFilterButtons({
         </Button>
       ))}
     </div>
+  );
+}
+
+type CategoryFilterComboboxProps = {
+  value: string[];
+  onChange: (value: string[]) => void;
+  categories: CategoryOption[];
+};
+
+// Multi-select category filter: an empty selection means "all". Chips render
+// square (DESIGN.md) — styling is inherited from `ui/combobox.tsx`. Operates
+// over category *names* so the predicate stays `cats.includes(p.category)`.
+export function CategoryFilterCombobox({
+  value,
+  onChange,
+  categories,
+}: CategoryFilterComboboxProps) {
+  const names = categories.map((c) => c.name);
+  return (
+    <Combobox<string, true>
+      multiple
+      items={names}
+      value={value}
+      onValueChange={onChange}
+    >
+      <ComboboxChips>
+        <ComboboxValue>
+          {(selected: string[]) =>
+            selected.map((name) => (
+              <ComboboxChip key={name} aria-label={name}>
+                {name}
+              </ComboboxChip>
+            ))
+          }
+        </ComboboxValue>
+        <ComboboxChipsInput placeholder={value.length ? "" : "Категорії..."} />
+      </ComboboxChips>
+      <ComboboxContent>
+        <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+        <ComboboxList>
+          {(name: string) => (
+            <ComboboxItem key={name} value={name}>
+              {name}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }
