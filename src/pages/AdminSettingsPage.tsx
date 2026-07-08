@@ -13,7 +13,6 @@ import {
   updatePlace,
   deletePlace,
 } from "@/services/problemsApi";
-import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -59,8 +58,6 @@ import type { Building, CategoryOption, Place } from "@/lib/types";
 // the consequence.
 
 const AdminSettingsPage = () => {
-  useAdminHeaderActions(null);
-
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="flex-1 p-6">
