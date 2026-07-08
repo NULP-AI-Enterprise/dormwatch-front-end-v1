@@ -328,19 +328,12 @@ const AdminComplaintsPage = () => {
                     <ComplaintCard
                       key={p.id}
                       complaint={p}
-                      headerLayout="detail"
                       cardClassName={`group transition-colors cursor-pointer ${
                         p.status === "pending" && !viewedComplaints.has(p.id as number)
                           ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
                           : "hover:bg-muted/50"
                       }`}
                       onCardClick={() => {
-                        markAsViewed(p.id as number);
-                        setSelectedComplaint(p);
-                        setSheetOpen(true);
-                      }}
-                      showDetails
-                      onDetails={() => {
                         markAsViewed(p.id as number);
                         setSelectedComplaint(p);
                         setSheetOpen(true);

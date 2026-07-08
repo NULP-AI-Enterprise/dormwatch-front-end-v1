@@ -87,7 +87,10 @@ const ComplaintSidePanel = ({
   if (!complaint) return null;
 
   const isOwner = String(currentUserId) === String(complaint.user_id);
-  const canEdit = isAdmin || (isOwner && complaint.status === "pending");
+  // Only the complaint owner may edit content, and only while pending. Admins
+  // run the moderation workflow (status/priority/delete/tickets) but must not
+  // rewrite a resident's report — enforced here and on the backend.
+  const canEdit = isOwner && complaint.status === "pending";
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -135,17 +138,12 @@ const ComplaintSidePanel = ({
     if (editPhotoFile) formData.append("photo_url", editPhotoFile);
 
     try {
-      if (isAdmin) {
-        await fetchJson(`/admin/complaints/${complaint.id}/status/`, {
-          method: "PATCH",
-          body: formData,
-        });
-      } else {
-        await fetchJson(`/me/complaints/${complaint.id}/`, {
-          method: "PATCH",
-          body: formData,
-        });
-      }
+      // Content edits are owner-only (canEdit gates this), so always use the
+      // owner endpoint. Admins have no content-edit path.
+      await fetchJson(`/me/complaints/${complaint.id}/`, {
+        method: "PATCH",
+        body: formData,
+      });
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
       onOpenChange(false);

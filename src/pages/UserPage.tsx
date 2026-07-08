@@ -238,10 +238,9 @@ const UserPage = () => {
                   key={p.id}
                   complaint={p}
                   bodyPadding="p-5"
-                  titleClass="text-sm font-semibold"
                   metaVariant="date"
                   descriptionFallback={"\u2014"}
-                  onTitleClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
+                  onCardClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
                   showPhoto
                   photoHeight="h-48"
                   footerClassName="flex items-center justify-between pt-4"

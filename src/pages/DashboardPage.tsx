@@ -207,15 +207,13 @@ const DashboardPage = () => {
                   key={problem.id}
                   complaint={problem}
                   bodyPadding="p-5"
-                  titleClass="text-lg font-bold"
                   footerClassName="flex items-center justify-between pt-3"
+                  onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
                   showPhoto
                   photoZoom
                   photoHeight="h-40"
                   onPhotoPreview={setPreviewImage}
                   footerLeft="added-date"
-                  showDetails={manage}
-                  onDetails={() => { setSelectedProblem(problem); setSheetOpen(true); }}
                   commentsMode={manage ? "inline" : "hidden"}
                   commentsOpen={comments.isOpen(problem.id)}
                   commentsSeparator
