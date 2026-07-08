@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { DashboardSquare01Icon, ClipboardIcon, GroupIcon, Megaphone01Icon, SettingsIcon, Logout01Icon, Building03Icon } from "@hugeicons/core-free-icons";
+import { DashboardSquare01Icon, ClipboardIcon, SettingsIcon, Logout01Icon, Building03Icon } from "@hugeicons/core-free-icons";
 import { logoutUser } from "../services/problemsApi";
 import { SettingsModal } from "./SettingsModal";
 import { useState } from "react";
@@ -14,9 +14,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { to: "/admin", icon: DashboardSquare01Icon, label: "Огляд" },
-  { to: "#", icon: GroupIcon, label: "Мешканці" },
   { to: "/admin/complaints", icon: ClipboardIcon, label: "Всі заявки" },
-  { to: "#", icon: Megaphone01Icon, label: "Оголошення" },
 ];
 
 const AdminSidebar = ({ userName = "Адмін", userRole = "Адміністратор", initials = "AD" }: AdminSidebarProps) => {

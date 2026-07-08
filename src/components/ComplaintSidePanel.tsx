@@ -140,7 +140,7 @@ const ComplaintSidePanel = ({
               {categoryLabel}
             </span>
             <span className="w-1 h-1 bg-border" />
-            {isAdmin ? (
+            {isAdmin && !["resolved", "rejected"].includes(complaint.status) ? (
               <Select 
                 value={complaint.priority} 
                 onValueChange={handlePriorityChange}
@@ -265,15 +265,16 @@ const ComplaintSidePanel = ({
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                    >
-                      <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
-                      Видалити
-                    </Button>
-                  </AlertDialogTrigger>
+                {!["resolved", "rejected"].includes(complaint.status) && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                      >
+                        <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
+                        Видалити
+                      </Button>
+                    </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Видалити скаргу?</AlertDialogTitle>
@@ -287,7 +288,8 @@ const ComplaintSidePanel = ({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                {!showTicketForm && (
+                )}
+                {!showTicketForm && complaint.status === "approved" && (
                   <Button
                     variant="outline"
                     onClick={() => setShowTicketForm(true)}
