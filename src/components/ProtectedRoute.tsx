@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { isAdminUser } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import LoadingSpinner from "./LoadingSpinner";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { useUser } from "@/context/UserContext";
+import PageSpinner from "@/components/PageSpinner";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -16,11 +16,7 @@ const ProtectedRoute = ({ children, requireAdmin, requireStudent, blockAdmin }: 
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const admin = isAdminUser(user);

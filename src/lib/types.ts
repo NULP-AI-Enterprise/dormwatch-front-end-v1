@@ -1,11 +1,21 @@
 export interface Building {
   building_id: number;
   name: string;
+  // Present in the buildings API payload; only surfaced/edited in admin settings.
+  address?: string;
 }
 
+// A selectable room/place within a building. Kept distinct from Building on
+// purpose — the backend models places separately, and the two may diverge if
+// the place data is populated independently of buildings.
 export interface Place {
   place_id: number;
   place_name: string;
+}
+
+export interface CategoryOption {
+  category_id: number;
+  name: string;
 }
 
 export interface Complaint {
@@ -21,7 +31,6 @@ export interface Complaint {
   thumbnail: string | null;
   status: string;
   priority: string;
-  votesCount: number;
   createdAt: string;
   user_id: number | null;
 }
@@ -61,15 +70,10 @@ export interface UserProfile {
   role: {
     role_name: string;
   };
-}
-
-export interface CategoryOption {
-  id: string;
-  name: string;
-}
-
-export interface TicketCreateFormValues {
-  complaint: number;
-  employee: number | null;
-  deadline: string | null;
+  photo_url?: string | null;
+  place?: {
+    place_id?: number;
+    place_name: string;
+    building?: Building;
+  };
 }

@@ -1,15 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchAllComplaints,
-} from "../services/problemsApi";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import { NotificationBell } from "../components/NotificationBell";
-import { StatCard, StatCardSkeleton } from "../components/StatCard";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { ExportTicketsModal } from "../components/ExportTicketsModal";
-import { Separator } from "../components/ui/separator";
+  fetchCategories,
+} from "@/services/problemsApi";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
+import { NotificationBell } from "@/components/NotificationBell";
+import { StatCard, StatCardSkeleton } from "@/components/StatCard";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  FilterSearchInput,
+  StatusFilterSelect,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterCombobox,
+} from "@/components/ComplaintFilters";
+import { ExportTicketsModal } from "@/components/ExportTicketsModal";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableHeader,
@@ -17,20 +27,30 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from "../components/ui/table";
+} from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, AddIcon } from "@hugeicons/core-free-icons";
-import { statusBadgeClass, statusLabel } from "../lib/complaintUtils";
-import { CATEGORY_LABELS } from "../services/problemsApi";
-import { useUser } from "../context/UserContext";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon } from "@hugeicons/core-free-icons";
+import { formatDate } from "@/lib/dateUtils";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const AdminPage = () => {
   const { user: currentUser } = useUser();
-  const [complaints, setComplaints] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const buildings = useBuildings();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterBuilding, setFilterBuilding] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
 
   const init = async () => {
     const data = await fetchAllComplaints();
@@ -40,7 +60,8 @@ const AdminPage = () => {
 
   useEffect(() => {
     init();
-    
+    fetchCategories().then(setCategories).catch(() => {});
+
     window.addEventListener("adminComplaintUpdated", init);
     return () => window.removeEventListener("adminComplaintUpdated", init);
   }, []);
@@ -49,11 +70,22 @@ const AdminPage = () => {
   const inProgressCount = complaints.filter((c) => c.status === "approved").length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
 
-  const recentComplaints = [...complaints]
+  const filteredComplaints = complaints.filter((c) => {
+    const searchOk = !searchQuery ||
+      c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const statusOk = filterStatus === "all" || c.status === filterStatus;
+    const buildingOk = filterBuilding === "all" || c.building === filterBuilding;
+    const priorityOk = filterPriority === "all" || c.priority === filterPriority;
+    const categoryOk = filterCategories.length === 0 || filterCategories.includes(c.category);
+    return searchOk && statusOk && buildingOk && priorityOk && categoryOk;
+  });
+
+  const recentComplaints = [...filteredComplaints]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
 
-  const handleRowClick = (complaint: any) => {
+  const handleRowClick = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setSheetOpen(true);
   };
@@ -63,53 +95,53 @@ const AdminPage = () => {
     setComplaints(data);
   };
 
+  const headerActions = useMemo(
+    () => (
+      <>
+        <NotificationBell onSelectComplaint={(c) => {
+          setSelectedComplaint(c);
+          setSheetOpen(true);
+        }} />
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+          Експорт даних
+        </Button>
+      </>
+    ),
+    [],
+  );
+  useAdminHeaderActions(headerActions);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="h-16 bg-card flex items-center justify-between px-6 lg:px-8 shrink-0">
-          <h1 className="text-2xl font-bold text-foreground">Інформаційна панель</h1>
-          <div className="flex items-center gap-3">
-            <NotificationBell onSelectComplaint={(c) => {
-              setSelectedComplaint(c);
-              setSheetOpen(true);
-            }} />
-            <Button
-              variant="outline"
-              size="default"
-              className="gap-2"
-              onClick={() => setIsExportModalOpen(true)}
-            >
-              <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-              Експорт даних
-            </Button>
-            <Button
-              size="default"
-              className="gap-2"
-              onClick={() => {
-                setSelectedComplaint({
-                  id: "new",
-                  title: "",
-                  description: "",
-                  category: "",
-                  status: "pending",
-                  building: "",
-                  placeName: "",
-                  priority: "medium",
-                  createdAt: "",
-                  photoUrl: null,
-                  thumbnail: null,
-                });
-                setSheetOpen(true);
-              }}
-            >
-              <HugeiconsIcon icon={AddIcon} className="size-5" strokeWidth={2} />
-              Новий тікет
-            </Button>
-          </div>
-        </header>
-        <Separator />
+        <div className="flex-1 overflow-auto p-6">
+          <div className="mx-auto grid lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-1 space-y-4">
+              <Card className="border-border shadow-none bg-card">
+                <CardContent className="space-y-4">
+                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+                  <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
+                  <BuildingFilterSelect
+                    value={filterBuilding}
+                    onValueChange={setFilterBuilding}
+                    buildings={buildings}
+                  />
+                  <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
+                  <CategoryFilterCombobox
+                    value={filterCategories}
+                    onChange={setFilterCategories}
+                    categories={categories}
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
-        <div className="flex-1 overflow-auto p-6 lg:p-8">
-          <div className="max-w-5xl mx-auto space-y-8">
+            <div className="lg:col-span-3 space-y-8">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -191,15 +223,13 @@ const AdminPage = () => {
                           </p>
                         </TableCell>
                         <TableCell className="px-6 py-4 text-xs text-muted-foreground font-semibold">
-                          {CATEGORY_LABELS[c.category as keyof typeof CATEGORY_LABELS] || c.category}
+                          {c.category}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-sm text-muted-foreground">
-                          {new Date(c.createdAt).toLocaleDateString()}
+                          {formatDate(c.createdAt)}
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <Badge variant="outline" className={statusBadgeClass(c.status)}>
-                            {statusLabel(c.status)}
-                          </Badge>
+                          <StatusBadge status={c.status} />
                         </TableCell>
                       </TableRow>
                     ))
@@ -207,19 +237,22 @@ const AdminPage = () => {
                 </TableBody>
               </Table>
             </div>
+            </div>
           </div>
         </div>
 
-      <ComplaintSidePanel
-        complaint={selectedComplaint}
-        open={sheetOpen}
-        onOpenChange={(open) => {
-          setSheetOpen(open);
-        }}
-        onStatusChange={handleRefresh}
-        currentUserId={currentUser?.user}
-        isAdmin={true}
-      />
+      {selectedComplaint && (
+        <ComplaintSidePanel
+          complaint={selectedComplaint}
+          open={sheetOpen}
+          onOpenChange={(open) => {
+            setSheetOpen(open);
+          }}
+          onStatusChange={handleRefresh}
+          currentUserId={currentUser?.user}
+          isAdmin={true}
+        />
+      )}
 
       <ExportTicketsModal
         open={isExportModalOpen}

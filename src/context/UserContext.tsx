@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { fetchUserProfile } from "../services/problemsApi";
+import { fetchUserProfile } from "@/services/problemsApi";
 
 interface UserContextValue {
   user: any;

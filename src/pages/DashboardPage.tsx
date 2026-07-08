@@ -1,24 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchApprovedComplaints,
   deleteProblem,
-  fetchBuildings,
-} from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
+  fetchCategories,
+} from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronUpIcon, ChevronDownIcon, Message01Icon, Cancel01Icon, SearchIcon, Delete01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Cancel01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
+  FilterSearchInput,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,27 +23,23 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "../components/ui/dialog";
-import CommentSection from "../components/CommentSection";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { Separator } from "../components/ui/separator";
-import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import type { Complaint } from "../lib/types";
-
-const categories = [
-  { id: "all", name: "Всі" },
-  { id: "plumbing", name: "Сантехніка" },
-  { id: "electricity", name: "Електрика" },
-  { id: "furniture", name: "Меблі" },
-  { id: "internet", name: "Інтернет" },
-];
+} from "@/components/ui/dialog";
+import CommentSection from "@/components/CommentSection";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import ComplaintCard from "@/components/ComplaintCard";
+import PageSpinner from "@/components/PageSpinner";
+import EmptyState from "@/components/EmptyState";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useCommentToggle } from "@/hooks/useCommentToggle";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
@@ -60,22 +51,26 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
+  const comments = useCommentToggle();
 
-  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
+  const buildings = useBuildings();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   useEffect(() => {
-    fetchBuildings().then(setBuildings).catch(() => {});
+    fetchCategories().then(setCategories).catch(() => {});
   }, []);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchApprovedComplaints("new", { corps: activeCorps, priority: activePriority }).catch(() => []);
+        const complaintsData = await fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).catch(() => []);
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
       } catch (error) {
         console.error("Critical dashboard error:", error);
@@ -84,6 +79,25 @@ const DashboardPage = () => {
       }
     };
     loadData();
+  }, [activeCorps, activePriority]);
+
+  const selectedProblemRef = useRef(selectedProblem);
+  selectedProblemRef.current = selectedProblem;
+
+  useEffect(() => {
+    const handler = () => {
+      fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+        const fresh = data.filter(Boolean) as Complaint[];
+        setProblems(fresh);
+        const current = selectedProblemRef.current;
+        if (current) {
+          const updated = fresh.find((c) => c.id === current.id);
+          if (updated) setSelectedProblem(updated);
+        }
+      }).catch(() => {});
+    };
+    window.addEventListener("complaintUpdated", handler);
+    return () => window.removeEventListener("complaintUpdated", handler);
   }, [activeCorps, activePriority]);
 
   const handleDelete = async (id: number) => {
@@ -119,11 +133,7 @@ const DashboardPage = () => {
     admin || currentUser?.user === problem.user_id;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
@@ -152,53 +162,19 @@ const DashboardPage = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
             <div className="space-y-4">
-              <div className="relative">
-                <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                <Input
-                  placeholder="Пошук заявок..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={activeCorps} onValueChange={setActiveCorps}>
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Всі гуртожитки" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Всі гуртожитки</SelectItem>
-                  {buildings.map((b) => (
-                    <SelectItem key={b.building_id} value={b.name}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={activePriority} onValueChange={setActivePriority}>
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Всі пріоритети" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Всі пріоритети</SelectItem>
-                  <SelectItem value="low">Низький</SelectItem>
-                  <SelectItem value="medium">Середній</SelectItem>
-                  <SelectItem value="high">Високий</SelectItem>
-                  <SelectItem value="critical">Критичний</SelectItem>
-                </SelectContent>
-              </Select>
+              <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+              <BuildingFilterSelect
+                value={activeCorps}
+                onValueChange={setActiveCorps}
+                buildings={buildings}
+              />
+              <PriorityFilterSelect value={activePriority} onValueChange={setActivePriority} />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
-                  size="xs"
-                  onClick={() => setActiveCategory(category.id)}
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
+            <CategoryFilterButtons
+              value={activeCategory}
+              onChange={setActiveCategory}
+              categories={categories}
+            />
 
             <div className="bg-primary p-6 text-primary-foreground">
               <h4 className="text-xs font-semibold mb-4">
@@ -225,119 +201,82 @@ const DashboardPage = () => {
           </div>
           <div className="lg:col-span-2 space-y-4">
             {filteredProblems.map((problem) => {
+              const manage = canManage(problem);
               return (
-                <Card
+                <ComplaintCard
                   key={problem.id}
-                  className="border-border shadow-none group relative"
-                >
-                  {canManage(problem) && (
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => handleDelete(problem.id)}
-                      className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Видалити"
-                    >
-                      <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-                    </Button>
-                  )}
-
-                  <div className="p-5">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className={statusBadgeClass(problem.status)}>
-                            {statusLabel(problem.status)}
-                          </Badge>
-                        </div>
-                        <span className="text-xs font-normal text-muted-foreground">
-                          {categories.find((c) => c.id === problem.category)?.name || problem.category}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.building ? `Корпус ${problem.building}` : ""}<span className="w-1 h-1 bg-border inline-block mx-1" />{problem.placeName}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-bold text-foreground mb-2">
-                        {problem.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                        {problem.description}
-                      </p>
-
-                      {problem.photoUrl && (
-                        <div
-                          className="w-full h-40 overflow-hidden border border-border mb-4 cursor-zoom-in"
-                          onClick={() => setPreviewImage(resolveImageUrl(problem.photoUrl))}
-                        >
-                          <img
-                            src={resolveImageUrl(problem.thumbnail || problem.photoUrl)}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            alt=""
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-3">
-                        <span className="text-xs font-normal text-muted-foreground">
-                          Додано{" "}
-                          {new Date(problem.createdAt).toLocaleDateString()}
-                        </span>
-                        {canManage(problem) && (
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() =>
-                              setOpenCommentsId(openCommentsId === problem.id ? null : problem.id)
-                            }
-                            className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                          >
-                            <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                            Коментарі {openCommentsId === problem.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                  {openCommentsId === problem.id && (
-                    <>
-                      <Separator dashed />
-                      <div className="p-4">
-                      <CommentSection
-                        complaintId={problem.id}
-                        currentUserId={currentUser?.user}
-                        isAdmin={admin}
-                        complaintAuthorId={problem.user_id}
-                      />
-                      </div>
-                    </>
-                  )}
-                </Card>
+                  complaint={problem}
+                  bodyPadding="p-5"
+                  titleClass="text-lg font-bold"
+                  footerClassName="flex items-center justify-between pt-3"
+                  showPhoto
+                  photoZoom
+                  photoHeight="h-40"
+                  onPhotoPreview={setPreviewImage}
+                  footerLeft="added-date"
+                  showDetails={manage}
+                  onDetails={() => { setSelectedProblem(problem); setSheetOpen(true); }}
+                  commentsMode={manage ? "inline" : "hidden"}
+                  commentsOpen={comments.isOpen(problem.id)}
+                  commentsSeparator
+                  onCommentToggle={() => comments.toggle(problem.id)}
+                  commentsContent={
+                    <CommentSection
+                      complaintId={problem.id}
+                      currentUserId={currentUser?.user}
+                      isAdmin={admin}
+                      complaintAuthorId={problem.user_id}
+                    />
+                  }
+                  showDelete={manage}
+                  deleteHoverReveal
+                  onDelete={handleDelete}
+                />
               );
             })}
 
             {filteredProblems.length === 0 && (
-              <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                  <HugeiconsIcon icon={SearchIcon2} className="size-5" strokeWidth={1.5} />
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Немає заявок за вибраними фільтрами.
-                </p>
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={() => {
-                    setActiveCategory("all");
-                    setActiveCorps("all");
-                    setActivePriority("all");
-                    setSearchQuery("");
-                  }}
-                >
-                  <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
-                  Скинути фільтри
-                </Button>
-              </div>
+              <EmptyState
+                icon={SearchIcon2}
+                title="Немає заявок за вибраними фільтрами."
+                action={
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      setActiveCategory("all");
+                      setActiveCorps("all");
+                      setActivePriority("all");
+                      setSearchQuery("");
+                    }}
+                  >
+                    <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+                    Скинути фільтри
+                  </Button>
+                }
+              />
             )}
           </div>
         </div>
       </main>
+
+      {selectedProblem && (
+        <ComplaintSidePanel
+          complaint={selectedProblem}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          onStatusChange={() => {
+            fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+              const fresh = data.filter(Boolean) as Complaint[];
+              setProblems(fresh);
+              const updated = fresh.find((c) => c.id === selectedProblem.id);
+              if (updated) setSelectedProblem(updated);
+            }).catch(() => {});
+          }}
+          currentUserId={currentUser?.user}
+          isAdmin={admin}
+        />
+      )}
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>

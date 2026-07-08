@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn } from "@/lib/utils";
 
 interface ProgressStepperProps {
   stage: "submitted" | "in_progress" | "resolved";

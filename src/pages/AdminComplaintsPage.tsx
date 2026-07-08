@@ -1,125 +1,71 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { DatePicker } from "../components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import {
   fetchAllComplaints,
   fetchApprovedComplaints,
   updateComplaintStatus,
   deleteProblem,
-  CATEGORY_LABELS,
+  fetchCategories,
   fetchTickets,
   fetchEmployees,
-} from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
-import ComplaintSidePanel from "../components/ComplaintSidePanel";
-import TicketCreateForm from "../components/TicketCreateForm";
-import { NotificationBell } from "../components/NotificationBell";
-import { useUser } from "../context/UserContext";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+} from "@/services/problemsApi";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import ComplaintCard from "@/components/ComplaintCard";
+import TicketSidePanel from "@/components/TicketSidePanel";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog";
+  FilterSearchInput,
+  StatusFilterSelect,
+  BuildingFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterCombobox,
+} from "@/components/ComplaintFilters";
+import EmptyState from "@/components/EmptyState";
+import { NotificationBell } from "@/components/NotificationBell";
+import { useBuildings } from "@/hooks/useBuildings";
+import { useUser } from "@/context/UserContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogClose,
-} from "../components/ui/dialog";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
+} from "@/components/ui/dialog";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
-import { Separator } from "../components/ui/separator";
-import { statusBadgeClass, statusLabel, priorityBadgeClass, priorityLabel } from "../lib/complaintUtils";
+import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  SearchIcon,
-  Delete01Icon,
-  EditIcon,
   Cancel01Icon,
   InboxIcon,
-  CheckmarkCircleIcon,
-  CancelCircleIcon,
-  AddIcon,
-  MoreHorizontalIcon,
   Download01Icon,
 } from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket, Employee } from "../lib/types";
-import { ExportTicketsModal } from "../components/ExportTicketsModal";
-
-const categoryOptions = [
-  { id: "all", name: "Всі категорії" },
-  { id: "plumbing", name: "Сантехніка" },
-  { id: "electricity", name: "Електрика" },
-  { id: "furniture", name: "Меблі" },
-  { id: "internet", name: "Інтернет" },
-];
-
-const statusOptions = [
-  { id: "pending", name: "Очікує" },
-  { id: "approved", name: "Активно" },
-  { id: "rejected", name: "Відхилено" },
-  { id: "resolved", name: "Вирішено" },
-];
-
-const ticketStatusOptions = [
-  { id: "all", name: "Всі" },
-  { id: "not_created", name: "Без тікета" },
-  { id: "created", name: "З тікетом" },
-];
-
-function FilterRadioGroup({
-  options,
-  value,
-  onChange,
-}: {
-  options: { id: string; name: string }[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <RadioGroup value={value} onValueChange={onChange} className="space-y-1">
-      {options.map((opt) => (
-        <label
-          key={opt.id}
-          className={`flex items-center gap-3 p-2.5 cursor-pointer transition-colors border-l-4 ${
-            value === opt.id
-              ? "border-l-blue-500 bg-primary/5 text-foreground"
-              : "border-l-transparent text-muted-foreground hover:border-l-stone-500 hover:text-foreground"
-          }`}
-        >
-          <RadioGroupItem value={opt.id} id={`filter-${opt.id}`} className="w-3.5 h-3.5 accent-blue-500" />
-          <span className="text-xs font-semibold cursor-pointer">
-            {opt.name}
-          </span>
-        </label>
-      ))}
-    </RadioGroup>
-  );
-}
+import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
+import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
   const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBuilding, setSelectedBuilding] = useState("all");
+  const [selectedPriority, setSelectedPriority] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [ticketStatus, setTicketStatus] = useState("all");
-  const [ticketCategory, setTicketCategory] = useState("all");
+  const [ticketCategories, setTicketCategories] = useState<string[]>([]);
 
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [approvedForTickets, setApprovedForTickets] = useState<Complaint[]>([]);
@@ -132,11 +78,19 @@ const AdminComplaintsPage = () => {
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [selectedForTicket, setSelectedForTicket] = useState<Complaint | null>(null);
+  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
+  const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const buildings = useBuildings();
+
+  const loadCategories = async () => {
+    const data = await fetchCategories();
+    setCategories(data);
+  };
 
   const [viewedComplaints, setViewedComplaints] = useState<Set<number>>(() => {
     try {
@@ -177,7 +131,8 @@ const AdminComplaintsPage = () => {
 
   useEffect(() => {
     loadComplaints();
-    
+    loadCategories();
+
     window.addEventListener("adminComplaintUpdated", loadComplaints);
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
@@ -187,7 +142,7 @@ const AdminComplaintsPage = () => {
   useEffect(() => {
     if (tab === "tickets") {
       loadTickets();
-      fetchApprovedComplaints("new").then(setApprovedForTickets);
+      fetchApprovedComplaints().then(setApprovedForTickets);
       fetchEmployees().then(setEmployees);
     }
   }, [tab]);
@@ -210,10 +165,10 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const openTicketModal = (complaint: Complaint, ticket?: Ticket) => {
-    setSelectedForTicket(complaint);
+  const openTicketSheet = (complaint: Complaint, ticket?: Ticket) => {
+    setSelectedTicketComplaint(complaint);
     setTicketToEdit(ticket || null);
-    setIsTicketModalOpen(true);
+    setTicketSheetOpen(true);
   };
 
   const filteredComplaints = useMemo(
@@ -221,22 +176,26 @@ const AdminComplaintsPage = () => {
       complaints.filter((p) => {
         const statusOk = selectedStatus === "all" || p.status === selectedStatus;
         const categoryOk =
-          selectedCategory === "all" || p.category === selectedCategory;
+          selectedCategories.length === 0 || selectedCategories.includes(p.category);
+        const buildingOk =
+          selectedBuilding === "all" || p.building === selectedBuilding;
+        const priorityOk =
+          selectedPriority === "all" || p.priority === selectedPriority;
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
         const dateOk = !selectedDate || new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd');
-        return statusOk && categoryOk && searchOk && dateOk;
+        return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
-    [complaints, selectedStatus, selectedCategory, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
   );
 
   const filteredTickets = useMemo(
     () =>
       approvedForTickets.filter((p) => {
         const categoryOk =
-          ticketCategory === "all" || p.category === ticketCategory;
+          ticketCategories.length === 0 || ticketCategories.includes(p.category);
         const searchOk =
           ticketSearchQuery === "" ||
           (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
@@ -247,8 +206,30 @@ const AdminComplaintsPage = () => {
         else if (ticketStatus === "not_created") statusOk = !hasTicket;
         return categoryOk && searchOk && statusOk;
       }),
-    [approvedForTickets, tickets, ticketCategory, ticketStatus, ticketSearchQuery]
+    [approvedForTickets, tickets, ticketCategories, ticketStatus, ticketSearchQuery]
   );
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+          Експорт даних
+        </Button>
+        <NotificationBell onSelectComplaint={(c) => {
+          setSelectedComplaint(c);
+          setSheetOpen(true);
+        }} />
+      </>
+    ),
+    [],
+  );
+  useAdminHeaderActions(headerActions);
 
   return (
     <>
@@ -270,66 +251,62 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
       <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between pr-6">
-            <TabsList variant="line" className="h-auto bg-transparent">
-              <TabsTrigger value="requests" className="px-5 py-3 text-xs font-semibold">
+          <div className="px-6 pt-6">
+            <TabsList variant="line">
+              <TabsTrigger value="requests" className="text-xs font-semibold">
                 Скарги
               </TabsTrigger>
-              <TabsTrigger value="tickets" className="px-5 py-3 text-xs font-semibold">
+              <TabsTrigger value="tickets" className="text-xs font-semibold">
                 Тікети
               </TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 h-9"
-                onClick={() => setIsExportModalOpen(true)}
-              >
-                <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-                Експорт даних
-              </Button>
-              <NotificationBell onSelectComplaint={(c) => {
-                setSelectedComplaint(c);
-                setSheetOpen(true);
-              }} />
-            </div>
           </div>
-          <Separator />
 
-          <TabsContent value="requests" className="flex-1 p-5">
+          <TabsContent value="requests" className="flex-1 p-6">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
-                  <CardContent className="p-4">
-                    <div className="relative mb-4">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
-                      <Input
-                        placeholder="Пошук скарг..."
+                  <CardContent>
+                    <div className="mb-4">
+                      <FilterSearchInput
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8"
+                        onChange={setSearchQuery}
+                        placeholder="Пошук скарг..."
                       />
                     </div>
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус
                     </h4>
-                    <FilterRadioGroup
-                      options={[{ id: "all", name: "Всі" }, ...statusOptions]}
-                      value={selectedStatus}
-                      onChange={setSelectedStatus}
+                    <StatusFilterSelect value={selectedStatus} onValueChange={setSelectedStatus} />
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                      Гуртожиток
+                    </h4>
+                    <BuildingFilterSelect
+                      value={selectedBuilding}
+                      onValueChange={setSelectedBuilding}
+                      buildings={buildings}
                     />
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                      Пріоритет
+                    </h4>
+                    <PriorityFilterSelect value={selectedPriority} onValueChange={setSelectedPriority} />
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <FilterRadioGroup
-                      options={categoryOptions}
-                      value={selectedCategory}
-                      onChange={setSelectedCategory}
+                    <CategoryFilterCombobox
+                      value={selectedCategories}
+                      onChange={setSelectedCategories}
+                      categories={categories}
                     />
 
                     <Separator className="my-4" />
@@ -355,318 +332,122 @@ const AdminComplaintsPage = () => {
                   </div>
                 )}
                 {!loading && err && (
-                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-bold">
+                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-semibold">
                     {err}
                   </div>
                 )}
 
                 {!loading && !err && filteredComplaints.length === 0 && (
-                  <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-sm font-bold text-foreground mb-1">Скарг не знайдено</p>
-                    <p className="text-xs text-muted-foreground">Жодна скарга не відповідає поточним фільтрам.</p>
-                  </div>
+                  <EmptyState
+                    icon={InboxIcon}
+                    title="Скарг не знайдено"
+                    subtitle="Жодна скарга не відповідає поточним фільтрам."
+                  />
                 )}
 
                 {!loading &&
                   !err &&
                   filteredComplaints.map((p) => (
-                    <Card
+                    <ComplaintCard
                       key={p.id}
-                      className={`shadow-none group transition-colors cursor-pointer ${
+                      complaint={p}
+                      headerLayout="detail"
+                      cardClassName={`group transition-colors cursor-pointer ${
                         p.status === "pending" && !viewedComplaints.has(p.id as number)
                           ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
-                          : "border-border bg-card hover:bg-muted/50"
+                          : "hover:bg-muted/50"
                       }`}
-                      onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('button, [role="dialog"], a')) return;
+                      onCardClick={() => {
                         markAsViewed(p.id as number);
                         setSelectedComplaint(p);
                         setSheetOpen(true);
                       }}
-                    >
-                      <div className="p-6">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground truncate max-w-xl">
-                              {p.title || "Без назви"}
-                            </h3>
-                            <p className="text-xs font-normal text-muted-foreground mt-1">
-                              {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={statusBadgeClass(p.status)}>
-                              {statusLabel(p.status)}
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsViewed(p.id as number);
-                                setSelectedComplaint(p);
-                                setSheetOpen(true);
-                              }}
-                              className="text-muted-foreground"
-                            >
-                              <HugeiconsIcon icon={MoreHorizontalIcon} className="size-4 mr-1.5" />
-                              Деталі
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge
-                            variant="outline"
-                            className={priorityBadgeClass(p.priority)}
-                          >
-                            Пріоритет: {priorityLabel(p.priority)}
-                          </Badge>
-                          {p.createdAt && (
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              {new Date(p.createdAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                          {p.description || "—"}
-                        </p>
-
-                        {p.photoUrl && (
-                          <div 
-                            className="w-full h-44 overflow-hidden border border-border mb-4 cursor-zoom-in"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewImage(resolveImageUrl(p.photoUrl as string));
-                            }}
-                          >
-                            <img
-                              src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-                              alt=""
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                          </div>
-                        )}
-
-                        <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4">
-                          <div className="flex items-center gap-4">
-                            <span className="text-xs text-muted-foreground font-semibold">
-                              ID: {p.id}
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {p.status === "pending" && (
-                              <>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button>
-                                      <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                      Схвалити
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Схвалити скаргу?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Ви впевнені, що хочете схвалити цю скаргу? Вона перейде в статус "Активно".
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleChangeStatus(p.id, "approved")}>Схвалити</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="destructive"
-                                    >
-                                      <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                      Відхилити
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Відхилити скаргу?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Ви впевнені, що хочете відхилити цю скаргу? Вона перейде в статус "Відхилено".
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleChangeStatus(p.id, "rejected")} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Відхилити</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </>
-                            )}
-                            {p.status === "approved" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button>
-                                    <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
-                                    Вирішити
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Позначити як вирішену?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Ви впевнені, що проблема була успішно вирішена? Скарга перейде в статус "Вирішено".
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleChangeStatus(p.id, "resolved")}>Вирішити</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                >
-                                  <HugeiconsIcon icon={Delete01Icon} className="size-3 mr-1" strokeWidth={2} />
-                                  Видалити
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Видалити скаргу?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Ви впевнені, що хочете видалити цю скаргу? Цю дію неможливо скасувати.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemove(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Видалити</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
+                      showDetails
+                      onDetails={() => {
+                        markAsViewed(p.id as number);
+                        setSelectedComplaint(p);
+                        setSheetOpen(true);
+                      }}
+                      showPriority
+                      descriptionFallback={"\u2014"}
+                      showPhoto
+                      photoZoom
+                      photoHeight="h-44"
+                      onPhotoPreview={setPreviewImage}
+                      footerLeft="id"
+                      showAdminActions
+                      onStatusChange={handleChangeStatus}
+                      onAdminDelete={handleRemove}
+                    />
                   ))}
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="tickets" className="flex-1 p-5">
+          <TabsContent value="tickets" className="flex-1 p-6">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
-                  <CardContent className="p-4">
-                    <div className="relative mb-4">
-                      <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" strokeWidth={2} />
-                      <Input
-                        placeholder="Пошук тікетів..."
+                  <CardContent>
+                    <div className="mb-4">
+                      <FilterSearchInput
                         value={ticketSearchQuery}
-                        onChange={(e) => setTicketSearchQuery(e.target.value)}
-                        className="pl-8"
+                        onChange={setTicketSearchQuery}
+                        placeholder="Пошук тікетів..."
                       />
                     </div>
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус тікету
                     </h4>
-                    <FilterRadioGroup
-                      options={ticketStatusOptions}
-                      value={ticketStatus}
-                      onChange={setTicketStatus}
-                    />
+                    <Select value={ticketStatus} onValueChange={setTicketStatus}>
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Статус тікету" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Всі</SelectItem>
+                        <SelectItem value="not_created">Без тікета</SelectItem>
+                        <SelectItem value="created">З тікетом</SelectItem>
+                      </SelectContent>
+                    </Select>
 
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Категорії
                     </h4>
-                    <FilterRadioGroup
-                      options={categoryOptions}
-                      value={ticketCategory}
-                      onChange={setTicketCategory}
+                    <CategoryFilterCombobox
+                      value={ticketCategories}
+                      onChange={setTicketCategories}
+                      categories={categories}
                     />
                   </CardContent>
                 </Card>
               </div>
 
               <div className="lg:col-span-3 space-y-6">
-                <h3 className="text-sm font-bold text-foreground">
+                <h3 className="text-sm font-semibold text-foreground">
                   Тікети для підтверджених заявок
                 </h3>
                 {filteredTickets.length === 0 ? (
-                  <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                      <HugeiconsIcon icon={InboxIcon} className="w-5 h-5" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Жодна заявка не відповідає фільтрам.</p>
-                  </div>
+                  <EmptyState
+                    icon={InboxIcon}
+                    title="Жодна заявка не відповідає фільтрам."
+                  />
                 ) : (
                   <div className="grid lg:grid-cols-2 gap-4">
                     {filteredTickets.map((p) => {
                       const ticket = tickets.find((t) => t.complaint === p.id);
                       return (
-                        <Card key={p.id} className="border-border shadow-none bg-card">
-                          <div className="p-6">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-sm font-bold text-foreground">
-                                {p.title || "Без назви"}
-                              </h4>
-                              <Badge
-                                variant="outline"
-                                className={priorityBadgeClass(p.priority)}
-                              >
-                                {priorityLabel(p.priority)}
-                              </Badge>
-                            </div>
-                            <div className="flex gap-2 mb-3 items-center">
-                              <Badge variant="outline" className="text-muted-foreground border-border bg-card">
-                                {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || "Категорія"}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">{p.building ? `Корпус ${p.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1" />{p.placeName || "?"}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">{p.description}</p>
-
-                            {ticket ? (
-                              <div className="bg-primary/5 p-3 border border-primary/10 relative group/ticket">
-                                <p className="text-xs font-bold text-primary">
-                                  Тікет створено (ID: {ticket.ticket_id})
-                                </p>
-                                {ticket.user && (
-                                  <p className="text-xs text-primary/80 mt-1">
-                                    Виконавець: {ticket.user.first_name} {ticket.user.last_name}
-                                  </p>
-                                )}
-                                {ticket.deadline && (
-                                  <p className="text-xs text-primary/70 mt-1">
-                                    Дедлайн: {new Date(ticket.deadline).toLocaleDateString()}
-                                  </p>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() => openTicketModal(p, ticket)}
-                                  className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
-                                >
-                                  <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={() => openTicketModal(p)}
-                              >
-                                <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
-                                Створити тікет
-                              </Button>
-                            )}
-                          </div>
-                        </Card>
+                        <ComplaintCard
+                          key={p.id}
+                          complaint={p}
+                          variant="compact"
+                          showPriority
+                          showTicketControls
+                          ticket={ticket}
+                          onTicketAction={openTicketSheet}
+                        />
                       );
                     })}
                   </div>
@@ -688,36 +469,30 @@ const AdminComplaintsPage = () => {
           onStatusChange={loadComplaints}
           currentUserId={currentUser?.user}
           isAdmin={true}
+          onCreateTicket={(c) => {
+            setSheetOpen(false);
+            setSelectedComplaint(null);
+            openTicketSheet(c);
+          }}
         />
       )}
 
-      {isTicketModalOpen && selectedForTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-          <div className="bg-card w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border shadow-lg p-6">
-            <div className="flex justify-between items-start mb-6">
-              <h2 className="text-base font-bold text-foreground">
-                {ticketToEdit ? "Редагувати тікет" : "Створити тікет"}
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => setIsTicketModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <HugeiconsIcon icon={Cancel01Icon} className="size-5" strokeWidth={2} />
-              </Button>
-            </div>
-            <TicketCreateForm
-              fixedComplaintId={selectedForTicket.id as number}
-              onClose={() => setIsTicketModalOpen(false)}
-              onSaved={() => {
-                setIsTicketModalOpen(false);
-                loadTickets();
-              }}
-              editTicket={ticketToEdit}
-            />
-          </div>
-        </div>
+      {selectedTicketComplaint && (
+        <TicketSidePanel
+          complaint={selectedTicketComplaint}
+          ticket={ticketToEdit}
+          open={ticketSheetOpen}
+          onOpenChange={(open) => {
+            setTicketSheetOpen(open);
+            if (!open) {
+              setSelectedTicketComplaint(null);
+              setTicketToEdit(null);
+            }
+          }}
+          employees={employees}
+          allTickets={tickets}
+          onTicketChange={loadTickets}
+        />
       )}
 
       <ExportTicketsModal

@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { fetchUserProfile } from "../services/problemsApi";
-import { Button } from "../components/ui/button";
+import { fetchUserProfile } from "@/services/problemsApi";
+import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, SearchIcon, Building03Icon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
-import LoadingSpinner from "../components/LoadingSpinner";
-import Footer from "../components/Footer";
-import { Separator } from "../components/ui/separator";
-import { isAdminUser } from "../lib/complaintUtils";
+import { ArrowRight01Icon, SearchIcon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
+import PageSpinner from "@/components/PageSpinner";
+import Logo from "@/components/Logo";
+import Footer from "@/components/Footer";
+import { Separator } from "@/components/ui/separator";
+import { isAdminUser } from "@/lib/complaintUtils";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -34,21 +35,14 @@ const HomePage = () => {
   }, [navigate]);
 
   if (checkingAuth) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner minHeight="min-h-[60vh]" />;
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-primary font-bold text-xl tracking-tight">
-            <HugeiconsIcon icon={Building03Icon} className="size-6" strokeWidth={1.5} />
-            <span>DormWatch</span>
-          </div>
+          <Logo />
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
             <a href="#how-it-works" className="hover:text-foreground transition-colors">Як це працює</a>

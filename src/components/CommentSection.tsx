@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Forward01Icon, Cancel01Icon, Message01Icon } from "@hugeicons/core-free-icons";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import LoadingSpinner from "./LoadingSpinner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   fetchComments,
   postComment,
   deleteComment,
-} from "../services/problemsApi";
-import type { Comment } from "../lib/types";
+} from "@/services/problemsApi";
+import { formatDate } from "@/lib/dateUtils";
+import type { Comment } from "@/lib/types";
 
 interface CommentSectionProps {
   complaintId: number;
@@ -88,7 +89,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(c.date).toLocaleDateString()}
+                  {formatDate(c.date)}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">{c.text}</p>

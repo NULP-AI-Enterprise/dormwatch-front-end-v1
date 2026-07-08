@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+import { API_BASE } from "@/services/apiConfig";
 
 let accessToken = null;
 
@@ -147,7 +147,86 @@ export async function fetchPlaces(buildingId) {
   }
 }
 
-async function fetchJson(path, { method = "GET", body } = {}) {
+export async function fetchCategories() {
+  try {
+    const data = await fetchJson("/categories/");
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.warn("Failed to fetch categories", e);
+    return [];
+  }
+}
+
+// ── Reference-data CRUD (admin settings + resident room creation) ──
+
+export async function createCategory(name) {
+  return await fetchJson("/admin/categories/", {
+    method: "POST",
+    body: { name },
+  });
+}
+
+export async function updateCategory(id, name) {
+  return await fetchJson(`/admin/categories/${id}/`, {
+    method: "PATCH",
+    body: { name },
+  });
+}
+
+// Non-destructive: returns { detached_complaints }.
+export async function deleteCategory(id) {
+  return await fetchJson(`/admin/categories/${id}/`, { method: "DELETE" });
+}
+
+export async function createBuilding(name, address) {
+  return await fetchJson("/admin/buildings/", {
+    method: "POST",
+    body: { name, address },
+  });
+}
+
+export async function updateBuilding(id, { name, address }) {
+  const body = {};
+  if (name !== undefined) body.name = name;
+  if (address !== undefined) body.address = address;
+  return await fetchJson(`/admin/buildings/${id}/`, {
+    method: "PATCH",
+    body,
+  });
+}
+
+// On 409 (building has rooms), fetchJson throws with the JSON body as the
+// message — callers JSON.parse(err.message) to read `places_count`.
+export async function deleteBuilding(id, { force = false } = {}) {
+  const q = force ? "?force=true" : "";
+  return await fetchJson(`/admin/buildings/${id}/${q}`, { method: "DELETE" });
+}
+
+// Returns the full Place (with place_id) — powers the combobox "create room".
+export async function createPlace(buildingId, placeName) {
+  return await fetchJson("/places/", {
+    method: "POST",
+    body: { building_id: buildingId, place_name: placeName },
+  });
+}
+
+export async function updatePlace(id, placeName) {
+  return await fetchJson(`/admin/places/${id}/`, {
+    method: "PATCH",
+    body: { place_name: placeName },
+  });
+}
+
+// Non-destructive: returns { detached_complaints }.
+export async function deletePlace(id) {
+  return await fetchJson(`/admin/places/${id}/`, { method: "DELETE" });
+}
+
+/**
+ * @param {string} path
+ * @param {{ method?: string, body?: any }} [options]
+ */
+export async function fetchJson(path, { method = "GET", body } = {}) {
   // Build headers INSIDE a function so they always pick up the
   // current (potentially refreshed) access token — no stale closure.
   const buildHeaders = () => {
@@ -210,13 +289,6 @@ async function fetchJson(path, { method = "GET", body } = {}) {
   return await res.json();
 }
 
-export const CATEGORY_LABELS = {
-  plumbing: "Сантехніка",
-  electricity: "Електрика",
-  furniture: "Меблі",
-  internet: "Інтернет",
-};
-
 /**
  * @param {any} raw
  * @returns {any}
@@ -255,7 +327,7 @@ function normalizeComplaint(raw) {
     id: raw.id ?? raw.complaint_id ?? Date.now(),
     title: raw.title ?? "Без назви",
     description: raw.description ?? "",
-    category: raw.category?.name ?? raw.category ?? "plumbing",
+    category: raw.category?.name ?? raw.category ?? "Категорія",
     building: safeBuilding,
     room: safeRoom,
     placeName: safeRoom,
@@ -264,7 +336,6 @@ function normalizeComplaint(raw) {
     thumbnail: raw.thumbnail ?? null,
     status: status,
     priority: raw.priority ?? "medium",
-    votesCount: Number(raw.votesCount || raw.counter || 0),
     createdAt: raw.created_at || raw.createdAt || nowIso,
     user_id: raw.user?.id || raw.user?.user || raw.user || null,
   };
@@ -284,7 +355,10 @@ export async function fetchUserProfile() {
 
 export async function createProblem(problem) {
   const formData = new FormData();
-  if (problem.place_name) {
+  // Prefer place_id (emitted by PlaceCombobox); fall back to free-text name.
+  if (problem.place_id) {
+    formData.append("place_id", problem.place_id);
+  } else if (problem.place_name) {
     formData.append("place_name", problem.place_name);
   }
   formData.append("category", problem.category);
@@ -314,22 +388,25 @@ export async function fetchMyProblems() {
   return [];
 }
 
-function buildQueryParams(filters = {}) {
+// Build a `?a=1&b=2` query string from `filters`, restricted to `keys`.
+// Skips missing/empty values and the sentinel "all"; prefixes "?" when non-empty.
+function buildQueryParams(filters = {}, keys = ["corps", "priority"]) {
   const params = new URLSearchParams();
-  if (filters.corps && filters.corps !== 'all') params.append('corps', filters.corps);
-  if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
+  for (const key of keys) {
+    const value = filters[key];
+    if (value && value !== "all") params.append(key, value);
+  }
   return params.toString() ? `?${params.toString()}` : "";
 }
 
-export async function fetchComplaints({ status, sort = "new", filters = {} } = {}) {
+export async function fetchComplaints({ status, filters = {} } = {}) {
   try {
     const q = buildQueryParams(filters);
     const data = await fetchJson(`/complaints/${q}`);
     if (Array.isArray(data)) {
       let results = data.map(normalizeComplaint).filter(Boolean);
       if (status) results = results.filter((c) => c.status === status);
-      if (sort === "popular") results.sort((a, b) => b.votesCount - a.votesCount);
-      else results.sort(sortByNew);
+      results.sort(sortByNew);
       return results;
     }
   } catch (e) {
@@ -342,20 +419,8 @@ export async function fetchAllComplaints(filters = {}) {
   return fetchComplaints({ filters });
 }
 
-export async function fetchApprovedComplaints(sort = "new", filters = {}) {
-  return fetchComplaints({ status: "approved", sort, filters });
-}
-
-export async function fetchPendingComplaints(filters = {}) {
-  return fetchComplaints({ status: "pending", filters });
-}
-
-export async function fetchRejectedComplaints(filters = {}) {
-  return fetchComplaints({ status: "rejected", filters });
-}
-
-export async function fetchComplaintsByStatus(targetStatus, filters = {}) {
-  return fetchComplaints({ status: targetStatus, filters });
+export async function fetchApprovedComplaints(filters = {}) {
+  return fetchComplaints({ status: "approved", filters });
 }
 
 export async function deleteProblem(id) {
@@ -389,17 +454,6 @@ export async function updateComplaintPriority(id, newPriority) {
   return { id, priority: newPriority };
 }
 
-export async function approveComplaint(id) {
-  return updateComplaintStatus(id, "approved");
-}
-
-export async function voteComplaint(id) {
-  const res = await fetchJson(`/complaints/${id}/counter/`, {
-    method: "PATCH",
-  });
-  return { id, votesCount: res.counter };
-}
-
 export async function fetchComments(complaintId) {
   try {
     const data = await fetchJson(`/complaints/${complaintId}/comments/`);
@@ -430,13 +484,8 @@ export async function fetchEmployees() {
 
 export async function fetchTickets(filters = {}) {
   try {
-      const params = new URLSearchParams();
-      if (filters.worker && filters.worker !== 'all') params.append('worker', filters.worker);
-      if (filters.priority && filters.priority !== 'all') params.append('priority', filters.priority);
-      if (filters.date_from) params.append('date_from', filters.date_from);
-      if (filters.date_to) params.append('date_to', filters.date_to);
-      const q = params.toString() ? `?${params.toString()}` : "";
-      
+      const q = buildQueryParams(filters, ["worker", "priority", "date_from", "date_to"]);
+
       const data = await fetchJson(`/tickets/${q}`);
       if (Array.isArray(data)) return data;
   } catch (e) {
@@ -494,27 +543,6 @@ export async function postComment(complaintId, text) {
 
 export async function deleteComment(commentId) {
   await fetchJson(`/comments/${commentId}/`, { method: "DELETE" });
-}
-
-export async function updateUserProfile(data) {
-  const formData = new FormData();
-  if (data.first_name) formData.append("first_name", data.first_name);
-  if (data.last_name) formData.append("last_name", data.last_name);
-  if (data.email) formData.append("email", data.email);
-  if (data.photoFile instanceof File) formData.append("photo_url", data.photoFile);
-
-  return await fetchJson("/profile/", { method: "PATCH", body: formData });
-}
-
-export async function changeUserRoom(building, floor, room) {
-  return await fetchJson("/profile/change-room/", {
-    method: "PATCH",
-    body: {
-      building_number: parseInt(building),
-      floor_number: parseInt(floor),
-      room_number: String(room),
-    },
-  });
 }
 
 export async function fetchNotifications() {

@@ -1,28 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchMyProblems,
   deleteProblem,
-  CATEGORY_LABELS,
-} from "../services/problemsApi";
-import { resolveImageUrl } from "../services/imageUtils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { TicketCard } from "../components/TicketCard";
-import CommunityBoard from "../components/CommunityBoard";
-import CommentSection from "../components/CommentSection";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { statusBadgeClass, statusLabel, isAdminUser } from "../lib/complaintUtils";
-import { useUser } from "../context/UserContext";
-import type { Complaint } from "../lib/types";
+  fetchCategories,
+} from "@/services/problemsApi";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TicketCard } from "@/components/TicketCard";
+import ComplaintCard from "@/components/ComplaintCard";
+import CommentSection from "@/components/CommentSection";
+import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  FilterSearchInput,
+  StatusFilterSelect,
+  PriorityFilterSelect,
+  CategoryFilterButtons,
+} from "@/components/ComplaintFilters";
+import PageSpinner from "@/components/PageSpinner";
+import EmptyState from "@/components/EmptyState";
+import { isAdminUser } from "@/lib/complaintUtils";
+import { formatDate } from "@/lib/dateUtils";
+import { useCommentToggle } from "@/hooks/useCommentToggle";
+import { useUser } from "@/context/UserContext";
+import type { Complaint, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  Delete01Icon,
-  Message01Icon,
   MapPinIcon,
   InboxIcon,
   File01Icon,
@@ -34,24 +38,60 @@ const UserPage = () => {
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [openCommentsId, setOpenCommentsId] = useState<number | null>(null);
+  const comments = useCommentToggle();
+
+  const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterSearch, setFilterSearch] = useState("");
+
+  const fetchProblems = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await fetchMyProblems();
+      setProblems(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to fetch user data", e);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let alive = true;
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchMyProblems();
-        if (!alive) return;
-        setProblems(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error("Failed to fetch user data", e);
-      } finally {
-        if (alive) setLoading(false);
+    fetchProblems();
+    fetchCategories().then(setCategories).catch(() => {});
+  }, []);
+
+  const filteredProblems = problems.filter((p) => {
+    const matchesSearch = !filterSearch ||
+      (p.title || "").toLowerCase().includes(filterSearch.toLowerCase()) ||
+      (p.description || "").toLowerCase().includes(filterSearch.toLowerCase());
+    const matchesStatus = filterStatus === "all" || p.status === filterStatus;
+    const matchesCategory = filterCategory === "all" || p.category === filterCategory;
+    const matchesPriority = filterPriority === "all" || p.priority === filterPriority;
+    return matchesSearch && matchesStatus && matchesCategory && matchesPriority;
+  });
+
+  const selectedProblemRef = useRef(selectedProblem);
+  selectedProblemRef.current = selectedProblem;
+
+  useEffect(() => {
+    const handler = async () => {
+      const data = await fetchMyProblems();
+      const fresh = Array.isArray(data) ? data : [];
+      setProblems(fresh);
+      const current = selectedProblemRef.current;
+      if (current) {
+        const updated = fresh.find((c) => c.id === current.id);
+        if (updated) setSelectedProblem(updated);
       }
     };
-    loadData();
-    return () => { alive = false; };
+    window.addEventListener("complaintUpdated", handler);
+    return () => window.removeEventListener("complaintUpdated", handler);
   }, []);
 
   const onDelete = async (id: number) => {
@@ -68,15 +108,11 @@ const UserPage = () => {
   const room = currentUser?.room || "";
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
+    <><div className="max-w-5xl mx-auto px-4 py-10">
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList variant="line" className="mb-8">
             <TabsTrigger value="dashboard" className="text-xs font-semibold">
@@ -134,15 +170,15 @@ const UserPage = () => {
                 </div>
                 <div className="space-y-3">
                   {problems.length === 0 ? (
-                    <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                      <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                        <HugeiconsIcon icon={InboxIcon} className="size-5" strokeWidth={1.5} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-3">Немає активних заявок.</p>
-                      <Button asChild size="xs">
-                        <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити першу заявку</Link>
-                      </Button>
-                    </div>
+                    <EmptyState
+                      icon={InboxIcon}
+                      title="Немає активних заявок."
+                      action={
+                        <Button asChild size="xs">
+                          <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити першу заявку</Link>
+                        </Button>
+                      }
+                    />
                   ) : (
                     problems.slice(0, 5).map((p) => (
                       <TicketCard
@@ -151,102 +187,93 @@ const UserPage = () => {
                         title={p.title}
                         description={p.description}
                         category={p.category}
-                        date={new Date(p.createdAt).toLocaleDateString()}
+                        date={formatDate(p.createdAt)}
                         status={p.status}
-                        categoryLabel={CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS]}
+                        categoryLabel={p.category}
                       />
                     ))
                   )}
                 </div>
-
-                <CommunityBoard />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="reports">
-            <div className="space-y-4">
+            <div className="grid lg:grid-cols-4 gap-8">
+              <div className="lg:col-span-1 space-y-4">
+                <Card className="border-border shadow-none bg-card">
+                  <CardContent className="space-y-4">
+                    <FilterSearchInput value={filterSearch} onChange={setFilterSearch} />
+                    <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
+                    <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
+                    <CategoryFilterButtons
+                      value={filterCategory}
+                      onChange={setFilterCategory}
+                      categories={categories}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-3 space-y-4">
               {problems.length === 0 && (
-                <div className="border border-dashed border-border p-8 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 mb-4 border border-border bg-card flex items-center justify-center text-muted-foreground">
-                    <HugeiconsIcon icon={File01Icon} className="size-5" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-sm font-bold text-foreground mb-1">Ще немає звернень</p>
-                </div>
+                <EmptyState icon={File01Icon} title="Ще немає звернень" />
               )}
 
-              {problems.map((p) => (
-                <Card key={p.id} className="border-border shadow-none bg-card p-5">
-                  <div>
-                    <div className="flex justify-between items-start mb-3 gap-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className={statusBadgeClass(p.status)}>
-                          {statusLabel(p.status)}
-                        </Badge>
-                      </div>
-                      <span className="text-xs font-normal text-muted-foreground shrink-0">
-                        {CATEGORY_LABELS[p.category as keyof typeof CATEGORY_LABELS] || p.category || ""}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{new Date(p.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+              {problems.length > 0 && filteredProblems.length === 0 && (
+                <EmptyState
+                  icon={InboxIcon}
+                  title="Немає заявок за вибраними фільтрами."
+                />
+              )}
 
-                    <h3 className="text-sm font-semibold text-foreground mb-2">
-                      {p.title || "Без назви"}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-                      {p.description || "\u2014"}
-                    </p>
-
-                    {p.photoUrl && (
-                      <div className="w-full h-48 overflow-hidden border border-border mb-4">
-                        <img
-                          src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-                          className="w-full h-full object-cover"
-                          alt=""
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() =>
-                            setOpenCommentsId(openCommentsId === p.id ? null : p.id)
-                          }
-                          className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
-                        >
-                          <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
-                          Коментарі {openCommentsId === p.id ? <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} /> : <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />}
-                        </Button>
-                      </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => onDelete(p.id)}
-                          className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
-                        >
-                          <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-                        </Button>
-                      </div>
-                    </div>
-
-                  {openCommentsId === p.id && (
-                    <div className="p-4">
-                      <CommentSection
-                        complaintId={p.id}
-                        currentUserId={currentUser?.user}
-                        isAdmin={isAdminUser(currentUser)}
-                        complaintAuthorId={p.user_id}
-                      />
-                    </div>
-                  )}
-                </Card>
+              {filteredProblems.map((p) => (
+                <ComplaintCard
+                  key={p.id}
+                  complaint={p}
+                  bodyPadding="p-5"
+                  titleClass="text-sm font-semibold"
+                  metaVariant="date"
+                  descriptionFallback={"\u2014"}
+                  onTitleClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
+                  showPhoto
+                  photoHeight="h-48"
+                  footerClassName="flex items-center justify-between pt-4"
+                  commentsMode="inline"
+                  commentsSide="left"
+                  commentsOpen={comments.isOpen(p.id)}
+                  onCommentToggle={() => comments.toggle(p.id)}
+                  commentsContent={
+                    <CommentSection
+                      complaintId={p.id}
+                      currentUserId={currentUser?.user}
+                      isAdmin={isAdminUser(currentUser)}
+                      complaintAuthorId={p.user_id}
+                    />
+                  }
+                  showDelete
+                  onDelete={onDelete}
+                />
               ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+        {selectedProblem && (
+          <ComplaintSidePanel
+            complaint={selectedProblem}
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            onStatusChange={() => {
+              fetchProblems();
+            }}
+            currentUserId={currentUser?.user}
+            isAdmin={isAdminUser(currentUser)}
+          />
+        )}
+    </>
   );
 };
 

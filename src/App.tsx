@@ -1,15 +1,16 @@
 import { Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import UserPage from "./pages/UserPage";
-import AdminPage from "./pages/AdminPage";
-import AdminComplaintsPage from "./pages/AdminComplaintsPage";
-import CreateReportPage from "./pages/CreateReportPage";
-import DashboardPage from "./pages/DashboardPage";
-import AuthPage from "./pages/AuthPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import StudentLayout from "./components/StudentLayout";
-import AdminLayout from "./components/AdminLayout";
-import AdminTicketsPrintPage from "./pages/AdminTicketsPrintPage";
+import HomePage from "@/pages/HomePage";
+import UserPage from "@/pages/UserPage";
+import AdminPage from "@/pages/AdminPage";
+import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
+import AdminSettingsPage from "@/pages/AdminSettingsPage";
+import CreateReportPage from "@/pages/CreateReportPage";
+import DashboardPage from "@/pages/DashboardPage";
+import AuthPage from "@/pages/AuthPage";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import StudentLayout from "@/components/StudentLayout";
+import AdminLayout from "@/components/AdminLayout";
+import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
 
 function App() {
   return (
@@ -39,9 +40,11 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <StudentLayout>
-            <DashboardPage />
-          </StudentLayout>
+          <ProtectedRoute>
+            <StudentLayout>
+              <DashboardPage />
+            </StudentLayout>
+          </ProtectedRoute>
         }
       />
       <Route
@@ -60,6 +63,16 @@ function App() {
           <ProtectedRoute requireAdmin>
             <AdminLayout>
               <AdminComplaintsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminLayout>
+              <AdminSettingsPage />
             </AdminLayout>
           </ProtectedRoute>
         }

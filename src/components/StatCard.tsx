@@ -1,4 +1,4 @@
-import Sparkline from "./Sparkline";
+import Sparkline from "@/components/Sparkline";
 
 interface StatCardProps {
   icon: React.ReactNode;

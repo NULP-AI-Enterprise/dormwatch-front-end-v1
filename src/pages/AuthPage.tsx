@@ -3,11 +3,11 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { loginUser, registerUser, fetchBuildings, fetchPlaces } from "../services/problemsApi";
-import { Card, CardContent } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { loginUser, registerUser } from "@/services/problemsApi";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Building03Icon,
@@ -23,7 +23,10 @@ import {
   FormMessage,
   FormDescription,
   useFormField,
-} from "../components/ui/form";
+} from "@/components/ui/form";
+import { useBuildings } from "@/hooks/useBuildings";
+import PlaceCombobox from "@/components/PlaceCombobox";
+import type { Place } from "@/lib/types";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
@@ -111,9 +114,8 @@ const AuthPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [buildings, setBuildings] = useState<Array<{building_id: number, name: string}>>([]);
-  const [places, setPlaces] = useState<Array<{place_id: number, place_name: string}>>([]);
-  const [placesLoading, setPlacesLoading] = useState(false);
+  const buildings = useBuildings();
+  const [regPlace, setRegPlace] = useState<Place | null>(null);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -131,21 +133,11 @@ const AuthPage = () => {
 
   const regBuildingId = registerForm.watch("building_id");
 
+  // Reset the picked room whenever the building changes (the room list is
+  // scoped to a building). PlaceCombobox self-fetches, so no manual load here.
   useEffect(() => {
-    fetchBuildings().then(setBuildings).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!regBuildingId) {
-      setPlaces([]);
-      return;
-    }
-    setPlacesLoading(true);
+    setRegPlace(null);
     registerForm.setValue("place_id", "");
-    fetchPlaces(regBuildingId)
-      .then(setPlaces)
-      .catch(() => setPlaces([]))
-      .finally(() => setPlacesLoading(false));
   }, [regBuildingId, registerForm]);
 
   const handleLogin = async (data: LoginData) => {
@@ -200,7 +192,7 @@ const AuthPage = () => {
   if (mode === "register") {
     return (
       <AuthLayout heading="Реєстрація" subtitle="Створіть обліковий запис для подачі заявок на ремонт.">
-        <Card className="border-border shadow-2xl">
+        <Card className="py-0 border-border shadow-2xl">
           <CardContent className="p-6">
             {error && <ErrorBanner message={error} />}
 
@@ -282,18 +274,15 @@ const AuthPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Кімната</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value} disabled={placesLoading}>
-                          <SelectField className="w-full">
-                            <SelectValue placeholder={placesLoading ? "Завантаження..." : "Оберіть кімнату"} />
-                          </SelectField>
-                          <SelectContent>
-                            {places.map((p) => (
-                              <SelectItem key={p.place_id} value={String(p.place_id)}>
-                                {p.place_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <PlaceCombobox
+                          buildingId={Number(regBuildingId)}
+                          value={regPlace}
+                          onChange={(p) => {
+                            setRegPlace(p);
+                            field.onChange(String(p.place_id));
+                          }}
+                          placeholder="Оберіть кімнату..."
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -362,7 +351,7 @@ const AuthPage = () => {
 
   return (
     <AuthLayout heading="Вхід до системи" subtitle="Увійдіть, щоб створити або відстежити заявку на ремонт.">
-      <Card className="border-border shadow-2xl">
+      <Card className="py-0 border-border shadow-2xl">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 
