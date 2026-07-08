@@ -166,11 +166,28 @@ Applied via Tailwind utility classes (e.g. from `complaintUtils.ts`):
 | `bg-muted/50` | Hover states, lighter surface fills (outline button hover, cross-link cards, table header row) |
 | `bg-muted/30` | Subtle background tints behind content (comment section, skeleton secondary bars) |
 
+### App Chrome (Sidebar, Header, Toolbars)
+The persistent framing surfaces around content — sidebar, top header/toolbar bar — are treated as a single continuous piece of "chrome," visually distinct from the content area behind them.
+
+*   **One surface token for all chrome.** Every chrome surface uses the *same* elevated surface fill (`bg-card`), not a mix of `bg-card` and `bg-background`. A sidebar on `bg-background` beside a header on `bg-card` reads as two disconnected panels; sharing one token makes them read as one frame wrapping the content. The content area itself keeps the base `bg-background` (plus the blueprint texture) so the chrome sits visibly above it.
+*   **Chrome/content boundary** is a solid `border-border`, never a dashed separator (dashed is reserved for intra-card divisions per the Ticket motif).
+
+### Aligning Fixed-Height Rows (Border-Model Discipline)
+When two fixed-height rows sit side by side across a layout seam — e.g. a sidebar's brand/identity block and the main header bar — their bottom edges (and any divider under them) must land on the *same* pixel. The common cause of a fractional-pixel mismatch is drawing the two dividers with different box models.
+
+*   **Draw a row's bottom divider with an in-box `border-b`, not an appended 1px separator element.** With `box-border` (the default), a `border-b` lives *inside* the declared height — an `h-20` row stays exactly 80px, border included. A separate sibling separator adds its 1px *outside* the row, pushing the seam 1px lower and leaving one side ~0.77px short after sub-pixel rounding.
+*   **Rule:** rows meant to align across a seam must use the *same* height token **and** the *same* divider mechanism. If one side draws its boundary with `border-b`, the other must too — do not pair a bordered row against a row-plus-Separator.
+*   This also removes a stray DOM node and keeps the divider color/opacity identical on both sides by construction.
+
 ### Buttons
 *   **Size:** All buttons across the application must use the `default` normal size. Avoid using `size="sm"` or other custom sizes unless strictly required for a specific layout constraint.
 *   **Primary Action Buttons:** `bg-primary text-primary-foreground hover:bg-primary/80`, `font-semibold`, square corners, `h-8` default.
 *   **Outline Buttons:** `border-border bg-background hover:bg-muted hover:text-foreground`.
-*   **Ghost Buttons:** Used for icon-only actions, secondary triggers. `text-muted-foreground hover:bg-muted hover:text-foreground`.
+*   **Ghost Buttons:** Used for icon-only actions, secondary triggers. `text-muted-foreground hover:bg-muted hover:text-foreground`. Keep them true ghosts — rely on the variant's own `hover:bg-muted` and never bolt on structural chrome (left-border dividers, `hover:opacity-*` overrides) that fights the variant. If a trigger needs a divider from adjacent chrome, that belongs on the surrounding container, not the button.
+*   **Composite Triggers (avatar / element + affordance):** When a ghost trigger wraps a fixed-height element — an avatar, thumbnail, or badge — alongside an affordance icon or label, do not force the button's fixed height (`h-8`). A same-height child leaves no room inside the button's border+padding box and gets clipped or cramped. Let the button grow to its content with `h-auto` plus vertical padding, so the wrapped element, gap, and affordance sit with breathing room. **Scale the padding and affordance icon to what the trigger wraps** — do not pin one value across both instances of this pattern:
+    *   **Header account trigger** (`StudentLayout`): compact — a `sm` avatar + a trailing `ChevronDownIcon`, no text label, `gap-2 py-1.5`. The chevron reads as a dropdown opener for a menu that drops *below* it.
+    *   **Sidebar account trigger** (`AdminLayout`): a full-width list row — a `md` avatar + a two-line name/place label + a trailing `ArrowRight01Icon` (`ml-auto`), `gap-3 px-4 py-3`. The larger avatar and stacked text earn the roomier `py-3`; the arrow reads as "go to profile," matching the row's navigational feel.
+    The padding difference is intentional and content-driven, not drift: `py-1.5` fits the icon-only chevron trigger, `py-3` the taller labeled row. The affordance icon differs for the same reason — a chevron for a menu that opens in place, an arrow for a row that reads as navigation.
 *   **Destructive Buttons:** `bg-destructive/10 text-destructive hover:bg-destructive/20`.
 *   **Focus States:** `focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50`.
 
@@ -178,6 +195,10 @@ Applied via Tailwind utility classes (e.g. from `complaintUtils.ts`):
 *   **Card base:** `rounded-none bg-card border border-border` with vertical internal gap (`--card-spacing`).
 *   **Ticket-style cards:** `bg-card border border-border` with the group-hover left-border reveal pattern.
 *   **Card hover:** `hover:border-border/80 transition-colors` (slight border brightening).
+*   **Padding — do not double it.** The `Card` component already supplies its own vertical padding (`py-(--card-spacing)`), and `CardContent` supplies only horizontal padding by default — the two are designed to compose into even padding on all sides. Do not add a full-`p` override (e.g. `p-4`, `p-6`) to `CardContent` or to a raw wrapper `div` inside a `Card`: that re-adds vertical padding on top of the Card's own, producing asymmetric, doubled top/bottom spacing. To adjust spacing, prefer these instead:
+    *   Need the default look → add no padding class; let `Card` + `CardContent` defaults resolve.
+    *   Need only inner gaps between children → use `space-y-*` (not `p-*`).
+    *   Need a genuinely different padding value → neutralize the Card's built-in vertical padding with `py-0` on the `Card`, then set the single desired `p-*` on the inner content. Never let both layers apply padding at once.
 
 ### Inputs
 *   **Base:** `h-8 rounded-none border border-input bg-transparent px-2.5` with `focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50`.
@@ -285,15 +306,17 @@ Public/semi-public view of all approved complaints with filtering and voting.
 Multi-section form for submitting new complaints.
 *   **Back button:** `border border-border hover:border-primary hover:bg-primary/5`.
 *   **Category selector:** 2×2 / 4-column grid of icon+label buttons. Active: `variant="default"`, inactive: `variant="outline"`, `border-2`.
-*   **Priority selector:** 3 outline/default toggle buttons (`Низький / Середній / Високий`), `flex-1`.
+*   **Priority selector:** outline/default toggle buttons, one per priority tier (`Низький / Середній / Високий / Критичний`), `flex-1`. The set of tiers and their labels is driven from the shared priority source (see §11) so the form never drifts from the admin filters.
 *   **Form fields:** Title, place name, description (`Textarea`, `min-h-36 resize-none`). All with `text-xs font-semibold text-foreground` label above.
 *   **Photo upload:** Square `aspect-square` drop zone with `border-2 border-dashed`. Shows preview with `X` overlay button when photo selected.
 *   **Submit button:** Full-width, button label styling per §3.4.
 
 ### Admin Dashboard (`/admin`)
 Sidebar + main content layout for administrators.
-*   **Sidebar:** `AdminSidebar` component with user identity (initials avatar, name, role), navigation links.
-*   **Header bar:** `h-16 bg-card` with page title + "Експорт даних" (outline) and "Нове замовлення" (primary) buttons.
+*   **Full-width content:** Admin pages span the full available width — no `max-w-*` cap on the content area and no `lg:px-*` / `lg:p-*` responsive padding step-up. The overview grid and header use flat `p-6` / `px-6` padding at all breakpoints so content fills the space next to the sidebar.
+*   **Shared header shell:** The header bar lives once at the admin layout level (not per-page), so every admin route inherits an identically-sized, aligned header. Its title is **derived synchronously from the route** (a path→title map), never set from a page effect — this avoids a one-frame blank flash on navigation. Only the right-aligned **action buttons** are page-specific; pages inject them upward through a small context, defaulting to none (title-only header).
+*   **Header/sidebar alignment:** The header row and the sidebar brand row share the same height token and both draw their bottom edge with an in-box `border-b` so the seam lands on one pixel (see §5, "Aligning Fixed-Height Rows"). Both surfaces use `bg-card` (see §5, "App Chrome").
+*   **Sidebar:** `AdminSidebar` component with user identity (initials avatar, name, role), navigation links. The account control is a single composite trigger (avatar + two-line name/place + trailing `ArrowRight01Icon`, per §5's sidebar variant) that opens the profile/contacts dialog — no separate settings gear.
 *   **Stat cards:** 3-column grid of `StatCard` components (Очікує / В роботі / Вирішено) with colored sparklines.
 *   **Recent complaints table:** `bg-card border border-border` container with `Table` component. Rows are clickable, opening `ComplaintSidePanel` (sheet).
 
@@ -329,6 +352,15 @@ Minimal CSS spinner for loading states.
 
 ### ComplaintSidePanel
 Slide-out sheet (`Sheet` / `Dialog` variant) for viewing/editing individual complaints in the admin dashboard.
+
+### ComplaintFilters
+Shared filter primitives for complaint list sidebars (`components/ComplaintFilters.tsx`). Extracted so the option lists and markup live in one place instead of being copy-pasted per page. Exports small, composable pieces rather than one monolithic panel — pages assemble only the filters they need, with their own headings/separators around them.
+*   `FilterSearchInput` — search field with the inline `SearchIcon`. `placeholder` defaults to "Пошук заявок...".
+*   `StatusFilterSelect` — status `Select` (Всі / Очікує / Активно / Відхилено / Вирішено).
+*   `PriorityFilterSelect` — priority `Select`, driven by `PRIORITY_OPTIONS` + `priorityLabel`.
+*   `BuildingFilterSelect` — building `Select`, takes a `buildings` prop.
+*   `CategoryFilterButtons` — outline/default toggle button group; clicking the active category clears back to `"all"`. Takes a `categories` prop.
+*   All selects share the `w-full h-8 text-xs` sizing. Used by the Dashboard, User reports, Admin overview, and Admin complaints (requests + tickets tabs) sidebars.
 
 ---
 
@@ -430,9 +462,11 @@ All components override `rounded-none` globally:
 | `resolved` | Вирішено |
 
 ### Priority Labels
+Labels and tier order come from one shared source (a `PRIORITY_LABELS` map + ordered `PRIORITY_OPTIONS` array); every selector, filter, form, and badge reads from it rather than hard-coding strings, so the resident form, admin filters, and complaint-sheet selector can never drift apart.
+
 | Key | Ukrainian Label |
 |---|---|
 | `low` | Низький |
 | `medium` | Середній |
 | `high` | Високий |
-| `critical` | Критично |
+| `critical` | Критичний |
