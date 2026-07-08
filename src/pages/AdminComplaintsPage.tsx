@@ -15,6 +15,8 @@ import {
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
 import TicketSidePanel from "@/components/TicketSidePanel";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
+import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import EmptyState from "@/components/EmptyState";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useBuildings } from "@/hooks/useBuildings";
@@ -209,6 +211,28 @@ const AdminComplaintsPage = () => {
     [approvedForTickets, tickets, ticketCategory, ticketStatus, ticketSearchQuery]
   );
 
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+          Експорт даних
+        </Button>
+        <NotificationBell onSelectComplaint={(c) => {
+          setSelectedComplaint(c);
+          setSheetOpen(true);
+        }} />
+      </>
+    ),
+    [],
+  );
+  useAdminHeaderActions(headerActions);
+
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
@@ -229,38 +253,22 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
       <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="flex items-center justify-between pr-6">
-            <TabsList variant="line" className="h-auto bg-transparent">
-              <TabsTrigger value="requests" className="px-5 py-3 text-xs font-semibold">
+          <div className="px-6 pt-6">
+            <TabsList variant="line">
+              <TabsTrigger value="requests" className="text-xs font-semibold">
                 Скарги
               </TabsTrigger>
-              <TabsTrigger value="tickets" className="px-5 py-3 text-xs font-semibold">
+              <TabsTrigger value="tickets" className="text-xs font-semibold">
                 Тікети
               </TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 h-9"
-                onClick={() => setIsExportModalOpen(true)}
-              >
-                <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-                Експорт даних
-              </Button>
-              <NotificationBell onSelectComplaint={(c) => {
-                setSelectedComplaint(c);
-                setSheetOpen(true);
-              }} />
-            </div>
           </div>
-          <Separator />
 
-          <TabsContent value="requests" className="flex-1 p-5">
+          <TabsContent value="requests" className="flex-1 p-6">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
-                  <CardContent className="p-4">
+                  <CardContent>
                     <div className="relative mb-4">
                       <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
                       <Input
@@ -317,10 +325,9 @@ const AdminComplaintsPage = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Всі пріоритети</SelectItem>
-                        <SelectItem value="low">Низький</SelectItem>
-                        <SelectItem value="medium">Середній</SelectItem>
-                        <SelectItem value="high">Високий</SelectItem>
-                        <SelectItem value="critical">Критичний</SelectItem>
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <SelectItem key={p} value={p}>{priorityLabel(p)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
@@ -447,11 +454,11 @@ const AdminComplaintsPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="tickets" className="flex-1 p-5">
+          <TabsContent value="tickets" className="flex-1 p-6">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
-                  <CardContent className="p-4">
+                  <CardContent>
                     <div className="relative mb-4">
                       <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
                       <Input
@@ -548,6 +555,11 @@ const AdminComplaintsPage = () => {
           onStatusChange={loadComplaints}
           currentUserId={currentUser?.user}
           isAdmin={true}
+          onCreateTicket={(c) => {
+            setSheetOpen(false);
+            setSelectedComplaint(null);
+            openTicketSheet(c);
+          }}
         />
       )}
 

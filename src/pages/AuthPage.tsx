@@ -198,7 +198,7 @@ const AuthPage = () => {
   if (mode === "register") {
     return (
       <AuthLayout heading="Реєстрація" subtitle="Створіть обліковий запис для подачі заявок на ремонт.">
-        <Card className="border-border shadow-2xl">
+        <Card className="py-0 border-border shadow-2xl">
           <CardContent className="p-6">
             {error && <ErrorBanner message={error} />}
 
@@ -360,7 +360,7 @@ const AuthPage = () => {
 
   return (
     <AuthLayout heading="Вхід до системи" subtitle="Увійдіть, щоб створити або відстежити заявку на ремонт.">
-      <Card className="border-border shadow-2xl">
+      <Card className="py-0 border-border shadow-2xl">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

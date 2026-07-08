@@ -205,7 +205,7 @@ const UserPage = () => {
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
-                  <CardContent className="p-4 space-y-4">
+                  <CardContent className="space-y-4">
                     <div className="relative">
                       <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
                       <Input

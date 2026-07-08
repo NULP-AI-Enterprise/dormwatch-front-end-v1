@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchAllComplaints,
   fetchCategories,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
+import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import { NotificationBell } from "@/components/NotificationBell";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -29,7 +31,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, AddIcon, SearchIcon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon, SearchIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
@@ -95,59 +97,35 @@ const AdminPage = () => {
     setComplaints(data);
   };
 
+  const headerActions = useMemo(
+    () => (
+      <>
+        <NotificationBell onSelectComplaint={(c) => {
+          setSelectedComplaint(c);
+          setSheetOpen(true);
+        }} />
+        <Button
+          variant="outline"
+          size="default"
+          className="gap-2"
+          onClick={() => setIsExportModalOpen(true)}
+        >
+          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+          Експорт даних
+        </Button>
+      </>
+    ),
+    [],
+  );
+  useAdminHeaderActions(headerActions);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <header className="h-16 bg-card flex items-center justify-between px-6 lg:px-8 shrink-0">
-          <h1 className="text-2xl font-bold text-foreground">Інформаційна панель</h1>
-          <div className="flex items-center gap-3">
-            <NotificationBell onSelectComplaint={(c) => {
-              setSelectedComplaint(c);
-              setSheetOpen(true);
-            }} />
-            <Button
-              variant="outline"
-              size="default"
-              className="gap-2"
-              onClick={() => setIsExportModalOpen(true)}
-            >
-              <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-              Експорт даних
-            </Button>
-            <Button
-              size="default"
-              className="gap-2"
-              onClick={() => {
-                setSelectedComplaint({
-                  id: "new" as unknown as number,
-                  title: "",
-                  description: "",
-                  category: "",
-                  status: "pending",
-                  building: "",
-                  room: "",
-                  placeName: "",
-                  floor: "",
-                  priority: "medium",
-                  createdAt: "",
-                  photoUrl: null,
-                  thumbnail: null,
-                  user_id: null,
-                });
-                setSheetOpen(true);
-              }}
-            >
-              <HugeiconsIcon icon={AddIcon} className="size-5" strokeWidth={2} />
-              Новий тікет
-            </Button>
-          </div>
-        </header>
-        <Separator />
-
         <div className="flex-1 overflow-auto p-6 lg:p-8">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-4 gap-8">
             <div className="lg:col-span-1 space-y-4">
               <Card className="border-border shadow-none bg-card">
-                <CardContent className="p-4 space-y-4">
+                <CardContent className="space-y-4">
                   <div className="relative">
                     <HugeiconsIcon icon={SearchIcon} className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" strokeWidth={2} />
                     <Input
@@ -191,10 +169,9 @@ const AdminPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Всі пріоритети</SelectItem>
-                      <SelectItem value="low">Низький</SelectItem>
-                      <SelectItem value="medium">Середній</SelectItem>
-                      <SelectItem value="high">Високий</SelectItem>
-                      <SelectItem value="critical">Критичний</SelectItem>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <SelectItem key={p} value={p}>{priorityLabel(p)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 

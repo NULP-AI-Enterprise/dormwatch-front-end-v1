@@ -1,30 +1,38 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { DashboardSquare01Icon, GroupIcon, File01Icon, SettingsIcon } from "@hugeicons/core-free-icons";
+import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
 import { SettingsModal } from "@/components/SettingsModal";
+import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
+
+const ROUTE_TITLES: Record<string, string> = {
+  "/admin": "Інформаційна панель",
+  "/admin/complaints": "Всі скарги",
+};
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useUser();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [headerActions, setHeaderActions] = useState<ReactNode>(null);
 
   const placeName = user?.place?.place_name || "Головний офіс";
+  const title = ROUTE_TITLES[currentPath] || "";
 
   const navItems = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
-    { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={GroupIcon} className="size-5" /> },
+    { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
     { name: "Всі скарги", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
   ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background bg-dot-grid relative">
-      <aside className="w-full md:w-64 bg-background border-r border-border flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
+      <aside className="w-full md:w-64 bg-card border-r border-border flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
         <div className="h-20 px-6 flex items-center border-b border-border">
           <Logo to="/admin" className="gap-3" />
         </div>
@@ -49,13 +57,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-border space-y-4">
-          <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-left text-muted-foreground hover:text-foreground">
-            <HugeiconsIcon icon={SettingsIcon} className="size-5" />
-            Налаштування
-          </Button>
-
-          <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50">
+        <div className="p-4 border-t border-border">
+          <Button variant="ghost" onClick={() => setIsProfileOpen(true)} className="w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-2">
             <UserAvatar user={user} size="md" fallback="AD" />
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-bold text-foreground truncate">
@@ -65,15 +68,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 {placeName}
               </span>
             </div>
+            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 ml-auto shrink-0 text-muted-foreground" />
           </Button>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
-        {children}
+        <header className="h-20 bg-card flex items-center justify-between px-6 lg:px-8 shrink-0 border-b border-border">
+          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+          <div className="flex items-center gap-3">{headerActions}</div>
+        </header>
+        <AdminHeaderProvider setActions={setHeaderActions}>
+          {children}
+        </AdminHeaderProvider>
       </main>
 
-      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <SettingsModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </div>
   );
 };

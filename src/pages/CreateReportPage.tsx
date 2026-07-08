@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import PhotoUploadField from "@/components/PhotoUploadField";
+import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import {
   Select,
   SelectContent,
@@ -142,21 +143,17 @@ const CreateReportPage = () => {
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Пріоритет</label>
               <div className="flex gap-2">
-                {[
-                  { id: "low", label: "Низький" },
-                  { id: "medium", label: "Середній" },
-                  { id: "high", label: "Високий" },
-                ].map((p) => (
+                {PRIORITY_OPTIONS.map((id) => (
                   <Button
-                    key={p.id}
+                    key={id}
                     type="button"
-                    variant={formData.priority === p.id ? "default" : "outline"}
+                    variant={formData.priority === id ? "default" : "outline"}
                     onClick={() =>
-                      setFormData((prev) => ({ ...prev, priority: p.id }))
+                      setFormData((prev) => ({ ...prev, priority: id }))
                     }
                     className="flex-1 py-2 text-xs transition-colors"
                   >
-                    {p.label}
+                    {priorityLabel(id)}
                   </Button>
                 ))}
               </div>

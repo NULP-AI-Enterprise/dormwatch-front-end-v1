@@ -48,8 +48,8 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
         showCloseButton
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Налаштування</DialogTitle>
-          <DialogDescription>Керування профілем та налаштуваннями</DialogDescription>
+          <DialogTitle>Профіль</DialogTitle>
+          <DialogDescription>Ваш профіль та екстрені контакти</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col max-h-[80vh]">

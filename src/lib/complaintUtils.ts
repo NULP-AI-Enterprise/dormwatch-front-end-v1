@@ -18,8 +18,11 @@ export const PRIORITY_LABELS: Record<string, string> = {
   high: "Високий",
   medium: "Середній",
   low: "Низький",
-  critical: "Критично",
+  critical: "Критичний",
 };
+
+// Ordered low → critical; the single source for priority selectors/forms.
+export const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"] as const;
 
 export const statusLabel = (status: string) => {
   const s = String(status || "").toLowerCase();

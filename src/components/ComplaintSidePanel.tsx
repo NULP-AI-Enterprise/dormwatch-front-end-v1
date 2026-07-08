@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
 import CommentSection from "@/components/CommentSection";
-import TicketCreateForm from "@/components/TicketCreateForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "@/services/problemsApi";
-import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
+import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
@@ -37,9 +36,8 @@ interface ComplaintSidePanelProps {
   onStatusChange: () => void;
   currentUserId?: number | string;
   isAdmin: boolean;
+  onCreateTicket?: (complaint: Complaint) => void;
 }
-
-const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"];
 
 const ComplaintSidePanel = ({
   complaint,
@@ -48,8 +46,8 @@ const ComplaintSidePanel = ({
   onStatusChange,
   currentUserId,
   isAdmin,
+  onCreateTicket,
 }: ComplaintSidePanelProps) => {
-  const [showTicketForm, setShowTicketForm] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isPrioritySelectOpen = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -355,27 +353,19 @@ const ComplaintSidePanel = ({
                   onStatusChange={handleStatusChange}
                   onDelete={handleDelete}
                 />
-                {!showTicketForm && (
+                {onCreateTicket && (
                   <Button
                     variant="outline"
-                    onClick={() => setShowTicketForm(true)}
+                    onClick={() => {
+                      onOpenChange(false);
+                      onCreateTicket(complaint);
+                    }}
                   >
                     <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
                     Створити тікет
                   </Button>
                 )}
               </div>
-
-              {showTicketForm && (
-                <TicketCreateForm
-                  fixedComplaintId={complaint.id as number}
-                  onClose={() => setShowTicketForm(false)}
-                  onSaved={() => {
-                    setShowTicketForm(false);
-                    onOpenChange(false);
-                  }}
-                />
-              )}
             </div>
           )}
 

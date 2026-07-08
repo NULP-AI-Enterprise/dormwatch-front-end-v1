@@ -124,7 +124,7 @@ const ComplaintCard = ({
   // ── Compact variant (ticket cards) ──────────────────────────────
   if (variant === "compact") {
     return (
-      <Card className={cn("border-border shadow-none bg-card", cardClassName)}>
+      <Card className={cn("py-0 border-border shadow-none bg-card", cardClassName)}>
         <div className="p-6">
           <div className="flex justify-between items-start mb-2">
             <h4 className="text-sm font-semibold text-foreground">
@@ -232,7 +232,7 @@ const ComplaintCard = ({
   return (
     <Card
       className={cn(
-        "border-border shadow-none bg-card",
+        "py-0 border-border shadow-none bg-card",
         onCardClick && "group hover:bg-muted/50 transition-colors cursor-pointer",
         hoverRevealDelete && "group relative",
         cardClassName
