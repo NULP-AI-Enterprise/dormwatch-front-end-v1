@@ -13,10 +13,11 @@ interface TicketCardProps {
   categoryLabel?: string;
 }
 
-const stageMap: Record<string, "submitted" | "in_progress" | "resolved"> = {
+const stageMap: Record<string, "submitted" | "in_progress" | "resolved" | "rejected"> = {
   pending: "submitted",
   approved: "in_progress",
   resolved: "resolved",
+  rejected: "rejected",
 };
 
 const TicketCardSkeleton = () => (

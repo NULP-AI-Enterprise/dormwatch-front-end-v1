@@ -178,17 +178,24 @@ export async function deleteCategory(id) {
   return await fetchJson(`/admin/categories/${id}/`, { method: "DELETE" });
 }
 
-export async function createBuilding(name, address) {
+export async function createBuilding(name, address, { commandantPhone, dutyMasterPhone } = {}) {
   return await fetchJson("/admin/buildings/", {
     method: "POST",
-    body: { name, address },
+    body: {
+      name,
+      address,
+      commandant_phone: commandantPhone ?? "",
+      duty_master_phone: dutyMasterPhone ?? "",
+    },
   });
 }
 
-export async function updateBuilding(id, { name, address }) {
+export async function updateBuilding(id, { name, address, commandantPhone, dutyMasterPhone }) {
   const body = {};
   if (name !== undefined) body.name = name;
   if (address !== undefined) body.address = address;
+  if (commandantPhone !== undefined) body.commandant_phone = commandantPhone;
+  if (dutyMasterPhone !== undefined) body.duty_master_phone = dutyMasterPhone;
   return await fetchJson(`/admin/buildings/${id}/`, {
     method: "PATCH",
     body,
@@ -295,39 +302,46 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
  */
 function normalizeComplaint(raw) {
   if (!raw) return null;
-  const nowIso = new Date().toISOString();
+
+  // A record with no real id is unusable — every action (delete/status/ticket)
+  // targets its id, so a fabricated id would silently 404. Skip it entirely.
+  const realId = raw.id ?? raw.complaint_id;
+  if (realId === undefined || realId === null) return null;
+
   let status = raw.status || "pending";
   if (status === "published") status = "approved";
   if (status === "denied") status = "rejected";
 
   let safeRoom = "";
   let safeFloor = "";
-  let safeBuilding = "4";
+  let safeBuilding = "";
 
   if (raw.place && typeof raw.place === "object") {
     safeRoom = String(raw.place.place_name || "");
     if (raw.place.building) {
-      safeBuilding = String(raw.place.building.name || raw.place.building.building_id || "4");
+      safeBuilding = String(raw.place.building.name || raw.place.building.building_id || "");
     }
   } else if (raw.room && typeof raw.room === "object") {
     safeRoom = String(raw.room.room_number || "");
     if (raw.room.floor) {
       safeFloor = String(raw.room.floor.floor_number || "");
       if (raw.room.floor.building) {
-        safeBuilding = String(raw.room.floor.building.number || "4");
+        safeBuilding = String(raw.room.floor.building.number || "");
       }
     }
   } else {
     safeRoom = raw.room || "";
     safeFloor = raw.floor || "";
-    safeBuilding = raw.building || "4";
+    safeBuilding = raw.building || "";
   }
 
   return {
-    id: raw.id ?? raw.complaint_id ?? Date.now(),
+    id: realId,
     title: raw.title ?? "Без назви",
     description: raw.description ?? "",
-    category: raw.category?.name ?? raw.category ?? "Категорія",
+    // null (not a fabricated label) when the payload has no category — the UI
+    // omits the chip rather than showing the literal word "Категорія".
+    category: raw.category?.name ?? raw.category ?? null,
     building: safeBuilding,
     room: safeRoom,
     placeName: safeRoom,
@@ -335,14 +349,20 @@ function normalizeComplaint(raw) {
     photoUrl: raw.photo_url ?? raw.photoUrl ?? null,
     thumbnail: raw.thumbnail ?? null,
     status: status,
-    priority: raw.priority ?? "medium",
-    createdAt: raw.created_at || raw.createdAt || nowIso,
+    // null when unset — the UI omits the badge instead of inventing "medium".
+    priority: raw.priority ?? null,
+    // null when unset — avoids fabricating a "created today" timestamp that
+    // would also sort to the top and match the "today" date filter.
+    createdAt: raw.created_at ?? raw.createdAt ?? null,
     user_id: raw.user?.id || raw.user?.user || raw.user || null,
   };
 }
 
+// Newest first; records without a timestamp sort last (they have no known date).
 function sortByNew(a, b) {
-  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  const ta = a.createdAt ? new Date(a.createdAt).getTime() : -Infinity;
+  const tb = b.createdAt ? new Date(b.createdAt).getTime() : -Infinity;
+  return tb - ta;
 }
 
 export async function fetchUserProfile() {

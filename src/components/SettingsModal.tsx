@@ -21,11 +21,6 @@ import UserAvatar from "@/components/UserAvatar";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 
-const CONTACT_PHONES = {
-  commandant: "093 123 45 67",
-  dutyMaster: "067 987 65 43",
-};
-
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,6 +30,11 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { user } = useUser();
 
   const isAdmin = isAdminUser(user);
+
+  // Per-dorm emergency contacts come from the user's building config; a building
+  // without a number simply omits that row (no fabricated placeholder).
+  const commandantPhone = user?.place?.building?.commandant_phone;
+  const dutyMasterPhone = user?.place?.building?.duty_master_phone;
 
   const handleLogout = async () => {
     await logoutUser();
@@ -78,32 +78,36 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                 Екстрені контакти
               </h4>
               <div className="space-y-4">
-                <div className="flex items-center gap-4 bg-muted border border-border p-4">
-                  <div className="p-2 bg-card border border-border shrink-0">
-                    <HugeiconsIcon icon={Briefcase01Icon} className="size-4 text-primary" strokeWidth={2} />
+                {commandantPhone && (
+                  <div className="flex items-center gap-4 bg-muted border border-border p-4">
+                    <div className="p-2 bg-card border border-border shrink-0">
+                      <HugeiconsIcon icon={Briefcase01Icon} className="size-4 text-primary" strokeWidth={2} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground">
+                        Комендант
+                      </p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">
+                        {commandantPhone}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-muted-foreground">
-                      Комендант
-                    </p>
-                    <p className="text-sm font-bold text-foreground mt-0.5">
-                      {CONTACT_PHONES.commandant}
-                    </p>
+                )}
+                {dutyMasterPhone && (
+                  <div className="flex items-center gap-4 bg-muted border border-border p-4">
+                    <div className="p-2 bg-card border border-border shrink-0">
+                      <HugeiconsIcon icon={AiPhone01Icon} className="size-4 text-primary" strokeWidth={2} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground">
+                        Черговий майстер
+                      </p>
+                      <p className="text-sm font-bold text-foreground mt-0.5">
+                        {dutyMasterPhone}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4 bg-muted border border-border p-4">
-                  <div className="p-2 bg-card border border-border shrink-0">
-                    <HugeiconsIcon icon={AiPhone01Icon} className="size-4 text-primary" strokeWidth={2} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-muted-foreground">
-                      Черговий майстер
-                    </p>
-                    <p className="text-sm font-bold text-foreground mt-0.5">
-                      {CONTACT_PHONES.dutyMaster}
-                    </p>
-                  </div>
-                </div>
+                )}
                 <div className="p-3 border border-dashed border-border text-center">
                   <HugeiconsIcon icon={ShieldIcon} className="size-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
                   <p className="text-xs text-muted-foreground font-semibold">

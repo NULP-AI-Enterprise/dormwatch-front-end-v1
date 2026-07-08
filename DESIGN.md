@@ -6,7 +6,7 @@ DormWatch bridges the gap between dormitory residents and housing management at 
 
 We explicitly reject the "AI slop" aesthetic.
 **Avoid:** Heavy gradients, soft glow drop-shadows, pill-shaped (`9999px`) corner radii, emojis as UI elements, and bulbous, floating components.
-**Embrace:** Crisp borders, sharp edges, distinct visual hierarchy, utilitarian texture (dot grids + film grain noise), asymmetrical hover states (`4px` left-border reveal), and meaningful micro-visualizations (sparklines, progress steppers).
+**Embrace:** Crisp borders, sharp edges, distinct visual hierarchy, utilitarian texture (dot grids + film grain noise), asymmetrical hover states (`4px` left-border reveal), and meaningful micro-visualizations (progress steppers).
 
 **Language:** The entire UI is in Ukrainian. All labels, buttons, headings, status text, and empty-state messages use Ukrainian copy. The only English text is the brand name "DormWatch" and technical identifiers (e.g. `#id`, email domains like `@lpnu.ua`).
 
@@ -215,12 +215,7 @@ Used in `TicketCard` to visualize complaint lifecycle. Three stages: "Створ
 *   Completed stages: `bg-blue-500`.
 *   Current stage: `bg-blue-500 animate-pulse` (for in-progress) or solid `bg-blue-500`.
 *   Future stages: `bg-muted`.
-
-### Sparkline
-A minimal bar-chart micro-visualization used in `StatCard` for admin dashboards.
-*   Rendered as `flex items-end gap-px` bars inside a `48px` height container.
-*   Most recent bar uses the `color` prop at full opacity; historical bars use `currentColor` at 30% opacity.
-*   Appears at the bottom of `StatCard`, fading in on group hover (`opacity-20 → opacity-100`).
+*   **Rejected (terminal) state:** A rejected complaint is *not* on the normal pipeline, so it does **not** light up the submitted→resolved bars. Instead it collapses to a single terminal state: one full-width solid `bg-red-500` bar (same `h-1.5`), under a single "Відхилено" label in `text-xs font-semibold text-red-500` (Badge-label type scale + the Rejected semantic color). The two-row label-over-bar layout is preserved so a rejected stepper aligns with normal steppers in a mixed list.
 
 ### Intentional Empty States
 Do not leave dead space when there is no data.
@@ -269,9 +264,10 @@ The project uses **Hugeicons** exclusively.
 The marketing/landing page for unauthenticated visitors. Auto-redirects logged-in users.
 *   **Sticky nav:** `bg-background/80 backdrop-blur-md sticky top-0 z-50` with `Separator` bottom border.
 *   **Brand mark:** `Building2` icon + "DormWatch" in `text-blue-500 font-bold text-xl tracking-tight`.
-*   **Nav links:** "Як це працює", "Поширені запитання", "Екстрені контакти" — `text-muted-foreground` hover to `text-foreground`.
+*   **Nav links:** "Як це працює" — `text-muted-foreground` hover to `text-foreground`.
+    > **TODO — evaluate whether needed:** the "Поширені запитання" (FAQ) and "Екстрені контакти" nav links were removed because they pointed at sections/pages that don't exist. Decide whether to build those destinations and restore the links, or drop them from the design for good.
 *   **Hero Section:** Two-column grid (`lg:grid-cols-2`). Left: headline with `text-blue-400` accent span, body text, two CTA buttons. Right: stylized mock-ticket illustration (layered borders with `rotate-3` / `-rotate-2` transforms and opacity stacking, containing skeleton ticket cards with hover left-border reveal).
-*   **Stats Banner:** 4-column grid with `divide-x divide-border`. Large stat numbers (`text-3xl font-bold`) + `text-xs font-normal text-muted-foreground` descriptions.
+*   **Stats Banner** *(TODO — evaluate whether needed)*: a 4-column grid with `divide-x divide-border`, large stat numbers (`text-3xl font-bold`) + `text-xs font-normal text-muted-foreground` descriptions. Currently removed — the prior figures ("15с / 24/7 / 100% Охоплення кампусу / Прямий") were unsubstantiated hardcoded marketing claims. Decide whether to wire this band to real, verifiable stats from an API and restore it, or drop it from the design.
 *   **Features Grid:** 3-column grid of feature cards. Each card: `bg-card border border-border p-8` with icon in `w-12 h-12 border border-border bg-muted` box, group-hover left-border reveal.
 *   **CTA Section:** Centered text + primary button. `bg-background py-20`.
 
@@ -317,7 +313,7 @@ Sidebar + main content layout for administrators.
 *   **Shared header shell:** The header bar lives once at the admin layout level (not per-page), so every admin route inherits an identically-sized, aligned header. Its title is **derived synchronously from the route** (a path→title map), never set from a page effect — this avoids a one-frame blank flash on navigation. Only the right-aligned **action buttons** are page-specific; pages inject them upward through a small context, defaulting to none (title-only header).
 *   **Header/sidebar alignment:** The header row and the sidebar brand row share the same height token and both draw their bottom edge with an in-box `border-b` so the seam lands on one pixel (see §5, "Aligning Fixed-Height Rows"). Both surfaces use `bg-card` (see §5, "App Chrome").
 *   **Sidebar:** `AdminSidebar` component with user identity (initials avatar, name, role), navigation links. The account control is a single composite trigger (avatar + two-line name/place + trailing `ArrowRight01Icon`, per §5's sidebar variant) that opens the profile/contacts dialog — no separate settings gear.
-*   **Stat cards:** 3-column grid of `StatCard` components (Очікує / В роботі / Вирішено) with colored sparklines.
+*   **Stat cards:** 3-column grid of `StatCard` components (Очікує / В роботі / Вирішено).
 *   **Recent complaints table:** `bg-card border border-border` container with `Table` component. Rows are clickable, opening `ComplaintSidePanel` (sheet).
 
 ---
@@ -332,9 +328,9 @@ Compact complaint summary used in the User Dashboard.
 
 ### StatCard
 Metric display for admin dashboard.
-*   **Props:** `icon`, `label`, `value`, `sparklineColor?`, `sparklineData?`, `loading?`.
-*   **Layout:** Icon + `text-xs font-semibold text-foreground` → large `text-3xl font-bold` value → optional sparkline bar chart at bottom (hidden at 20% opacity, revealed to 100% on hover).
-*   **Skeleton:** Custom `StatCardSkeleton` with `animate-pulse` and mock sparkline bars.
+*   **Props:** `icon`, `label`, `value`, `loading?`.
+*   **Layout:** Icon + `text-xs font-semibold text-foreground` → large `text-3xl font-bold` value.
+*   **Skeleton:** Custom `StatCardSkeleton` with `animate-pulse`.
 
 ### CommunityBoard
 Empty-state placeholder for building announcements.

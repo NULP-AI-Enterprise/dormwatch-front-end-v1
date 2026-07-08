@@ -15,8 +15,9 @@ const Footer = () => {
         </div>
 
         <div className="flex gap-6 text-sm text-muted-foreground font-semibold">
-          <a href="#" className="hover:text-foreground transition-colors">Конфіденційність</a>
-          <a href="#" className="hover:text-foreground transition-colors">Умови використання</a>
+          {/* TODO: add privacy/terms pages, then re-enable these as links. */}
+          <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Конфіденційність</span>
+          <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Умови використання</span>
           <Link to="/dashboard" className="hover:text-foreground transition-colors">Статус системи</Link>
         </div>
 

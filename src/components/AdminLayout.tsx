@@ -6,6 +6,7 @@ import { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
+import { AdminGlobalActions } from "@/components/AdminGlobalActions";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -20,13 +21,18 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const currentPath = location.pathname;
   const { user } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [headerActions, setHeaderActions] = useState<ReactNode>(null);
+  // Page-specific ("semantic") actions pushed up into the header via
+  // useAdminHeaderActions; the global chrome (export + bell) is always present.
+  const [pageActions, setPageActions] = useState<ReactNode>(null);
 
-  const placeName = user?.place?.place_name || "Головний офіс";
+  // Real office from the admin's profile; empty when they have no place assigned
+  // (no invented "Головний офіс").
+  const placeName = user?.place?.place_name || "";
   const title = ROUTE_TITLES[currentPath] || "";
 
   const navItems = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
+    // TODO: implement Residents page, then wire up a real path and remove `disabled`.
     { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" />, disabled: true },
     { name: "Всі скарги", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
@@ -90,9 +96,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-20 bg-card flex items-center justify-between px-6 shrink-0 border-b border-border">
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-          <div className="flex items-center gap-3">{headerActions}</div>
+          <div className="flex items-center gap-3">
+            {pageActions}
+            <AdminGlobalActions />
+          </div>
         </header>
-        <AdminHeaderProvider setActions={setHeaderActions}>
+        <AdminHeaderProvider setActions={setPageActions}>
           {children}
         </AdminHeaderProvider>
       </main>

@@ -103,9 +103,11 @@ const UserPage = () => {
     }
   };
 
-  const firstName = currentUser?.first_name || "User";
-  const building = currentUser?.building || "";
-  const room = currentUser?.room || "";
+  const firstName = currentUser?.first_name || "Користувач";
+  // Location lives under `place` in the profile payload (like CreateReportPage /
+  // AdminLayout read it), not on flat building/room fields.
+  const building = currentUser?.place?.building?.name || "";
+  const room = currentUser?.place?.place_name || "";
 
   if (loading) {
     return <PageSpinner />;
@@ -128,10 +130,14 @@ const UserPage = () => {
               <div className="md:col-span-1 space-y-6">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground tracking-tight">Вітаємо, {firstName}!</h1>
-                  <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                    <HugeiconsIcon icon={MapPinIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
-                    {building}<span className="w-1 h-1 bg-border inline-block mx-1.5" />Кімната {room}
-                  </p>
+                  {(building || room) && (
+                    <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                      <HugeiconsIcon icon={MapPinIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
+                      {building}
+                      {building && room && <span className="w-1 h-1 bg-border inline-block mx-1.5" />}
+                      {room && `Кімната ${room}`}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -186,10 +192,10 @@ const UserPage = () => {
                         id={p.id}
                         title={p.title}
                         description={p.description}
-                        category={p.category}
+                        category={p.category ?? ""}
                         date={formatDate(p.createdAt)}
                         status={p.status}
-                        categoryLabel={p.category}
+                        categoryLabel={p.category ?? undefined}
                       />
                     ))
                   )}

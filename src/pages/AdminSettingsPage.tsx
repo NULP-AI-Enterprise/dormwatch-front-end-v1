@@ -13,7 +13,6 @@ import {
   updatePlace,
   deletePlace,
 } from "@/services/problemsApi";
-import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -59,8 +58,6 @@ import type { Building, CategoryOption, Place } from "@/lib/types";
 // the consequence.
 
 const AdminSettingsPage = () => {
-  useAdminHeaderActions(null);
-
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="flex-1 p-6">
@@ -335,12 +332,16 @@ function BuildingsTab() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [commandantPhone, setCommandantPhone] = useState("");
+  const [dutyMasterPhone, setDutyMasterPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
   const [editing, setEditing] = useState<Building | null>(null);
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
+  const [editCommandantPhone, setEditCommandantPhone] = useState("");
+  const [editDutyMasterPhone, setEditDutyMasterPhone] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [pending, setPending] = useState<Building | null>(null);
@@ -363,9 +364,14 @@ function BuildingsTab() {
     setSaving(true);
     setAddError("");
     try {
-      await createBuilding(name.trim(), address.trim());
+      await createBuilding(name.trim(), address.trim(), {
+        commandantPhone: commandantPhone.trim(),
+        dutyMasterPhone: dutyMasterPhone.trim(),
+      });
       setName("");
       setAddress("");
+      setCommandantPhone("");
+      setDutyMasterPhone("");
       await load();
     } catch (err) {
       setAddError("Не вдалося додати гуртожиток");
@@ -379,6 +385,8 @@ function BuildingsTab() {
     setEditing(b);
     setEditName(b.name);
     setEditAddress(b.address ?? "");
+    setEditCommandantPhone(b.commandant_phone ?? "");
+    setEditDutyMasterPhone(b.duty_master_phone ?? "");
   };
 
   const commitEdit = async () => {
@@ -388,6 +396,8 @@ function BuildingsTab() {
       await updateBuilding(editing.building_id, {
         name: editName.trim(),
         address: editAddress.trim(),
+        commandantPhone: editCommandantPhone.trim(),
+        dutyMasterPhone: editDutyMasterPhone.trim(),
       });
       setEditing(null);
       await load();
@@ -440,6 +450,28 @@ function BuildingsTab() {
               className="h-8 text-xs"
             />
           </div>
+
+          <Separator className="my-1" dashed />
+          <p className="text-xs font-semibold text-muted-foreground">Екстрені контакти</p>
+          <div className="space-y-1">
+            <Label className="text-xs">Комендант</Label>
+            <Input
+              placeholder="Напр. 032 123 45 67"
+              value={commandantPhone}
+              onChange={(e) => setCommandantPhone(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Черговий майстер</Label>
+            <Input
+              placeholder="Напр. 067 987 65 43"
+              value={dutyMasterPhone}
+              onChange={(e) => setDutyMasterPhone(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+
           <Button onClick={add} disabled={saving || !name.trim() || !address.trim()}>
             Додати гуртожиток
           </Button>
@@ -512,6 +544,27 @@ function BuildingsTab() {
               <Input
                 value={editAddress}
                 onChange={(e) => setEditAddress(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+
+            <Separator className="my-1" dashed />
+            <p className="text-xs font-semibold text-muted-foreground">Екстрені контакти</p>
+            <div className="space-y-1">
+              <Label className="text-xs">Комендант</Label>
+              <Input
+                placeholder="Напр. 032 123 45 67"
+                value={editCommandantPhone}
+                onChange={(e) => setEditCommandantPhone(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Черговий майстер</Label>
+              <Input
+                placeholder="Напр. 067 987 65 43"
+                value={editDutyMasterPhone}
+                onChange={(e) => setEditDutyMasterPhone(e.target.value)}
                 className="h-8 text-xs"
               />
             </div>

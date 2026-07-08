@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   fetchAllComplaints,
   fetchCategories,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
-import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
-import { NotificationBell } from "@/components/NotificationBell";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   FilterSearchInput,
@@ -18,7 +15,6 @@ import {
   PriorityFilterSelect,
   CategoryFilterCombobox,
 } from "@/components/ComplaintFilters";
-import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -29,7 +25,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, Download01Icon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
@@ -41,7 +37,6 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const buildings = useBuildings();
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -77,12 +72,19 @@ const AdminPage = () => {
     const statusOk = filterStatus === "all" || c.status === filterStatus;
     const buildingOk = filterBuilding === "all" || c.building === filterBuilding;
     const priorityOk = filterPriority === "all" || c.priority === filterPriority;
-    const categoryOk = filterCategories.length === 0 || filterCategories.includes(c.category);
+    const categoryOk =
+      filterCategories.length === 0 ||
+      (c.category != null && filterCategories.includes(c.category));
     return searchOk && statusOk && buildingOk && priorityOk && categoryOk;
   });
 
   const recentComplaints = [...filteredComplaints]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => {
+      // Records without a timestamp sort last.
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : -Infinity;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : -Infinity;
+      return tb - ta;
+    })
     .slice(0, 10);
 
   const handleRowClick = (complaint: Complaint) => {
@@ -94,28 +96,6 @@ const AdminPage = () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
   };
-
-  const headerActions = useMemo(
-    () => (
-      <>
-        <NotificationBell onSelectComplaint={(c) => {
-          setSelectedComplaint(c);
-          setSheetOpen(true);
-        }} />
-        <Button
-          variant="outline"
-          size="default"
-          className="gap-2"
-          onClick={() => setIsExportModalOpen(true)}
-        >
-          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-          Експорт даних
-        </Button>
-      </>
-    ),
-    [],
-  );
-  useAdminHeaderActions(headerActions);
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -154,19 +134,16 @@ const AdminPage = () => {
                 icon={<HugeiconsIcon icon={ClockIcon} className="size-4" strokeWidth={1.5} />}
                 label="Очікує"
                 value={pendingCount}
-                sparklineColor="#eab308"
               />
               <StatCard
                 icon={<HugeiconsIcon icon={HammerIcon} className="size-4" strokeWidth={1.5} />}
                 label="В роботі"
                 value={inProgressCount}
-                sparklineColor="#3b82f6"
               />
               <StatCard
                 icon={<HugeiconsIcon icon={CheckmarkCircleIcon} className="size-4" strokeWidth={1.5} />}
                 label="Вирішено"
                 value={resolvedCount}
-                sparklineColor="#22c55e"
               />
               </div>
             )}
@@ -253,11 +230,6 @@ const AdminPage = () => {
           isAdmin={true}
         />
       )}
-
-      <ExportTicketsModal
-        open={isExportModalOpen}
-        onOpenChange={setIsExportModalOpen}
-      />
     </div>
   );
 };

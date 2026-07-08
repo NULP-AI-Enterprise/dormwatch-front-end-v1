@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface ProgressStepperProps {
-  stage: "submitted" | "in_progress" | "resolved";
+  stage: "submitted" | "in_progress" | "resolved" | "rejected";
 }
 
 const stages = [
@@ -11,6 +11,21 @@ const stages = [
 ] as const;
 
 const ProgressStepper = ({ stage }: ProgressStepperProps) => {
+  // A rejected complaint is not in the normal pipeline — show a single terminal
+  // "Відхилено" state instead of lighting up the submitted→resolved steps.
+  if (stage === "rejected") {
+    return (
+      <div className="w-full">
+        <div className="mb-1.5">
+          <span className="text-xs font-semibold text-red-500">Відхилено</span>
+        </div>
+        <div className="flex h-1.5 gap-0.5">
+          <div className="flex-1 h-full bg-red-500" />
+        </div>
+      </div>
+    );
+  }
+
   const currentIdx = stages.findIndex((s) => s.key === stage);
 
   return (

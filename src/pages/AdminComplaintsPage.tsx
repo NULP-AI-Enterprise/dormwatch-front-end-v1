@@ -14,7 +14,6 @@ import {
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
 import TicketSidePanel from "@/components/TicketSidePanel";
-import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import {
   FilterSearchInput,
   StatusFilterSelect,
@@ -23,10 +22,8 @@ import {
   CategoryFilterCombobox,
 } from "@/components/ComplaintFilters";
 import EmptyState from "@/components/EmptyState";
-import { NotificationBell } from "@/components/NotificationBell";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -49,10 +46,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Cancel01Icon,
   InboxIcon,
-  Download01Icon,
 } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
-import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -81,7 +76,6 @@ const AdminComplaintsPage = () => {
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -176,7 +170,8 @@ const AdminComplaintsPage = () => {
       complaints.filter((p) => {
         const statusOk = selectedStatus === "all" || p.status === selectedStatus;
         const categoryOk =
-          selectedCategories.length === 0 || selectedCategories.includes(p.category);
+          selectedCategories.length === 0 ||
+          (p.category != null && selectedCategories.includes(p.category));
         const buildingOk =
           selectedBuilding === "all" || p.building === selectedBuilding;
         const priorityOk =
@@ -185,7 +180,10 @@ const AdminComplaintsPage = () => {
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-        const dateOk = !selectedDate || new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd');
+        const dateOk =
+          !selectedDate ||
+          (p.createdAt != null &&
+            new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd'));
         return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
     [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
@@ -195,7 +193,8 @@ const AdminComplaintsPage = () => {
     () =>
       approvedForTickets.filter((p) => {
         const categoryOk =
-          ticketCategories.length === 0 || ticketCategories.includes(p.category);
+          ticketCategories.length === 0 ||
+          (p.category != null && ticketCategories.includes(p.category));
         const searchOk =
           ticketSearchQuery === "" ||
           (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
@@ -208,28 +207,6 @@ const AdminComplaintsPage = () => {
       }),
     [approvedForTickets, tickets, ticketCategories, ticketStatus, ticketSearchQuery]
   );
-
-  const headerActions = useMemo(
-    () => (
-      <>
-        <Button
-          variant="outline"
-          size="default"
-          className="gap-2"
-          onClick={() => setIsExportModalOpen(true)}
-        >
-          <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
-          Експорт даних
-        </Button>
-        <NotificationBell onSelectComplaint={(c) => {
-          setSelectedComplaint(c);
-          setSheetOpen(true);
-        }} />
-      </>
-    ),
-    [],
-  );
-  useAdminHeaderActions(headerActions);
 
   return (
     <>
@@ -494,11 +471,6 @@ const AdminComplaintsPage = () => {
           onTicketChange={loadTickets}
         />
       )}
-
-      <ExportTicketsModal
-        open={isExportModalOpen}
-        onOpenChange={setIsExportModalOpen}
-      />
     </>
   );
 };
