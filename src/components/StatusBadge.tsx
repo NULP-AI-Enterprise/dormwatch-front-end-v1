@@ -28,12 +28,17 @@ export const PriorityBadge = ({
   prefix = false,
   className,
 }: {
-  priority: string;
+  priority: string | null | undefined;
   /** When true, prepends the "Пріоритет: " label. */
   prefix?: boolean;
   className?: string;
-}) => (
-  <Badge variant="outline" className={cn(priorityBadgeClass(priority), className)}>
-    {prefix ? `Пріоритет: ${priorityLabel(priority)}` : priorityLabel(priority)}
-  </Badge>
-);
+}) => {
+  // No badge for an unset priority — priorityBadgeClass would otherwise paint
+  // a yellow "medium"-styled empty badge for a value that was never assigned.
+  if (!priority) return null;
+  return (
+    <Badge variant="outline" className={cn(priorityBadgeClass(priority), className)}>
+      {prefix ? `Пріоритет: ${priorityLabel(priority)}` : priorityLabel(priority)}
+    </Badge>
+  );
+};

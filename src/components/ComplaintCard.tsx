@@ -133,9 +133,11 @@ const ComplaintCard = ({
             {showPriority && <PriorityBadge priority={p.priority} />}
           </div>
           <div className="flex gap-2 mb-3 items-center">
-            <Badge variant="outline" className="text-muted-foreground border-border bg-card">
-              {p.category || "Категорія"}
-            </Badge>
+            {p.category && (
+              <Badge variant="outline" className="text-muted-foreground border-border bg-card">
+                {p.category}
+              </Badge>
+            )}
             <span className="text-xs text-muted-foreground">
               {p.building ? `Корпус ${p.building}` : "Корпус ?"}
               <Dot />
@@ -194,7 +196,7 @@ const ComplaintCard = ({
       </>
     ) : headerLayout === "detail" ? (
       <>
-        {p.category || "Категорія"}
+        {p.category}
         <Dot />
         {p.building ? `Корпус ${p.building}` : "Корпус ?"}
         <Dot />

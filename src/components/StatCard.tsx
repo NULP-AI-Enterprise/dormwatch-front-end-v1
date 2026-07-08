@@ -1,11 +1,7 @@
-import Sparkline from "@/components/Sparkline";
-
 interface StatCardProps {
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  sparklineColor?: string;
-  sparklineData?: number[];
   loading?: boolean;
 }
 
@@ -23,7 +19,7 @@ const StatCardSkeleton = () => (
   </div>
 );
 
-const StatCard = ({ icon, label, value, sparklineColor = "var(--primary)", sparklineData, loading }: StatCardProps) => {
+const StatCard = ({ icon, label, value, loading }: StatCardProps) => {
   if (loading) return <StatCardSkeleton />;
 
   return (
@@ -35,11 +31,6 @@ const StatCard = ({ icon, label, value, sparklineColor = "var(--primary)", spark
         </div>
         <div className="text-3xl font-bold text-foreground mb-2">{value}</div>
       </div>
-      {sparklineData && (
-        <div className="absolute bottom-0 right-0 left-0 px-5 pt-0 opacity-20 group-hover/stat:opacity-100 transition-opacity duration-300 pointer-events-none">
-          <Sparkline data={sparklineData} color={sparklineColor} />
-        </div>
-      )}
     </div>
   );
 };

@@ -3,6 +3,9 @@ export interface Building {
   name: string;
   // Present in the buildings API payload; only surfaced/edited in admin settings.
   address?: string;
+  // Per-dorm emergency contacts, shown in the profile modal. Optional/blank when unset.
+  commandant_phone?: string;
+  duty_master_phone?: string;
 }
 
 // A selectable room/place within a building. Kept distinct from Building on
@@ -22,7 +25,9 @@ export interface Complaint {
   id: number;
   title: string;
   description: string;
-  category: string;
+  // null when the payload has no category/priority/timestamp — rendered as
+  // "unknown" (no chip/badge/date) rather than a fabricated value.
+  category: string | null;
   building: string;
   room: string;
   placeName: string;
@@ -30,8 +35,8 @@ export interface Complaint {
   photoUrl: string | null;
   thumbnail: string | null;
   status: string;
-  priority: string;
-  createdAt: string;
+  priority: string | null;
+  createdAt: string | null;
   user_id: number | null;
 }
 

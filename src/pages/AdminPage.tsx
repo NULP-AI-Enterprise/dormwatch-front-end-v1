@@ -77,12 +77,19 @@ const AdminPage = () => {
     const statusOk = filterStatus === "all" || c.status === filterStatus;
     const buildingOk = filterBuilding === "all" || c.building === filterBuilding;
     const priorityOk = filterPriority === "all" || c.priority === filterPriority;
-    const categoryOk = filterCategories.length === 0 || filterCategories.includes(c.category);
+    const categoryOk =
+      filterCategories.length === 0 ||
+      (c.category != null && filterCategories.includes(c.category));
     return searchOk && statusOk && buildingOk && priorityOk && categoryOk;
   });
 
   const recentComplaints = [...filteredComplaints]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort((a, b) => {
+      // Records without a timestamp sort last.
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : -Infinity;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : -Infinity;
+      return tb - ta;
+    })
     .slice(0, 10);
 
   const handleRowClick = (complaint: Complaint) => {
@@ -154,19 +161,16 @@ const AdminPage = () => {
                 icon={<HugeiconsIcon icon={ClockIcon} className="size-4" strokeWidth={1.5} />}
                 label="Очікує"
                 value={pendingCount}
-                sparklineColor="#eab308"
               />
               <StatCard
                 icon={<HugeiconsIcon icon={HammerIcon} className="size-4" strokeWidth={1.5} />}
                 label="В роботі"
                 value={inProgressCount}
-                sparklineColor="#3b82f6"
               />
               <StatCard
                 icon={<HugeiconsIcon icon={CheckmarkCircleIcon} className="size-4" strokeWidth={1.5} />}
                 label="Вирішено"
                 value={resolvedCount}
-                sparklineColor="#22c55e"
               />
               </div>
             )}

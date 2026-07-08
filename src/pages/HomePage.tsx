@@ -46,8 +46,6 @@ const HomePage = () => {
 
           <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
             <a href="#how-it-works" className="hover:text-foreground transition-colors">Як це працює</a>
-            <a href="#faq" className="hover:text-foreground transition-colors">Поширені запитання</a>
-            <a href="#emergency" className="hover:text-foreground transition-colors">Екстрені контакти</a>
           </div>
 
           <div className="flex items-center gap-4">
@@ -118,28 +116,12 @@ const HomePage = () => {
         </div>
       </section>
 
-      <Separator />
-      <div className="bg-background">
-        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-border">
-          <div className="text-center px-4">
-            <p className="text-3xl font-bold text-foreground mb-1">15с</p>
-            <p className="text-xs text-muted-foreground font-semibold">На подачу заявки</p>
-          </div>
-          <div className="text-center px-4">
-            <p className="text-3xl font-bold text-foreground mb-1">24/7</p>
-            <p className="text-xs text-muted-foreground font-semibold">Екстрена підтримка</p>
-          </div>
-          <div className="text-center px-4">
-            <p className="text-3xl font-bold text-foreground mb-1">100%</p>
-            <p className="text-xs text-muted-foreground font-semibold">Охоплення кампусу</p>
-          </div>
-          <div className="text-center px-4">
-            <p className="text-3xl font-bold text-foreground mb-1">Прямий</p>
-            <p className="text-xs text-muted-foreground font-semibold">Зв'язок із майстрами</p>
-          </div>
-        </div>
-      </div>
-      <Separator />
+      {/*
+        TODO: replace with real, verifiable stats from an API before showing this band.
+        The previous values ("15с", "24/7", "100% Охоплення кампусу", "Прямий") were
+        hardcoded marketing figures with nothing to substantiate them, so the band is
+        hidden until real numbers are wired up.
+      */}
 
       <section className="py-24 max-w-7xl mx-auto px-6" id="how-it-works">
         <div className="mb-16">

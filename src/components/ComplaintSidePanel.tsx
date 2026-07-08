@@ -78,8 +78,8 @@ const ComplaintSidePanel = ({
     if (!complaint) return;
     setEditTitle(complaint.title);
     setEditDescription(complaint.description);
-    setEditCategory(complaint.category);
-    setEditPriority(complaint.priority);
+    setEditCategory(complaint.category ?? "");
+    setEditPriority(complaint.priority ?? "");
     setEditPhotoFile(null);
     setIsEditing(false);
   }, [complaint]);
@@ -128,8 +128,10 @@ const ComplaintSidePanel = ({
     const formData = new FormData();
     formData.append("title", editTitle);
     formData.append("description", editDescription);
-    formData.append("category_name", editCategory);
-    formData.append("priority", editPriority);
+    // Only send category/priority when actually set, so an empty (unknown)
+    // value is never persisted as a fabricated category/priority.
+    if (editCategory) formData.append("category_name", editCategory);
+    if (editPriority) formData.append("priority", editPriority);
     if (editPhotoFile) formData.append("photo_url", editPhotoFile);
 
     try {
@@ -156,8 +158,8 @@ const ComplaintSidePanel = ({
   const handleCancel = () => {
     setEditTitle(complaint.title);
     setEditDescription(complaint.description);
-    setEditCategory(complaint.category);
-    setEditPriority(complaint.priority);
+    setEditCategory(complaint.category ?? "");
+    setEditPriority(complaint.priority ?? "");
     setEditPhotoFile(null);
     setIsEditing(false);
   };
@@ -251,7 +253,7 @@ const ComplaintSidePanel = ({
                 <span className="w-1 h-1 bg-border" />
                 {isAdmin && !["resolved", "rejected"].includes(complaint.status) ? (
                   <Select
-                    value={complaint.priority}
+                    value={complaint.priority ?? undefined}
                     onValueChange={handlePriorityChange}
                     onOpenChange={(isOpen) => {
                       if (!isOpen) {
@@ -261,7 +263,7 @@ const ComplaintSidePanel = ({
                       }
                     }}
                   >
-                    <SelectTrigger className={`h-6 text-xs px-2 py-0 font-semibold border ${priorityBadgeClass(complaint.priority)}`}>
+                    <SelectTrigger className={`h-6 text-xs px-2 py-0 font-semibold border ${priorityBadgeClass(complaint.priority ?? "")}`}>
                       <SelectValue placeholder="Пріоритет" />
                     </SelectTrigger>
                     <SelectContent>

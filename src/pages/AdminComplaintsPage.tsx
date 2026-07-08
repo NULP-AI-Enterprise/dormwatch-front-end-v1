@@ -176,7 +176,8 @@ const AdminComplaintsPage = () => {
       complaints.filter((p) => {
         const statusOk = selectedStatus === "all" || p.status === selectedStatus;
         const categoryOk =
-          selectedCategories.length === 0 || selectedCategories.includes(p.category);
+          selectedCategories.length === 0 ||
+          (p.category != null && selectedCategories.includes(p.category));
         const buildingOk =
           selectedBuilding === "all" || p.building === selectedBuilding;
         const priorityOk =
@@ -185,7 +186,10 @@ const AdminComplaintsPage = () => {
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-        const dateOk = !selectedDate || new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd');
+        const dateOk =
+          !selectedDate ||
+          (p.createdAt != null &&
+            new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd'));
         return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
     [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
@@ -195,7 +199,8 @@ const AdminComplaintsPage = () => {
     () =>
       approvedForTickets.filter((p) => {
         const categoryOk =
-          ticketCategories.length === 0 || ticketCategories.includes(p.category);
+          ticketCategories.length === 0 ||
+          (p.category != null && ticketCategories.includes(p.category));
         const searchOk =
           ticketSearchQuery === "" ||
           (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||

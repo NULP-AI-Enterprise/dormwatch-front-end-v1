@@ -241,8 +241,8 @@ const AdminTicketsPrintPage = () => {
                   </thead>
                   <tbody>
                     {group.tickets.map((t) => {
-                      const priority = t.complaintDetail?.priority || "medium";
-                      const category = t.complaintDetail?.category || "";
+                      const priority = t.complaintDetail?.priority;
+                      const category = t.complaintDetail?.category;
                       return (
                         <tr key={t.ticket_id} className="hover:bg-gray-50/50">
                           <td className="border border-gray-300 p-2 break-words">
@@ -250,13 +250,13 @@ const AdminTicketsPrintPage = () => {
                             <div className="text-xs text-gray-500 break-words whitespace-pre-wrap mt-1 print-description">{t.complaintDetail?.description || "Без опису"}</div>
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
-                            {category || "Інше"}
+                            {category || "Не вказано"}
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
                             {t.complaintDetail?.placeName || "Не вказано"}
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
-                            {priorityLabel(priority)}
+                            {priority ? priorityLabel(priority) : "Не визначено"}
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs font-semibold text-red-600">
                             {t.deadline ? new Date(t.deadline).toLocaleDateString("uk-UA") : "Не визначено"}

@@ -22,11 +22,14 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [headerActions, setHeaderActions] = useState<ReactNode>(null);
 
-  const placeName = user?.place?.place_name || "Головний офіс";
+  // Real office from the admin's profile; empty when they have no place assigned
+  // (no invented "Головний офіс").
+  const placeName = user?.place?.place_name || "";
   const title = ROUTE_TITLES[currentPath] || "";
 
   const navItems = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
+    // TODO: implement Residents page, then wire up a real path and remove `disabled`.
     { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" />, disabled: true },
     { name: "Всі скарги", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
