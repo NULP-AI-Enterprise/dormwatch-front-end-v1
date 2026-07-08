@@ -24,6 +24,9 @@ interface ComplaintAdminActionsProps {
   complaint: Complaint;
   onStatusChange: (status: string) => void;
   onDelete: () => void;
+  // When true, hides Delete once the complaint is resolved/rejected. Used by the
+  // side panel; the admin list leaves delete available in every state (default).
+  hideDeleteWhenClosed?: boolean;
 }
 
 const destructiveActionClass =
@@ -87,6 +90,7 @@ const ComplaintAdminActions = ({
   complaint,
   onStatusChange,
   onDelete,
+  hideDeleteWhenClosed = false,
 }: ComplaintAdminActionsProps) => (
   <>
     {complaint.status === "pending" && (
@@ -121,6 +125,7 @@ const ComplaintAdminActions = ({
         onConfirm={() => onStatusChange("resolved")}
       />
     )}
+    {!(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) && (
     <ConfirmAction
       trigger={
         <ActionButton variant="destructive" icon={Delete01Icon}>
@@ -133,6 +138,7 @@ const ComplaintAdminActions = ({
       confirmClassName={destructiveActionClass}
       onConfirm={onDelete}
     />
+    )}
   </>
 );
 

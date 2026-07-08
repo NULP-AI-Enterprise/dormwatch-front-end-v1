@@ -27,7 +27,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   const navItems = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
-    { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
+    { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" />, disabled: true },
     { name: "Всі скарги", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];
@@ -42,6 +42,18 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <nav className="flex-1 py-6 px-4 space-y-2">
           {navItems.map((item) => {
           const isActive = item.path !== "#" && (currentPath === item.path || (item.path !== '/admin' && currentPath.startsWith(item.path + "/")));
+            if (item.disabled) {
+              return (
+                <span
+                  key={item.name}
+                  aria-disabled="true"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-semibold border-l-4 border-transparent text-muted-foreground/50 cursor-not-allowed select-none"
+                >
+                  {item.icon}
+                  {item.name}
+                </span>
+              );
+            }
             return (
               <Link
                 key={item.name}

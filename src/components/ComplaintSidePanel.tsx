@@ -249,9 +249,9 @@ const ComplaintSidePanel = ({
                   {categoryLabel}
                 </span>
                 <span className="w-1 h-1 bg-border" />
-                {isAdmin ? (
-                  <Select 
-                    value={complaint.priority} 
+                {isAdmin && !["resolved", "rejected"].includes(complaint.status) ? (
+                  <Select
+                    value={complaint.priority}
                     onValueChange={handlePriorityChange}
                     onOpenChange={(isOpen) => {
                       if (!isOpen) {
@@ -352,8 +352,9 @@ const ComplaintSidePanel = ({
                   complaint={complaint}
                   onStatusChange={handleStatusChange}
                   onDelete={handleDelete}
+                  hideDeleteWhenClosed
                 />
-                {onCreateTicket && (
+                {onCreateTicket && complaint.status === "approved" && (
                   <Button
                     variant="outline"
                     onClick={() => {
