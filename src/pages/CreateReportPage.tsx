@@ -6,6 +6,7 @@ import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import {
@@ -150,21 +151,31 @@ const CreateReportPage = () => {
           <div className="space-y-5">
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Пріоритет</label>
-              <div className="flex gap-2">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                spacing={0}
+                value={formData.priority}
+                // Radix emits "" when the active item is clicked again; ignore
+                // it so a priority stays selected at all times.
+                onValueChange={(value) => {
+                  if (value) setFormData((prev) => ({ ...prev, priority: value }));
+                }}
+                className="w-full"
+              >
                 {PRIORITY_OPTIONS.map((id) => (
-                  <Button
+                  <ToggleGroupItem
                     key={id}
-                    type="button"
-                    variant={formData.priority === id ? "default" : "outline"}
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, priority: id }))
-                    }
-                    className="flex-1 py-2 text-xs transition-colors"
+                    value={id}
+                    // DESIGN.md §305/§184: selected tier carries the primary
+                    // fill (the "default button" look), not the muted on-state
+                    // shadcn ships by default.
+                    className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
                   >
                     {priorityLabel(id)}
-                  </Button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Заголовок</label>
