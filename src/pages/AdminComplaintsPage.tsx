@@ -13,6 +13,7 @@ import {
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
+import { TicketCard } from "@/components/TicketCard";
 import TicketSidePanel from "@/components/TicketSidePanel";
 import {
   FilterSearchInput,
@@ -76,6 +77,7 @@ const AdminComplaintsPage = () => {
   const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
   const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
+  const [ticketReadOnly, setTicketReadOnly] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -159,9 +161,10 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const openTicketSheet = (complaint: Complaint, ticket?: Ticket) => {
+  const openTicketSheet = (complaint: Complaint, ticket?: Ticket, readOnly = false) => {
     setSelectedTicketComplaint(complaint);
     setTicketToEdit(ticket || null);
+    setTicketReadOnly(readOnly);
     setTicketSheetOpen(true);
   };
 
@@ -328,19 +331,12 @@ const AdminComplaintsPage = () => {
                     <ComplaintCard
                       key={p.id}
                       complaint={p}
-                      headerLayout="detail"
                       cardClassName={`group transition-colors cursor-pointer ${
                         p.status === "pending" && !viewedComplaints.has(p.id as number)
                           ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
                           : "hover:bg-muted/50"
                       }`}
                       onCardClick={() => {
-                        markAsViewed(p.id as number);
-                        setSelectedComplaint(p);
-                        setSheetOpen(true);
-                      }}
-                      showDetails
-                      onDetails={() => {
                         markAsViewed(p.id as number);
                         setSelectedComplaint(p);
                         setSheetOpen(true);
@@ -415,7 +411,18 @@ const AdminComplaintsPage = () => {
                   <div className="grid lg:grid-cols-2 gap-4">
                     {filteredTickets.map((p) => {
                       const ticket = tickets.find((t) => t.complaint === p.id);
-                      return (
+                      // A complaint that already has a ticket → view it via the
+                      // real TicketCard. One without → keep the compact
+                      // ComplaintCard "Створити тікет" create flow.
+                      return ticket ? (
+                        <TicketCard
+                          key={p.id}
+                          ticket={ticket}
+                          complaint={p}
+                          readOnly={false}
+                          onOpen={(ro) => openTicketSheet(p, ticket, ro)}
+                        />
+                      ) : (
                         <ComplaintCard
                           key={p.id}
                           complaint={p}
@@ -464,11 +471,13 @@ const AdminComplaintsPage = () => {
             if (!open) {
               setSelectedTicketComplaint(null);
               setTicketToEdit(null);
+              setTicketReadOnly(false);
             }
           }}
           employees={employees}
           allTickets={tickets}
           onTicketChange={loadTickets}
+          readOnly={ticketReadOnly}
         />
       )}
     </>

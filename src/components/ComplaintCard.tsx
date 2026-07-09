@@ -11,23 +11,31 @@ import {
   Delete01Icon,
   EditIcon,
   AddIcon,
-  MoreHorizontalIcon,
 } from "@hugeicons/core-free-icons";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import ProgressStepper from "@/components/ProgressStepper";
 import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import type { Complaint, Ticket } from "@/lib/types";
+
+// Maps a complaint's raw status to a ProgressStepper stage. Shared here (rather
+// than in TicketCard) since ComplaintCard is now the component that renders the
+// progress bar via `showProgress`.
+const stageMap: Record<string, "submitted" | "in_progress" | "resolved" | "rejected"> = {
+  pending: "submitted",
+  approved: "in_progress",
+  resolved: "resolved",
+  rejected: "rejected",
+};
 
 interface ComplaintCardProps {
   complaint: Complaint;
   variant?: "default" | "compact";
 
   // Layout
-  headerLayout?: "feed" | "detail"; // feed = badge-left / title below; detail = title-left / badge-right
   bodyPadding?: string; // "p-5" | "p-6"
-  titleClass?: string;
   cardClassName?: string;
   footerClassName?: string;
 
@@ -37,7 +45,6 @@ interface ComplaintCardProps {
 
   // Card interaction
   onCardClick?: () => void;
-  onTitleClick?: () => void;
 
   // Photo
   showPhoto?: boolean;
@@ -48,12 +55,11 @@ interface ComplaintCardProps {
   // Priority row
   showPriority?: boolean;
 
+  // Progress bar (default variant only)
+  showProgress?: boolean;
+
   // Footer left
   footerLeft?: "added-date" | "id" | "none";
-
-  // Details button
-  showDetails?: boolean;
-  onDetails?: () => void;
 
   // Comments
   commentsMode?: "inline" | "hidden";
@@ -86,23 +92,19 @@ const Dot = ({ className }: { className?: string }) => (
 const ComplaintCard = ({
   complaint,
   variant = "default",
-  headerLayout = "feed",
   bodyPadding = "p-6",
-  titleClass = "text-sm font-semibold",
   cardClassName,
   footerClassName = "flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4",
   metaVariant = "location",
   descriptionFallback = "",
   onCardClick,
-  onTitleClick,
   showPhoto = false,
   photoZoom = false,
   photoHeight = "h-40",
   onPhotoPreview,
   showPriority = false,
+  showProgress = false,
   footerLeft = "none",
-  showDetails = false,
-  onDetails,
   commentsMode = "hidden",
   commentsSide = "right",
   commentsOpen = false,
@@ -194,21 +196,13 @@ const ComplaintCard = ({
         <Dot className="mx-1.5" />
         {formatDate(p.createdAt)}
       </>
-    ) : headerLayout === "detail" ? (
+    ) : (
       <>
         {p.category}
         <Dot />
         {p.building ? `Корпус ${p.building}` : "Корпус ?"}
         <Dot />
         {p.placeName || "?"}
-      </>
-    ) : (
-      <>
-        {p.category}
-        <Dot />
-        {p.building ? `Корпус ${p.building}` : ""}
-        <Dot />
-        {p.placeName}
       </>
     );
 
@@ -261,51 +255,18 @@ const ComplaintCard = ({
       )}
 
       <div className={bodyPadding}>
-        {headerLayout === "detail" ? (
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
-            <div>
-              <h3 className={cn(titleClass, "text-foreground truncate max-w-xl")}>
-                {p.title || "Без назви"}
-              </h3>
-              <p className="text-xs font-normal text-muted-foreground mt-1">{metaLine}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {statusBadge}
-              {showDetails && (
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDetails?.();
-                  }}
-                  className="text-muted-foreground"
-                >
-                  <HugeiconsIcon icon={MoreHorizontalIcon} className="size-4 mr-1.5" />
-                  Деталі
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-              <div className="flex flex-wrap gap-2">{statusBadge}</div>
-              <span className="text-xs font-normal text-muted-foreground shrink-0">
-                {metaLine}
-              </span>
-            </div>
-            <h3
-              className={cn(
-                titleClass,
-                "text-foreground mb-2",
-                onTitleClick && "cursor-pointer hover:underline"
-              )}
-              onClick={onTitleClick}
-            >
-              {p.title || "Без назви"}
-            </h3>
-          </>
-        )}
+        {/* Unified header: status badge left, meta line right, bold title below.
+            Same across admin / feed / reports — role-specific controls live in
+            the footer, not the header. */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+          <div className="flex flex-wrap gap-2">{statusBadge}</div>
+          <span className="text-xs font-normal text-muted-foreground shrink-0">
+            {metaLine}
+          </span>
+        </div>
+        <h3 className="text-sm font-semibold text-foreground mb-2">
+          {p.title || "Без назви"}
+        </h3>
 
         {showPriority && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -349,6 +310,13 @@ const ComplaintCard = ({
           </div>
         )}
 
+        {showProgress && (
+          <div className="mb-4">
+            <Separator className="mb-4" />
+            <ProgressStepper stage={stageMap[p.status] ?? "submitted"} />
+          </div>
+        )}
+
         <div className={footerClassName}>
           <div className="flex items-center gap-4">
             {footerLeft === "added-date" && (
@@ -363,16 +331,6 @@ const ComplaintCard = ({
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
-            {showDetails && headerLayout === "feed" && (
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={onDetails}
-                className="text-xs font-semibold hover:underline p-0 h-auto"
-              >
-                Деталі
-              </Button>
-            )}
             {commentsSide === "right" && commentButton}
             {showDelete && !deleteHoverReveal && (
               <Button

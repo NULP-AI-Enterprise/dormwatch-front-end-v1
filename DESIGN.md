@@ -288,14 +288,14 @@ Tabbed dashboard for authenticated residents.
     *   **CTA block:** Full-width `bg-primary` card with `Wrench` icon in `w-12 h-12 border border-white/20 bg-white/10` box. Arrow icon translates `+x-2` on hover. Contains a gradient overlay that fades in on hover.
     *   **Active tickets:** 2/3 column. Uses `TicketCard` components (max 5 rendered). "Історія" link to `/dashboard`.
     *   **Community board:** 1/3 column. Uses `CommunityBoard` component with dashed-border empty state + `BellOff` icon.
-*   **Reports tab:** Full list of user's own complaints. Same card pattern as Dashboard feed but with inline vote counts and `Trash2` delete button with `border border-destructive/30 hover:bg-destructive/10`.
+*   **Reports tab:** Full list of user's own complaints. Uses the unified `ComplaintCard` (see Problem Feed) with an inline `Trash2` delete button (`border border-destructive/30 hover:bg-destructive/10`). The whole card is clickable to open the detail sheet.
 
 ### Problem Feed (`/dashboard`)
 Public/semi-public view of all approved complaints with filtering and voting.
 *   **Filters toolbar:** Search input (`w-48`) with inline `Search` icon, building `Select`, priority `Select` (all `h-8 text-xs`).
 *   **Category pills:** Outline/default toggle buttons in `text-xs font-semibold`.
 *   **Content grid:** `lg:grid-cols-3`, 2/3 for complaint list, 1/3 for sidebar action cards.
-*   **Complaint cards:** Vote-up button (left column, `Separator orientation="vertical" dashed`), status + category badges, title, description, optional photo (click-to-zoom via `Dialog`), `Separator dashed`, date + comments toggle.
+*   **Complaint cards:** The single unified `ComplaintCard` component, shared by the Problem Feed, the User Reports tab, and Admin `/admin/complaints`. One layout everywhere — header with status badge (left) and a muted `text-xs` meta line (right: `category · Корпус · place · date`), then the bold `text-sm font-semibold` title, description, optional photo (click-to-zoom via `Dialog`), and a footer whose controls are role-appropriate (comments toggle / delete / admin status actions). **The whole card is clickable and opens the detail sheet** (read-only for non-owners); inline buttons stop propagation so they don't also open the sheet. Only the admin ticket-creation view uses the separate `compact` variant.
 *   **Sidebar:** Primary-colored action card (`bg-primary text-primary-foreground`) with context-dependent CTA (admin → "Перейти в комендант-центр", user → "Створити нову заявку").
 
 ### Create Report (`/create-report`)
