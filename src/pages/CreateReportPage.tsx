@@ -99,7 +99,7 @@ const CreateReportPage = () => {
         place_id: place?.place_id,
         photoFile: photoFile,
       });
-      navigate("/");
+      navigate("/user");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Не вдалось створити заявку: ${msg}`);
@@ -112,7 +112,7 @@ const CreateReportPage = () => {
     <div className="max-w-3xl mx-auto px-4 py-12">
       <div className="flex items-center gap-4 mb-10">
         <Link
-          to="/"
+          to="/user"
           className="p-2 border border-border hover:border-primary hover:bg-primary/5 transition-colors"
         >
                   <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />

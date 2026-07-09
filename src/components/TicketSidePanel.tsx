@@ -13,7 +13,7 @@ import {
 import { format } from "date-fns";
 import { createTicket, updateTicket } from "@/services/problemsApi";
 import { StatusBadge } from "@/components/StatusBadge";
-import { formatDate } from "@/lib/dateUtils";
+import TicketInfo from "@/components/TicketInfo";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { EditIcon } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket } from "@/lib/types";
@@ -174,23 +174,18 @@ const TicketSidePanel = ({
           ) : (
             <>
               {/* Ticket fields (read-only) */}
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold">Виконавець:</span>{" "}
-                  {ticket?.user
-                    ? `${ticket.user.first_name} ${ticket.user.last_name}`
-                    : "Не призначено"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold">Дедлайн:</span>{" "}
-                  {ticket?.deadline ? formatDate(ticket.deadline) : "—"}
-                </p>
-                {ticket && (
-                  <p className="text-xs text-muted-foreground font-semibold">
-                    Тікет #{ticket.ticket_id}
+              {ticket ? (
+                <TicketInfo variant="detail" ticket={ticket} />
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-semibold">Виконавець:</span> Не призначено
                   </p>
-                )}
-              </div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-semibold">Дедлайн:</span> —
+                  </p>
+                </div>
+              )}
 
               {!readOnly && (
                 <Button variant="outline" onClick={() => setIsEditing(true)}>

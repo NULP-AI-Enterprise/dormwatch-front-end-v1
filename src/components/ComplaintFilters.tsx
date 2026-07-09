@@ -17,7 +17,6 @@ import {
   ComboboxValue,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import type { Building, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -119,41 +118,6 @@ export function BuildingFilterSelect({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-type CategoryFilterButtonsProps = {
-  value: string;
-  onChange: (value: string) => void;
-  categories: CategoryOption[];
-};
-
-// Toggle group: clicking the active category clears it back to "all".
-export function CategoryFilterButtons({
-  value,
-  onChange,
-  categories,
-}: CategoryFilterButtonsProps) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant={value === "all" ? "default" : "outline"}
-        size="xs"
-        onClick={() => onChange("all")}
-      >
-        Всі
-      </Button>
-      {categories.map((cat) => (
-        <Button
-          key={cat.category_id}
-          variant={value === cat.name ? "default" : "outline"}
-          size="xs"
-          onClick={() => onChange(value === cat.name ? "all" : cat.name)}
-        >
-          {cat.name}
-        </Button>
-      ))}
-    </div>
   );
 }
 

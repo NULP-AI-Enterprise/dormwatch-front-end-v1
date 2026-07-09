@@ -20,14 +20,15 @@ import {
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "@/services/problemsApi";
-import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS } from "@/lib/complaintUtils";
+import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS, lifecycleStage } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
+import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Ticket01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import type { Complaint, CategoryOption } from "@/lib/types";
+import type { Complaint, CategoryOption, Ticket } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -37,6 +38,9 @@ interface ComplaintSidePanelProps {
   currentUserId?: number | string;
   isAdmin: boolean;
   onCreateTicket?: (complaint: Complaint) => void;
+  // Read-only work-order info surfaced to the complaint owner (assignee /
+  // deadline). Assigning stays admin-only in the admin ticket flow.
+  ticket?: Ticket | null;
 }
 
 const ComplaintSidePanel = ({
@@ -47,6 +51,7 @@ const ComplaintSidePanel = ({
   currentUserId,
   isAdmin,
   onCreateTicket,
+  ticket,
 }: ComplaintSidePanelProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isPrioritySelectOpen = useRef(false);
@@ -343,31 +348,46 @@ const ComplaintSidePanel = ({
             </Button>
           )}
 
-          <Separator />
+          {/* Owner-facing read-only work-order tracking. Shown while in progress
+              and after resolution (informational: who handled it, deadline), but
+              not for a rejected request — there is no work order to track. Each
+              block owns its leading Separator so rules never double up. */}
+          {!isAdmin && isOwner && ticket && lifecycleStage(complaint.status) !== "rejected" && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-2">Відстеження виконання</p>
+                <TicketInfo variant="detail" ticket={ticket} />
+              </div>
+            </>
+          )}
 
           {isAdmin && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <ComplaintAdminActions
-                  complaint={complaint}
-                  onStatusChange={handleStatusChange}
-                  onDelete={handleDelete}
-                  hideDeleteWhenClosed
-                />
-                {onCreateTicket && complaint.status === "approved" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      onOpenChange(false);
-                      onCreateTicket(complaint);
-                    }}
-                  >
-                    <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
-                    Створити тікет
-                  </Button>
-                )}
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <ComplaintAdminActions
+                    complaint={complaint}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    hideDeleteWhenClosed
+                  />
+                  {onCreateTicket && complaint.status === "approved" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        onOpenChange(false);
+                        onCreateTicket(complaint);
+                      }}
+                    >
+                      <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
+                      Створити тікет
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           <Separator dashed />

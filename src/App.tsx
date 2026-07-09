@@ -5,6 +5,8 @@ import AdminPage from "@/pages/AdminPage";
 import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
+import MyComplaintsPage from "@/pages/MyComplaintsPage";
+import MyTicketsPage from "@/pages/MyTicketsPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AuthPage from "@/pages/AuthPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -33,6 +35,26 @@ function App() {
           <ProtectedRoute blockAdmin>
             <StudentLayout>
               <CreateReportPage />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-complaints"
+        element={
+          <ProtectedRoute blockAdmin>
+            <StudentLayout>
+              <MyComplaintsPage />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-tickets"
+        element={
+          <ProtectedRoute blockAdmin>
+            <StudentLayout>
+              <MyTicketsPage />
             </StudentLayout>
           </ProtectedRoute>
         }

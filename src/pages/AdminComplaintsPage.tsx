@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { DatePicker } from "@/components/ui/date-picker";
-import { format } from "date-fns";
+import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
   fetchApprovedComplaints,
@@ -183,10 +183,7 @@ const AdminComplaintsPage = () => {
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-        const dateOk =
-          !selectedDate ||
-          (p.createdAt != null &&
-            new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd'));
+        const dateOk = !selectedDate || isSameLocalDay(p.createdAt, selectedDate);
         return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
     [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]

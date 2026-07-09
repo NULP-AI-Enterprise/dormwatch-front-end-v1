@@ -16,19 +16,11 @@ import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ProgressStepper from "@/components/ProgressStepper";
+import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
+import { lifecycleStage } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
 import type { Complaint, Ticket } from "@/lib/types";
-
-// Maps a complaint's raw status to a ProgressStepper stage. Shared here (rather
-// than in TicketCard) since ComplaintCard is now the component that renders the
-// progress bar via `showProgress`.
-const stageMap: Record<string, "submitted" | "in_progress" | "resolved" | "rejected"> = {
-  pending: "submitted",
-  approved: "in_progress",
-  resolved: "resolved",
-  rejected: "rejected",
-};
 
 interface ComplaintCardProps {
   complaint: Complaint;
@@ -83,6 +75,10 @@ interface ComplaintCardProps {
   ticket?: Ticket | null;
   showTicketControls?: boolean;
   onTicketAction?: (complaint: Complaint, ticket?: Ticket) => void;
+
+  // Read-only ticket tracking strip (default variant, resident-facing): shows
+  // assignee + deadline when a work order exists. No edit affordance.
+  showTicketTracking?: boolean;
 }
 
 const Dot = ({ className }: { className?: string }) => (
@@ -120,6 +116,7 @@ const ComplaintCard = ({
   ticket,
   showTicketControls = false,
   onTicketAction,
+  showTicketTracking = false,
 }: ComplaintCardProps) => {
   const p = complaint;
 
@@ -152,29 +149,22 @@ const ComplaintCard = ({
 
           {showTicketControls &&
             (ticket ? (
-              <div className="bg-primary/5 p-3 border border-primary/10 relative group/ticket">
-                <p className="text-xs font-semibold text-primary">
-                  Тікет створено (ID: {ticket.ticket_id})
-                </p>
-                {ticket.user && (
-                  <p className="text-xs text-primary/80 mt-1">
-                    Виконавець: {ticket.user.first_name} {ticket.user.last_name}
-                  </p>
-                )}
-                {ticket.deadline && (
-                  <p className="text-xs text-primary/70 mt-1">
-                    Дедлайн: {formatDate(ticket.deadline)}
-                  </p>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={() => onTicketAction?.(p, ticket)}
-                  className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
-                >
-                  <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
-                </Button>
-              </div>
+              <TicketInfo
+                variant="callout"
+                ticket={ticket}
+                tone="primary"
+                heading={`Тікет створено (ID: ${ticket.ticket_id})`}
+                action={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => onTicketAction?.(p, ticket)}
+                    className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
+                  >
+                    <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
+                  </Button>
+                }
+              />
             ) : (
               <Button onClick={() => onTicketAction?.(p)}>
                 <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
@@ -313,8 +303,17 @@ const ComplaintCard = ({
         {showProgress && (
           <div className="mb-4">
             <Separator className="mb-4" />
-            <ProgressStepper stage={stageMap[p.status] ?? "submitted"} />
+            <ProgressStepper stage={lifecycleStage(p.status)} />
           </div>
+        )}
+
+        {showTicketTracking && ticket && lifecycleStage(p.status) === "in_progress" && (
+          <TicketInfo
+            variant="callout"
+            ticket={ticket}
+            heading={`Заявку взято в роботу · Тікет #${ticket.ticket_id}`}
+            className="mb-4"
+          />
         )}
 
         <div className={footerClassName}>

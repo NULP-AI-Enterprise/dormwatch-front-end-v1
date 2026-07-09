@@ -514,6 +514,19 @@ export async function fetchTickets(filters = {}) {
   return [];
 }
 
+// Read-only: the tickets (work orders) opened for the current resident's own
+// complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
+// (that stays admin-gated via fetchTickets).
+export async function fetchMyTickets() {
+  try {
+      const data = await fetchJson("/me/tickets/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch my tickets", e);
+  }
+  return [];
+}
+
 /**
  * @param {any} complaintId
  * @param {any} employeeId

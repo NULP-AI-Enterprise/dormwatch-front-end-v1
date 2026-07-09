@@ -1,281 +1,197 @@
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  fetchMyProblems,
-  deleteProblem,
-  fetchCategories,
-} from "@/services/problemsApi";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ComplaintCard from "@/components/ComplaintCard";
-import CommentSection from "@/components/CommentSection";
+import { TicketCard } from "@/components/TicketCard";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  FilterSearchInput,
-  StatusFilterSelect,
-  PriorityFilterSelect,
-  CategoryFilterButtons,
-} from "@/components/ComplaintFilters";
+import { StatCard } from "@/components/StatCard";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
-import { isAdminUser } from "@/lib/complaintUtils";
-import { useCommentToggle } from "@/hooks/useCommentToggle";
+import { isAdminUser, isActiveStatus, lifecycleStage } from "@/lib/complaintUtils";
+import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
-import type { Complaint, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MapPinIcon,
-  InboxIcon,
   File01Icon,
-  AddIcon,
+  CheckmarkCircle02Icon,
+  Clock01Icon,
+  ArrowRight02Icon,
+  Wrench01Icon,
+  Ticket01Icon,
 } from "@hugeicons/core-free-icons";
 
 const UserPage = () => {
   const { user: currentUser } = useUser();
-  const [problems, setProblems] = useState<Complaint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { problems, loading, reload, complaintById, ticketByComplaint } =
+    useMyComplaintsAndTickets();
 
-  const comments = useCommentToggle();
-
-  const [selectedProblem, setSelectedProblem] = useState<Complaint | null>(null);
+  // Select by id so the open sheet always reflects the freshest complaint from
+  // the hook (no stale snapshot, no manual re-sync ref).
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
-  const [filterSearch, setFilterSearch] = useState("");
-
-  const fetchProblems = async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const data = await fetchMyProblems();
-      setProblems(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error("Failed to fetch user data", e);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProblems();
-    fetchCategories().then(setCategories).catch(() => {});
-  }, []);
-
-  const filteredProblems = problems.filter((p) => {
-    const matchesSearch = !filterSearch ||
-      (p.title || "").toLowerCase().includes(filterSearch.toLowerCase()) ||
-      (p.description || "").toLowerCase().includes(filterSearch.toLowerCase());
-    const matchesStatus = filterStatus === "all" || p.status === filterStatus;
-    const matchesCategory = filterCategory === "all" || p.category === filterCategory;
-    const matchesPriority = filterPriority === "all" || p.priority === filterPriority;
-    return matchesSearch && matchesStatus && matchesCategory && matchesPriority;
-  });
-
-  const selectedProblemRef = useRef(selectedProblem);
-  selectedProblemRef.current = selectedProblem;
-
-  useEffect(() => {
-    const handler = async () => {
-      const data = await fetchMyProblems();
-      const fresh = Array.isArray(data) ? data : [];
-      setProblems(fresh);
-      const current = selectedProblemRef.current;
-      if (current) {
-        const updated = fresh.find((c) => c.id === current.id);
-        if (updated) setSelectedProblem(updated);
-      }
-    };
-    window.addEventListener("complaintUpdated", handler);
-    return () => window.removeEventListener("complaintUpdated", handler);
-  }, []);
-
-  const onDelete = async (id: number) => {
-    try {
-      await deleteProblem(id);
-      setProblems((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
-      console.warn('Failed to delete problem', err);
-    }
-  };
+  if (loading) return <PageSpinner />;
 
   const firstName = currentUser?.first_name || "Користувач";
-  // Location lives under `place` in the profile payload (like CreateReportPage /
-  // AdminLayout read it), not on flat building/room fields.
   const building = currentUser?.place?.building?.name || "";
   const room = currentUser?.place?.place_name || "";
 
-  if (loading) {
-    return <PageSpinner />;
-  }
+  const resolvedCount = problems.filter((p) => p.status === "resolved").length;
+  const activeCount = problems.filter((p) => isActiveStatus(p.status)).length;
+
+  const recent = problems.slice(0, 4);
+
+  // Active work orders for the right-column glance: resolve each ticket to its
+  // complaint FIRST, drop any that don't resolve or aren't in progress, THEN
+  // cap — so the cap never yields blank slots.
+  const activeTickets = ticketByComplaint.size
+    ? [...ticketByComplaint.values()]
+        .map((t) => ({ ticket: t, complaint: complaintById.get(t.complaint) }))
+        .filter(
+          (r): r is { ticket: (typeof r)["ticket"]; complaint: NonNullable<(typeof r)["complaint"]> } =>
+            !!r.complaint && lifecycleStage(r.complaint.status) === "in_progress"
+        )
+        .slice(0, 3)
+    : [];
+
+  const selectedProblem = selectedId != null ? complaintById.get(selectedId) ?? null : null;
+  const selectedTicket = selectedId != null ? ticketByComplaint.get(selectedId) ?? null : null;
+
+  const openSheet = (id: number) => {
+    setSelectedId(id);
+    setSheetOpen(true);
+  };
 
   return (
-    <><div className="max-w-5xl mx-auto px-4 py-10">
-        <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList variant="line" className="mb-8">
-            <TabsTrigger value="dashboard" className="text-xs font-semibold">
-              Панель
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs font-semibold">
-              Мої заявки
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="dashboard">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-1 space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground tracking-tight">Вітаємо, {firstName}!</h1>
-                  {(building || room) && (
-                    <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                      <HugeiconsIcon icon={MapPinIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
-                      {building}
-                      {building && room && <span className="w-1 h-1 bg-border inline-block mx-1.5" />}
-                      {room && `Кімната ${room}`}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="bg-card border border-border p-5">
-                    <p className="text-2xl font-bold text-foreground">{problems.length}</p>
-                    <p className="text-xs text-muted-foreground font-semibold mt-1">Всього заявок</p>
-                  </div>
-                  <div className="bg-card border border-border p-5">
-                    <p className="text-2xl font-bold text-green-400">
-                      {problems.filter((p) => p.status === "resolved").length}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-semibold mt-1">Вирішено</p>
-                  </div>
-                  <div className="bg-card border border-border p-5">
-                    <p className="text-2xl font-bold text-yellow-400">
-                      {problems.filter((p) => p.status !== "resolved").length}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-semibold mt-1">Активні</p>
-                  </div>
-                </div>
-
-                <Button asChild className="w-full">
-                  <Link to="/create-report">
-                    <HugeiconsIcon icon={AddIcon} className="size-4 mr-2" strokeWidth={2} />
-                    Створити заявку
-                  </Link>
-                </Button>
-              </div>
-
-              <div className="md:col-span-2 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">Активні заявки</h2>
-                  <Link to="/dashboard" className="text-sm font-semibold text-primary hover:underline">
-                    Історія
-                  </Link>
-                </div>
-                <div className="space-y-3">
-                  {problems.length === 0 ? (
-                    <EmptyState
-                      icon={InboxIcon}
-                      title="Немає активних заявок."
-                      action={
-                        <Button asChild size="xs">
-                          <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити першу заявку</Link>
-                        </Button>
-                      }
-                    />
-                  ) : (
-                    problems.slice(0, 5).map((p) => (
-                      <ComplaintCard
-                        key={p.id}
-                        complaint={p}
-                        bodyPadding="p-5"
-                        metaVariant="date"
-                        descriptionFallback={"—"}
-                        showProgress
-                        footerLeft="id"
-                        onCardClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <div className="grid lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-4">
-                <Card className="border-border shadow-none bg-card">
-                  <CardContent className="space-y-4">
-                    <FilterSearchInput value={filterSearch} onChange={setFilterSearch} />
-                    <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
-                    <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
-                    <CategoryFilterButtons
-                      value={filterCategory}
-                      onChange={setFilterCategory}
-                      categories={categories}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-3 space-y-4">
-              {problems.length === 0 && (
-                <EmptyState icon={File01Icon} title="Ще немає звернень" />
-              )}
-
-              {problems.length > 0 && filteredProblems.length === 0 && (
-                <EmptyState
-                  icon={InboxIcon}
-                  title="Немає заявок за вибраними фільтрами."
-                />
-              )}
-
-              {filteredProblems.map((p) => (
-                <ComplaintCard
-                  key={p.id}
-                  complaint={p}
-                  bodyPadding="p-5"
-                  metaVariant="date"
-                  descriptionFallback={"\u2014"}
-                  onCardClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
-                  showPhoto
-                  photoHeight="h-48"
-                  footerClassName="flex items-center justify-between pt-4"
-                  commentsMode="inline"
-                  commentsSide="left"
-                  commentsOpen={comments.isOpen(p.id)}
-                  onCommentToggle={() => comments.toggle(p.id)}
-                  commentsContent={
-                    <CommentSection
-                      complaintId={p.id}
-                      currentUserId={currentUser?.user}
-                      isAdmin={isAdminUser(currentUser)}
-                      complaintAuthorId={p.user_id}
-                    />
-                  }
-                  showDelete
-                  onDelete={onDelete}
-                />
-              ))}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+    <>
+      {/* greeting */}
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          Вітаємо, {firstName}!
+        </h1>
+        {(building || room) && (
+          <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+            <HugeiconsIcon icon={MapPinIcon} className="size-4" strokeWidth={1.5} />
+            {building}
+            {building && room && <span className="w-1 h-1 bg-border inline-block mx-1.5" />}
+            {room && `Кімната ${room}`}
+          </p>
+        )}
       </div>
 
-        {selectedProblem && (
-          <ComplaintSidePanel
-            complaint={selectedProblem}
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
-            onStatusChange={() => {
-              fetchProblems();
-            }}
-            currentUserId={currentUser?.user}
-            isAdmin={isAdminUser(currentUser)}
-          />
-        )}
+      {/* front-and-center CTA — big button with right arrow */}
+      <Link
+        to="/create-report"
+        className="group w-full flex items-center justify-between gap-4 bg-primary text-primary-foreground px-8 py-6 mb-10 hover:bg-primary/80 transition-colors"
+      >
+        <span className="flex items-center gap-4">
+          <span className="inline-flex size-12 items-center justify-center border border-white/20 bg-white/10 shrink-0">
+            <HugeiconsIcon icon={Wrench01Icon} className="size-6" strokeWidth={2} />
+          </span>
+          <span className="text-left">
+            <span className="block text-lg md:text-xl font-semibold">Створити заявку</span>
+            <span className="block text-sm text-primary-foreground/80 mt-0.5">
+              Опишіть несправність — комендант побачить її одразу.
+            </span>
+          </span>
+        </span>
+        <HugeiconsIcon
+          icon={ArrowRight02Icon}
+          className="size-7 shrink-0 group-hover:translate-x-1 transition-transform"
+          strokeWidth={2}
+        />
+      </Link>
+
+      {/* stat row — same grid/gap and icon stroke as AdminPage's StatCard row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <StatCard
+          icon={<HugeiconsIcon icon={File01Icon} className="size-4" strokeWidth={1.5} />}
+          label="Всього заявок"
+          value={problems.length}
+        />
+        <StatCard
+          icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-4" strokeWidth={1.5} />}
+          label="Вирішено"
+          value={resolvedCount}
+        />
+        <StatCard
+          icon={<HugeiconsIcon icon={Clock01Icon} className="size-4" strokeWidth={1.5} />}
+          label="Активні"
+          value={activeCount}
+        />
+      </div>
+
+      {/* two columns: recent requests + active tickets glance */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground">Останні заявки</h2>
+            <Link to="/my-complaints" className="text-sm font-semibold text-primary hover:underline">
+              Усі мої заявки →
+            </Link>
+          </div>
+
+          {recent.length === 0 ? (
+            <EmptyState
+              icon={File01Icon}
+              title="Ще немає заявок"
+              subtitle="Створіть першу заявку, щоб повідомити про проблему."
+            />
+          ) : (
+            recent.map((p) => (
+              <ComplaintCard
+                key={p.id}
+                complaint={p}
+                metaVariant="date"
+                descriptionFallback="—"
+                showProgress
+                footerLeft="id"
+                ticket={ticketByComplaint.get(p.id) ?? null}
+                showTicketTracking
+                onCardClick={() => openSheet(p.id)}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="lg:col-span-1 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground">У роботі</h2>
+            <Link to="/my-tickets" className="text-sm font-semibold text-primary hover:underline">
+              Мої тікети →
+            </Link>
+          </div>
+
+          {activeTickets.length === 0 ? (
+            <EmptyState
+              icon={Ticket01Icon}
+              title="Немає активних тікетів"
+              subtitle="Коли комендант візьме заявку в роботу, вона з’явиться тут."
+            />
+          ) : (
+            activeTickets.map(({ ticket, complaint }) => (
+              <TicketCard
+                key={ticket.ticket_id}
+                ticket={ticket}
+                complaint={complaint}
+                onOpen={() => openSheet(complaint.id)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {selectedProblem && (
+        <ComplaintSidePanel
+          complaint={selectedProblem}
+          ticket={selectedTicket}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          onStatusChange={reload}
+          currentUserId={currentUser?.user}
+          isAdmin={isAdminUser(currentUser)}
+        />
+      )}
     </>
   );
 };
