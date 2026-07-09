@@ -1,85 +1,74 @@
-import ProgressStepper from "@/components/ProgressStepper";
+import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
+import { formatDate } from "@/lib/dateUtils";
+import { cn } from "@/lib/utils";
+import type { Complaint, Ticket } from "@/lib/types";
 
 interface TicketCardProps {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  date: string;
-  status: string;
-  location?: string;
-  categoryLabel?: string;
+  ticket: Ticket; // real Ticket
+  complaint: Complaint; // resolved via complaint.id === ticket.complaint
+  readOnly?: boolean; // this card's mode, forwarded to the panel on open
+  onOpen?: (readOnly: boolean) => void; // card click → parent opens TicketSidePanel
 }
 
-const stageMap: Record<string, "submitted" | "in_progress" | "resolved" | "rejected"> = {
-  pending: "submitted",
-  approved: "in_progress",
-  resolved: "resolved",
-  rejected: "rejected",
-};
-
-const TicketCardSkeleton = () => (
-  <div className="bg-card border border-border overflow-hidden animate-pulse">
-    <div className="p-6">
-      <div className="flex justify-between items-start mb-3">
-        <div className="h-4 w-16 bg-muted/50" />
-        <div className="h-3 w-12 bg-muted/30" />
-      </div>
-      <div className="h-5 w-3/4 bg-muted/50 mb-2" />
-      <div className="h-3 w-full bg-muted/30 mb-1" />
-      <div className="h-3 w-2/3 bg-muted/30 mb-4" />
-      <Separator className="mb-4" />
-      <div className="h-1.5 bg-muted/50 rounded-none" />
-    </div>
-  </div>
-);
-
-const TicketCard = ({ id, title, description, category, date, status, location, categoryLabel }: TicketCardProps) => {
-  const step = stageMap[status] || "submitted";
+const TicketCard = ({ ticket, complaint, readOnly = true, onOpen }: TicketCardProps) => {
+  const p = complaint;
 
   return (
-    <div className="group/ticket bg-card border border-border relative overflow-hidden hover:border-border transition-colors">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover/ticket:opacity-100 transition-opacity" />
+    <Card
+      className={cn(
+        "py-0 border-border shadow-none bg-card",
+        onOpen && "group hover:bg-muted/50 transition-colors cursor-pointer"
+      )}
+      onClick={
+        onOpen
+          ? (e) => {
+              if ((e.target as HTMLElement).closest('button, [role="dialog"], a')) return;
+              onOpen(readOnly);
+            }
+          : undefined
+      }
+    >
       <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-semibold">
-              {categoryLabel || category}
-            </span>
-            <span className="w-1 h-1 bg-border" />
-            <span className="text-xs text-muted-foreground">{date}</span>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge status={p.status} />
           </div>
-          <StatusBadge status={status} />
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold text-foreground group-hover/ticket:text-primary transition-colors">
-            {title}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed break-all whitespace-pre-wrap">
-            {description}
-          </p>
-        </div>
-
-        <Separator className="my-5" />
-
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <ProgressStepper stage={step} />
-          </div>
-          <Separator orientation="vertical" dashed className="border-border h-6" />
-          <span className="ml-3 text-xs font-semibold text-muted-foreground shrink-0 pl-3">
-            #{id}
+          <span className="text-xs font-normal text-muted-foreground shrink-0">
+            {p.category || ""}
+            <span className="w-1 h-1 bg-border inline-block mx-1.5" />
+            {formatDate(p.createdAt)}
           </span>
         </div>
-        {location && (
-          <p className="text-xs text-muted-foreground mt-2">{location}</p>
-        )}
+
+        <h3 className="text-sm font-semibold text-foreground mb-2">
+          {p.title || "Без назви"}
+        </h3>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
+          {p.description || "—"}
+        </p>
+
+        <Separator className="mb-4" />
+
+        <div className="space-y-1.5">
+          <span className="text-xs text-muted-foreground font-semibold">
+            Тікет #{ticket.ticket_id}
+          </span>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold">Виконавець:</span>{" "}
+            {ticket.user
+              ? `${ticket.user.first_name} ${ticket.user.last_name}`
+              : "Не призначено"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold">Дедлайн:</span>{" "}
+            {ticket.deadline ? formatDate(ticket.deadline) : "—"}
+          </p>
+        </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
-export { TicketCard, TicketCardSkeleton };
+export { TicketCard };

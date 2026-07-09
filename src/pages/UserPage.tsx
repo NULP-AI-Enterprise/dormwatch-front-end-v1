@@ -6,7 +6,6 @@ import {
   fetchCategories,
 } from "@/services/problemsApi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TicketCard } from "@/components/TicketCard";
 import ComplaintCard from "@/components/ComplaintCard";
 import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
@@ -21,7 +20,6 @@ import {
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
-import { formatDate } from "@/lib/dateUtils";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
@@ -187,15 +185,15 @@ const UserPage = () => {
                     />
                   ) : (
                     problems.slice(0, 5).map((p) => (
-                      <TicketCard
+                      <ComplaintCard
                         key={p.id}
-                        id={p.id}
-                        title={p.title}
-                        description={p.description}
-                        category={p.category ?? ""}
-                        date={formatDate(p.createdAt)}
-                        status={p.status}
-                        categoryLabel={p.category ?? undefined}
+                        complaint={p}
+                        bodyPadding="p-5"
+                        metaVariant="date"
+                        descriptionFallback={"—"}
+                        showProgress
+                        footerLeft="id"
+                        onCardClick={() => { setSelectedProblem(p); setSheetOpen(true); }}
                       />
                     ))
                   )}

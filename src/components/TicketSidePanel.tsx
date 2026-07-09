@@ -13,6 +13,9 @@ import {
 import { format } from "date-fns";
 import { createTicket, updateTicket } from "@/services/problemsApi";
 import { StatusBadge } from "@/components/StatusBadge";
+import { formatDate } from "@/lib/dateUtils";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { EditIcon } from "@hugeicons/core-free-icons";
 import type { Complaint, Ticket } from "@/lib/types";
 
 interface TicketSidePanelProps {
@@ -23,6 +26,7 @@ interface TicketSidePanelProps {
   employees: Array<{ user: number; first_name: string; last_name: string }>;
   allTickets: Ticket[];
   onTicketChange?: () => void;
+  readOnly?: boolean;
 }
 
 const UNASSIGNED = "unassigned";
@@ -34,17 +38,22 @@ const TicketSidePanel = ({
   onOpenChange,
   employees,
   onTicketChange,
+  readOnly = true,
 }: TicketSidePanelProps) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>(UNASSIGNED);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Default to the read-only view; create mode (editable + no ticket yet) opens
+  // straight into the form. Mirrors ComplaintSidePanel's isEditing pattern.
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setSelectedEmployee(ticket?.user?.user ? String(ticket.user.user) : UNASSIGNED);
     setDeadlineDate(ticket?.deadline ? new Date(ticket.deadline) : undefined);
     setError(null);
-  }, [ticket, complaint]);
+    setIsEditing(!readOnly && !ticket);
+  }, [ticket, complaint, readOnly]);
 
   if (!complaint) return null;
 
@@ -99,58 +108,98 @@ const TicketSidePanel = ({
 
           <Separator />
 
-          {/* Ticket fields (editable) */}
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-2 block">
-                Виконавець
-              </label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Не призначено" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UNASSIGNED}>Не призначено</SelectItem>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.user} value={String(emp.user)}>
-                      {emp.first_name} {emp.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {isEditing ? (
+            <>
+              {/* Ticket fields (editable) */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                    Виконавець
+                  </label>
+                  <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Не призначено" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED}>Не призначено</SelectItem>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.user} value={String(emp.user)}>
+                          {emp.first_name} {emp.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-2 block">
-                Дедлайн
-              </label>
-              <DatePicker
-                date={deadlineDate}
-                setDate={setDeadlineDate}
-                placeholder="Оберіть дедлайн"
-              />
-            </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                    Дедлайн
+                  </label>
+                  <DatePicker
+                    date={deadlineDate}
+                    setDate={setDeadlineDate}
+                    placeholder="Оберіть дедлайн"
+                  />
+                </div>
 
-            {ticket && (
-              <p className="text-xs text-muted-foreground font-semibold">
-                Тікет #{ticket.ticket_id}
-              </p>
-            )}
-          </div>
+                {ticket && (
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    Тікет #{ticket.ticket_id}
+                  </p>
+                )}
+              </div>
 
-          {error && (
-            <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+              {error && (
+                <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? "Збереження..." : "Зберегти"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Editing an existing ticket → back to read-only view.
+                    // Creating (no ticket) → nothing to view, so close.
+                    if (ticket) setIsEditing(false);
+                    else onOpenChange(false);
+                  }}
+                >
+                  Скасувати
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Ticket fields (read-only) */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold">Виконавець:</span>{" "}
+                  {ticket?.user
+                    ? `${ticket.user.first_name} ${ticket.user.last_name}`
+                    : "Не призначено"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold">Дедлайн:</span>{" "}
+                  {ticket?.deadline ? formatDate(ticket.deadline) : "—"}
+                </p>
+                {ticket && (
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    Тікет #{ticket.ticket_id}
+                  </p>
+                )}
+              </div>
+
+              {!readOnly && (
+                <Button variant="outline" onClick={() => setIsEditing(true)}>
+                  <HugeiconsIcon icon={EditIcon} className="size-4 mr-1.5" strokeWidth={2} />
+                  Редагувати
+                </Button>
+              )}
+            </>
           )}
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Збереження..." : "Зберегти"}
-            </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Скасувати
-            </Button>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

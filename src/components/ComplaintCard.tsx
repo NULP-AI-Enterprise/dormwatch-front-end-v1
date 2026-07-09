@@ -15,9 +15,20 @@ import {
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import ProgressStepper from "@/components/ProgressStepper";
 import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import type { Complaint, Ticket } from "@/lib/types";
+
+// Maps a complaint's raw status to a ProgressStepper stage. Shared here (rather
+// than in TicketCard) since ComplaintCard is now the component that renders the
+// progress bar via `showProgress`.
+const stageMap: Record<string, "submitted" | "in_progress" | "resolved" | "rejected"> = {
+  pending: "submitted",
+  approved: "in_progress",
+  resolved: "resolved",
+  rejected: "rejected",
+};
 
 interface ComplaintCardProps {
   complaint: Complaint;
@@ -43,6 +54,9 @@ interface ComplaintCardProps {
 
   // Priority row
   showPriority?: boolean;
+
+  // Progress bar (default variant only)
+  showProgress?: boolean;
 
   // Footer left
   footerLeft?: "added-date" | "id" | "none";
@@ -89,6 +103,7 @@ const ComplaintCard = ({
   photoHeight = "h-40",
   onPhotoPreview,
   showPriority = false,
+  showProgress = false,
   footerLeft = "none",
   commentsMode = "hidden",
   commentsSide = "right",
@@ -292,6 +307,13 @@ const ComplaintCard = ({
               )}
               alt=""
             />
+          </div>
+        )}
+
+        {showProgress && (
+          <div className="mb-4">
+            <Separator className="mb-4" />
+            <ProgressStepper stage={stageMap[p.status] ?? "submitted"} />
           </div>
         )}
 
