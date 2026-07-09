@@ -113,12 +113,11 @@ const CreateReportPage = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <div className="flex items-center gap-4 mb-10">
-        <Link
-          to="/user"
-          className="p-2 border border-border hover:border-primary hover:bg-primary/5 transition-colors"
-        >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />
-        </Link>
+        <Button asChild variant="outline" size="icon">
+          <Link to="/user">
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />
+          </Link>
+        </Button>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Нове звернення
         </h1>

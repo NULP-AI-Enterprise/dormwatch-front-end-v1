@@ -6,6 +6,7 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard } from "@/components/StatCard";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 import { isAdminUser, isActiveStatus, lifecycleStage } from "@/lib/complaintUtils";
 import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
@@ -80,10 +81,11 @@ const UserPage = () => {
       </div>
 
       {/* front-and-center CTA — big button with right arrow */}
-      <Link
-        to="/create-report"
-        className="group w-full flex items-center justify-between gap-4 bg-primary text-primary-foreground px-8 py-6 mb-10 hover:bg-primary/80 transition-colors"
+      <Button
+        asChild
+        className="group h-auto w-full justify-between gap-4 px-8 py-6 mb-10 text-base"
       >
+        <Link to="/create-report">
         <span className="flex items-center gap-4">
           <span className="inline-flex size-12 items-center justify-center border border-white/20 bg-white/10 shrink-0">
             <HugeiconsIcon icon={Wrench01Icon} className="size-6" strokeWidth={2} />
@@ -100,7 +102,8 @@ const UserPage = () => {
           className="size-7 shrink-0 group-hover:translate-x-1 transition-transform"
           strokeWidth={2}
         />
-      </Link>
+        </Link>
+      </Button>
 
       {/* stat row — same grid/gap and icon stroke as AdminPage's StatCard row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
