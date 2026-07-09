@@ -36,7 +36,9 @@ const CreateReportPage = () => {
 
   useEffect(() => {
     fetchUserProfile().then((user) => {
-      setBuildingId(user?.place?.building?.building_id);
+      // Building is set on the profile independently of room; fall back to the
+      // room's building for users whose building is only known via their place.
+      setBuildingId(user?.building?.building_id ?? user?.place?.building?.building_id);
       if (user?.place?.place_id && user?.place?.place_name) {
         setPlace({
           place_id: user.place.place_id,

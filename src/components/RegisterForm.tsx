@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +25,10 @@ import PlaceCombobox from "@/components/PlaceCombobox";
 import type { Place } from "@/lib/types";
 import { AuthLayout, ErrorBanner } from "@/components/AuthLayout";
 
-const registerSchema = z.object({
+// Building is required once buildings exist; on an empty DB (first-user/admin
+// bootstrap there is nothing to pick) it stays optional — mirrors the server-side
+// guard in RegisterSerializer.validate().
+const makeRegisterSchema = (buildingRequired: boolean) => z.object({
   first_name: z.string().min(1, "Ім'я обов'язкове"),
   last_name: z.string().min(1, "Прізвище обов'язкове"),
   email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
@@ -34,14 +37,16 @@ const registerSchema = z.object({
   ),
   password: z.string().min(8, "Пароль має бути щонайменше 8 символів"),
   confirm_password: z.string().min(1, "Підтвердження пароля обов'язкове"),
-  building_id: z.string().optional(),
+  building_id: buildingRequired
+    ? z.string().min(1, "Оберіть гуртожиток")
+    : z.string().optional(),
   place_id: z.string().optional(),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Паролі не співпадають",
   path: ["confirm_password"],
 });
 
-type RegisterData = z.infer<typeof registerSchema>;
+type RegisterData = z.infer<ReturnType<typeof makeRegisterSchema>>;
 
 function SelectField({ children, ...props }: React.ComponentProps<typeof SelectTrigger>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
@@ -65,6 +70,11 @@ function RegisterForm() {
 
   const buildings = useBuildings();
   const [regPlace, setRegPlace] = useState<Place | null>(null);
+
+  const registerSchema = useMemo(
+    () => makeRegisterSchema(buildings.length > 0),
+    [buildings.length],
+  );
 
   const registerForm = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
@@ -94,7 +104,7 @@ function RegisterForm() {
         confirm_password: data.confirm_password,
         first_name: data.first_name,
         last_name: data.last_name,
-        // TODO: include place_id once buildings/places are populated
+        ...(data.building_id ? { building_id: data.building_id } : {}),
         ...(data.place_id ? { place_id: data.place_id } : {}),
       });
       window.dispatchEvent(new Event("profileUpdated"));
