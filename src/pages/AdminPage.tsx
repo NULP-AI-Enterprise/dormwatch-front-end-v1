@@ -150,9 +150,9 @@ const AdminPage = () => {
 
             <div className="bg-card border border-border overflow-hidden">
               <div className="px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Останні скарги</h2>
+                <h2 className="text-xl font-semibold text-foreground">Останні заявки</h2>
                 <Link to="/admin/complaints" className="text-sm font-semibold text-blue-500 hover:text-blue-400">
-                  Всі скарги
+                  Всі заявки
                 </Link>
               </div>
               <Separator />

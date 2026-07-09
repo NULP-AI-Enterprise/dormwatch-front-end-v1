@@ -83,7 +83,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                   {c.author_id === currentUserId && isAdmin ? (
                     <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500 text-white hover:bg-blue-600">Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор скарги</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор заявки</Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-stone-500 border-stone-300">Студент</Badge>
                   )}

@@ -97,8 +97,8 @@ const ComplaintAdminActions = ({
       <>
         <ConfirmAction
           trigger={<ActionButton icon={CheckmarkCircleIcon}>Схвалити</ActionButton>}
-          title="Схвалити скаргу?"
-          description={'Ви впевнені, що хочете схвалити цю скаргу? Вона перейде в статус "Активно".'}
+          title="Схвалити заявку?"
+          description={'Ви впевнені, що хочете схвалити цю заявку? Вона перейде в статус "Активно".'}
           confirmLabel="Схвалити"
           onConfirm={() => onStatusChange("approved")}
         />
@@ -108,8 +108,8 @@ const ComplaintAdminActions = ({
               Відхилити
             </ActionButton>
           }
-          title="Відхилити скаргу?"
-          description={'Ви впевнені, що хочете відхилити цю скаргу? Вона перейде в статус "Відхилено".'}
+          title="Відхилити заявку?"
+          description={'Ви впевнені, що хочете відхилити цю заявку? Вона перейде в статус "Відхилено".'}
           confirmLabel="Відхилити"
           confirmClassName={destructiveActionClass}
           onConfirm={() => onStatusChange("rejected")}
@@ -120,7 +120,7 @@ const ComplaintAdminActions = ({
       <ConfirmAction
         trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
         title="Позначити як вирішену?"
-        description={'Ви впевнені, що проблема була успішно вирішена? Скарга перейде в статус "Вирішено".'}
+        description={'Ви впевнені, що проблема була успішно вирішена? Заявка перейде в статус "Вирішено".'}
         confirmLabel="Вирішити"
         onConfirm={() => onStatusChange("resolved")}
       />
@@ -132,8 +132,8 @@ const ComplaintAdminActions = ({
           Видалити
         </ActionButton>
       }
-      title="Видалити скаргу?"
-      description="Ви впевнені, що хочете видалити цю скаргу? Цю дію неможливо скасувати."
+      title="Видалити заявку?"
+      description="Ви впевнені, що хочете видалити цю заявку? Цю дію неможливо скасувати."
       confirmLabel="Видалити"
       confirmClassName={destructiveActionClass}
       onConfirm={onDelete}

@@ -115,7 +115,7 @@ const AdminComplaintsPage = () => {
       setSelectedComplaint(prev => prev ? data.find(c => c.id === prev.id) || prev : prev);
     } catch (err) {
       console.warn('Failed to load complaints', err);
-      setErr("Не вдалося завантажити скарги.");
+      setErr("Не вдалося завантажити заявки.");
     } finally {
       setLoading(false);
     }
@@ -234,7 +234,7 @@ const AdminComplaintsPage = () => {
           <div className="px-6 pt-6">
             <TabsList variant="line">
               <TabsTrigger value="requests" className="text-xs font-semibold">
-                Скарги
+                Заявки
               </TabsTrigger>
               <TabsTrigger value="tickets" className="text-xs font-semibold">
                 Тікети
@@ -251,7 +251,7 @@ const AdminComplaintsPage = () => {
                       <FilterSearchInput
                         value={searchQuery}
                         onChange={setSearchQuery}
-                        placeholder="Пошук скарг..."
+                        placeholder="Пошук заявок..."
                       />
                     </div>
 
@@ -320,8 +320,8 @@ const AdminComplaintsPage = () => {
                 {!loading && !err && filteredComplaints.length === 0 && (
                   <EmptyState
                     icon={InboxIcon}
-                    title="Скарг не знайдено"
-                    subtitle="Жодна скарга не відповідає поточним фільтрам."
+                    title="Заявок не знайдено"
+                    subtitle="Жодна заявка не відповідає поточним фільтрам."
                   />
                 )}
 

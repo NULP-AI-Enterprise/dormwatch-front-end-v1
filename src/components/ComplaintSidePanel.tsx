@@ -191,8 +191,8 @@ const ComplaintSidePanel = ({
     >
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Деталі скарги</SheetTitle>
-          <SheetDescription>Інформація про скаргу та керування статусом</SheetDescription>
+          <SheetTitle>Деталі заявки</SheetTitle>
+          <SheetDescription>Інформація про заявку та керування статусом</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 px-4 py-4">
