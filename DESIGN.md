@@ -155,7 +155,8 @@ Applied via Tailwind utility classes (e.g. from `complaintUtils.ts`):
 *   **Standard Radius:** `rounded-none` (0px) for **all** cards, buttons, dialogs, avatars, inputs, badges, tabs, and selects.
 *   **CSS Variable:** `--radius: 0` is set globally in both `:root` and `.dark`.
 *   **Strict Rule:** No rounded corners anywhere. The interface relies entirely on sharp, structural 90-degree angles.
-*   **Exception — Radio Group:** Radio group items and their indicator dots retain `rounded-full`. Circular radio indicators are a platform convention that aids visual distinction from checkboxes. This is the only component exempt from the zero-radius rule.
+*   **Exception — Radio Group:** Radio group items and their indicator dots retain `rounded-full`. Circular radio indicators are a platform convention that aids visual distinction from checkboxes.
+*   **Exception — Loading Spinner:** The loading spinner (`LoadingSpinner`) retains `rounded-full`. Its roundness is functional, not decorative — a rotating square reads as a broken/glitching component rather than as motion, defeating the purpose of a progress indicator. Radius here communicates state, so it is exempt from the zero-radius rule.
 
 ### Surface Opacity Tiers
 `bg-muted` is used at three opacity levels depending on depth. An element should use the lowest opacity tier that provides sufficient visual separation:
