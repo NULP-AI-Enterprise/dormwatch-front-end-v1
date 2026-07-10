@@ -50,8 +50,12 @@ const DashboardPage = () => {
   // the same read-only tracking block as on /user and /my-complaints.
   const myTicketByComplaint = useMyTicketMap();
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
-  const [activeCorps, setActiveCorps] = useState("all");
-  const [activePriority, setActivePriority] = useState("all");
+  // All filters (building/priority/category/search) are multi-select and filtered
+  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage/
+  // MyComplaintsPage. Pilot-scale choice: the fetch returns all approved once and
+  // filteredProblems narrows it. Revisit (server-side + pagination) at real scale.
+  const [activeCorps, setActiveCorps] = useState<string[]>([]);
+  const [activePriority, setActivePriority] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,7 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).catch(() => []);
+        const complaintsData = await fetchApprovedComplaints().catch(() => []);
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
       } catch (error) {
         console.error("Critical dashboard error:", error);
@@ -85,14 +89,14 @@ const DashboardPage = () => {
       }
     };
     loadData();
-  }, [activeCorps, activePriority]);
+  }, []);
 
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
 
   useEffect(() => {
     const handler = () => {
-      fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+      fetchApprovedComplaints().then((data) => {
         const fresh = data.filter(Boolean) as Complaint[];
         setProblems(fresh);
         const current = selectedProblemRef.current;
@@ -104,7 +108,7 @@ const DashboardPage = () => {
     };
     window.addEventListener("complaintUpdated", handler);
     return () => window.removeEventListener("complaintUpdated", handler);
-  }, [activeCorps, activePriority]);
+  }, []);
 
   const handleDelete = async (id: number) => {
     setDeleteTarget(id);
@@ -128,11 +132,18 @@ const DashboardPage = () => {
     const matchesCategory =
       activeCategories.length === 0 ||
       (p.category != null && activeCategories.includes(p.category));
+    // Building filters on the complaint's own location (p.building), matching the
+    // other three pages — not the reporter's residence the server join used.
+    const matchesBuilding =
+      activeCorps.length === 0 || activeCorps.includes(p.building);
+    const matchesPriority =
+      activePriority.length === 0 ||
+      (p.priority != null && activePriority.includes(p.priority));
     const matchesSearch =
       searchQuery === "" ||
       (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesBuilding && matchesPriority && matchesSearch;
   });
 
   const admin = isAdminUser(currentUser);
@@ -189,14 +200,14 @@ const DashboardPage = () => {
                 <h4 className="text-xs font-semibold text-muted-foreground mb-3">Гуртожиток</h4>
                 <BuildingFilterSelect
                   value={activeCorps}
-                  onValueChange={setActiveCorps}
+                  onChange={setActiveCorps}
                   buildings={buildings}
                 />
 
                 <Separator className="my-4" />
 
                 <h4 className="text-xs font-semibold text-muted-foreground mb-3">Пріоритет</h4>
-                <PriorityFilterSelect value={activePriority} onValueChange={setActivePriority} />
+                <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
 
                 <Separator className="my-4" />
 
@@ -252,8 +263,8 @@ const DashboardPage = () => {
                     size="xs"
                     onClick={() => {
                       setActiveCategories([]);
-                      setActiveCorps("all");
-                      setActivePriority("all");
+                      setActiveCorps([]);
+                      setActivePriority([]);
                       setSearchQuery("");
                     }}
                   >
@@ -274,7 +285,7 @@ const DashboardPage = () => {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={() => {
-            fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+            fetchApprovedComplaints().then((data) => {
               const fresh = data.filter(Boolean) as Complaint[];
               setProblems(fresh);
               const updated = fresh.find((c) => c.id === selectedProblem.id);

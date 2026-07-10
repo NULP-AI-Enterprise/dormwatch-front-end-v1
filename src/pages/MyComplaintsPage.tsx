@@ -33,8 +33,8 @@ const MyComplaintsPage = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [priority, setPriority] = useState("all");
+  const [status, setStatus] = useState<string[]>([]);
+  const [priority, setPriority] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined);
 
@@ -58,8 +58,9 @@ const MyComplaintsPage = () => {
           search === "" ||
           (p.title || "").toLowerCase().includes(search.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(search.toLowerCase());
-        const statusOk = status === "all" || p.status === status;
-        const priorityOk = priority === "all" || p.priority === priority;
+        const statusOk = status.length === 0 || status.includes(p.status);
+        const priorityOk =
+          priority.length === 0 || (p.priority != null && priority.includes(p.priority));
         const categoryOk =
           selectedCategories.length === 0 ||
           (p.category != null && selectedCategories.includes(p.category));
@@ -104,12 +105,12 @@ const MyComplaintsPage = () => {
               </div>
 
               <h4 className="text-xs font-semibold text-muted-foreground mb-3">Статус</h4>
-              <StatusFilterSelect value={status} onValueChange={setStatus} />
+              <StatusFilterSelect value={status} onChange={setStatus} />
 
               <Separator className="my-4" />
 
               <h4 className="text-xs font-semibold text-muted-foreground mb-3">Пріоритет</h4>
-              <PriorityFilterSelect value={priority} onValueChange={setPriority} />
+              <PriorityFilterSelect value={priority} onChange={setPriority} />
 
               <Separator className="my-4" />
 

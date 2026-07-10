@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { format } from "date-fns";
 import { createTicket, updateTicket } from "@/services/problemsApi";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -58,6 +59,16 @@ const TicketSidePanel = ({
   if (!complaint) return null;
 
   const categoryLabel = complaint.category;
+
+  // Assignee combobox operates over user-id strings (matching selectedEmployee),
+  // with UNASSIGNED as the first selectable item. The label map lets search match
+  // employee names, and renders the id back to a name in the input/list.
+  const employeeItems = [UNASSIGNED, ...employees.map((e) => String(e.user))];
+  const employeeLabel = (id: string) => {
+    if (id === UNASSIGNED) return "Не призначено";
+    const emp = employees.find((e) => String(e.user) === id);
+    return emp ? `${emp.first_name} ${emp.last_name}` : id;
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -116,19 +127,24 @@ const TicketSidePanel = ({
                   <label className="text-xs font-semibold text-muted-foreground mb-2 block">
                     Виконавець
                   </label>
-                  <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Не призначено" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={UNASSIGNED}>Не призначено</SelectItem>
-                      {employees.map((emp) => (
-                        <SelectItem key={emp.user} value={String(emp.user)}>
-                          {emp.first_name} {emp.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox<string, false>
+                    items={employeeItems}
+                    value={selectedEmployee}
+                    onValueChange={(v) => setSelectedEmployee(v ?? UNASSIGNED)}
+                    itemToStringLabel={employeeLabel}
+                  >
+                    <ComboboxInput placeholder="Не призначено" className="w-full" />
+                    <ComboboxContent>
+                      <ComboboxEmpty>Виконавців не знайдено</ComboboxEmpty>
+                      <ComboboxList>
+                        {(id: string) => (
+                          <ComboboxItem key={id} value={id}>
+                            {employeeLabel(id)}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
 
                 <div>

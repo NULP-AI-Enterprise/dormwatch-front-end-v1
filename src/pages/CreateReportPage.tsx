@@ -10,12 +10,13 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import PlaceCombobox from "@/components/PlaceCombobox";
 import type { CategoryOption, Place } from "@/lib/types";
 
@@ -133,18 +134,23 @@ const CreateReportPage = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
           <label className="text-xs font-semibold text-foreground block mb-4">Що трапилось?</label>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Оберіть категорію" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.category_id} value={category.name}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Combobox<string, false>
+            items={categories.map((c) => c.name)}
+            value={selectedCategory}
+            onValueChange={(v) => setSelectedCategory(v ?? "")}
+          >
+            <ComboboxInput placeholder="Оберіть категорію" className="w-full" />
+            <ComboboxContent>
+              <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+              <ComboboxList>
+                {(name: string) => (
+                  <ComboboxItem key={name} value={name}>
+                    {name}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">

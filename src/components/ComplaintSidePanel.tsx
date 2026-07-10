@@ -13,6 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -223,18 +231,23 @@ const ComplaintSidePanel = ({
           <div className="flex flex-wrap items-center gap-2">
             {isEditing ? (
               <div className="w-full space-y-2">
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Категорія" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.category_id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox<string, false>
+                  items={categories.map((c) => c.name)}
+                  value={editCategory}
+                  onValueChange={(v) => setEditCategory(v ?? "")}
+                >
+                  <ComboboxInput placeholder="Категорія" className="w-full h-8 text-xs" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+                    <ComboboxList>
+                      {(name: string) => (
+                        <ComboboxItem key={name} value={name}>
+                          {name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
                 <Select value={editPriority} onValueChange={setEditPriority}>
                   <SelectTrigger className="w-full h-8 text-xs">
                     <SelectValue placeholder="Пріоритет" />

@@ -53,10 +53,12 @@ import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
 const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
-  const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(
+    location.state?.selectedStatus ? [location.state.selectedStatus] : ["pending"]
+  );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState("all");
-  const [selectedPriority, setSelectedPriority] = useState("all");
+  const [selectedBuilding, setSelectedBuilding] = useState<string[]>([]);
+  const [selectedPriority, setSelectedPriority] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -171,14 +173,16 @@ const AdminComplaintsPage = () => {
   const filteredComplaints = useMemo(
     () =>
       complaints.filter((p) => {
-        const statusOk = selectedStatus === "all" || p.status === selectedStatus;
+        const statusOk =
+          selectedStatus.length === 0 || selectedStatus.includes(p.status);
         const categoryOk =
           selectedCategories.length === 0 ||
           (p.category != null && selectedCategories.includes(p.category));
         const buildingOk =
-          selectedBuilding === "all" || p.building === selectedBuilding;
+          selectedBuilding.length === 0 || selectedBuilding.includes(p.building);
         const priorityOk =
-          selectedPriority === "all" || p.priority === selectedPriority;
+          selectedPriority.length === 0 ||
+          (p.priority != null && selectedPriority.includes(p.priority));
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -255,7 +259,7 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус
                     </h4>
-                    <StatusFilterSelect value={selectedStatus} onValueChange={setSelectedStatus} />
+                    <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
 
                     <Separator className="my-4" />
 
@@ -264,7 +268,7 @@ const AdminComplaintsPage = () => {
                     </h4>
                     <BuildingFilterSelect
                       value={selectedBuilding}
-                      onValueChange={setSelectedBuilding}
+                      onChange={setSelectedBuilding}
                       buildings={buildings}
                     />
 
@@ -273,7 +277,7 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Пріоритет
                     </h4>
-                    <PriorityFilterSelect value={selectedPriority} onValueChange={setSelectedPriority} />
+                    <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
 
                     <Separator className="my-4" />
 

@@ -7,7 +7,14 @@ import { registerUser } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import {
@@ -48,17 +55,15 @@ const makeRegisterSchema = (buildingRequired: boolean) => z.object({
 
 type RegisterData = z.infer<ReturnType<typeof makeRegisterSchema>>;
 
-function SelectField({ children, ...props }: React.ComponentProps<typeof SelectTrigger>) {
+function ComboboxField(props: React.ComponentProps<typeof ComboboxInput>) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
   return (
-    <SelectTrigger
+    <ComboboxInput
       id={formItemId}
       aria-invalid={!!error}
       aria-describedby={!error ? formDescriptionId : `${formDescriptionId} ${formMessageId}`}
       {...props}
-    >
-      {children}
-    </SelectTrigger>
+    />
   );
 }
 
@@ -189,18 +194,26 @@ function RegisterForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Гуртожиток</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectField className="w-full">
-                        <SelectValue placeholder="Оберіть свій гуртожиток..." />
-                      </SelectField>
-                      <SelectContent>
-                        {buildings.map((b) => (
-                          <SelectItem key={b.building_id} value={String(b.building_id)}>
-                            {b.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox<string, false>
+                      items={buildings.map((b) => String(b.building_id))}
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? "")}
+                      itemToStringLabel={(id) =>
+                        buildings.find((b) => String(b.building_id) === id)?.name ?? id
+                      }
+                    >
+                      <ComboboxField placeholder="Оберіть свій гуртожиток..." className="w-full" />
+                      <ComboboxContent>
+                        <ComboboxEmpty>Гуртожитків не знайдено</ComboboxEmpty>
+                        <ComboboxList>
+                          {(id: string) => (
+                            <ComboboxItem key={id} value={id}>
+                              {buildings.find((b) => String(b.building_id) === id)?.name ?? id}
+                            </ComboboxItem>
+                          )}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
                     <FormMessage />
                   </FormItem>
                 )}
