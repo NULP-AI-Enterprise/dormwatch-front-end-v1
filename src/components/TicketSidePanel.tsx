@@ -84,7 +84,7 @@ const TicketSidePanel = ({
       onTicketChange?.();
       onOpenChange(false);
     } catch (err) {
-      setError("Не вдалось зберегти тікет");
+      setError("Не вдалося зберегти тікет. Спробуйте ще раз.");
       console.warn("Failed to save ticket", err);
     } finally {
       setSaving(false);
@@ -96,7 +96,7 @@ const TicketSidePanel = ({
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Тікет{String(complaint.id) !== "new" ? ` #${complaint.id}` : ""}</SheetTitle>
-          <SheetDescription>Керування тікетом для заявки</SheetDescription>
+          <SheetDescription>Керування тікетом для звернення</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 px-4 py-4">

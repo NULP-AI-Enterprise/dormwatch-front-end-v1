@@ -48,14 +48,14 @@ function LoginForm() {
       window.dispatchEvent(new Event("profileUpdated"));
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Невірний email або пароль");
+      setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthLayout heading="Вхід до системи" subtitle="Увійдіть, щоб створити або відстежити заявку на ремонт.">
+    <AuthLayout heading="З поверненням!" subtitle="Увійдіть, щоб подати або відстежити звернення про ремонт.">
       <Card className="py-0 border-border shadow-2xl">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
@@ -102,7 +102,7 @@ function LoginForm() {
                 className="w-full relative overflow-hidden group"
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                {loading ? "Завантаження..." : "Увійти"}
+                {loading ? "Входимо…" : "Увійти"}
               </Button>
             </form>
           </Form>

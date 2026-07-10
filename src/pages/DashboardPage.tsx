@@ -178,14 +178,14 @@ const DashboardPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Всі заявки
+              Всі звернення
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Опубліковані звернення мешканців по гуртожитках.
             </p>
           </div>
           <ArrowLinkButton to={admin ? "/admin" : "/create-report"}>
-            {admin ? "Перейти в комендант-центр" : "Створити заявку"}
+            {admin ? "Перейти в комендант-центр" : "Створити звернення"}
           </ArrowLinkButton>
         </div>
 
@@ -300,7 +300,7 @@ const DashboardPage = () => {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Видалити заявку?</AlertDialogTitle>
+            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
             <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

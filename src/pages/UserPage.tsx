@@ -91,7 +91,7 @@ const UserPage = () => {
             <HugeiconsIcon icon={Wrench01Icon} className="size-6" strokeWidth={2} />
           </span>
           <span className="text-left">
-            <span className="block text-lg md:text-xl font-semibold">Створити заявку</span>
+            <span className="block text-lg md:text-xl font-semibold">Створити звернення</span>
             <span className="block text-sm text-primary-foreground/80 mt-0.5">
               Опишіть несправність — комендант побачить її одразу.
             </span>
@@ -109,7 +109,7 @@ const UserPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <StatCard
           icon={<HugeiconsIcon icon={File01Icon} className="size-4" strokeWidth={1.5} />}
-          label="Всього заявок"
+          label="Всього звернень"
           value={problems.length}
         />
         <StatCard
@@ -128,17 +128,17 @@ const UserPage = () => {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg md:text-xl font-semibold text-foreground">Останні заявки</h2>
+            <h2 className="text-lg md:text-xl font-semibold text-foreground">Останні звернення</h2>
             <Link to="/my-complaints" className="text-sm font-semibold text-primary hover:underline">
-              Усі мої заявки →
+              Усі мої звернення →
             </Link>
           </div>
 
           {recent.length === 0 ? (
             <EmptyState
-              icon={File01Icon}
-              title="Ще немає заявок"
-              subtitle="Створіть першу заявку, щоб повідомити про проблему."
+              icon={CheckmarkCircle02Icon}
+              title="Тут поки порожньо"
+              subtitle="Щось зламалося? Створіть перше звернення — комендант одразу його побачить."
             />
           ) : (
             recent.map((p) => (
@@ -168,8 +168,8 @@ const UserPage = () => {
           {activeTickets.length === 0 ? (
             <EmptyState
               icon={Ticket01Icon}
-              title="Немає активних тікетів"
-              subtitle="Коли комендант візьме заявку в роботу, вона з’явиться тут."
+              title="Поки нічого в роботі"
+              subtitle="Щойно комендант візьме звернення в роботу, воно з’явиться тут."
             />
           ) : (
             activeTickets.map(({ ticket, complaint }) => (

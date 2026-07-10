@@ -115,7 +115,7 @@ function RegisterForm() {
       window.dispatchEvent(new Event("profileUpdated"));
       navigate("/");
     } catch (err) {
-      let msg = "Помилка реєстрації";
+      let msg = "Не вдалося зареєструватися. Перевірте дані й спробуйте ще раз.";
       if (err instanceof Error) {
         try {
           const parsed = JSON.parse(err.message);
@@ -135,7 +135,7 @@ function RegisterForm() {
   };
 
   return (
-    <AuthLayout heading="Реєстрація" subtitle="Створіть обліковий запис для подачі заявок на ремонт.">
+    <AuthLayout heading="Реєстрація" subtitle="Кілька секунд — і можна подавати звернення про ремонт.">
       <Card className="py-0 border-border shadow-2xl">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}

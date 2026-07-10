@@ -23,7 +23,7 @@ import { isAdminUser, lifecycleStage } from "@/lib/complaintUtils";
 import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
 import type { CategoryOption } from "@/lib/types";
-import { File01Icon, InboxIcon } from "@hugeicons/core-free-icons";
+import { Ticket01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
 const MyTicketsPage = () => {
   const { user: currentUser } = useUser();
@@ -93,7 +93,7 @@ const MyTicketsPage = () => {
           Мої тікети
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Заявки, які комендант взяв у роботу — виконавець, дедлайн і стан.
+          Звернення, які комендант взяв у роботу — виконавець, дедлайн і стан.
         </p>
       </div>
 
@@ -143,12 +143,12 @@ const MyTicketsPage = () => {
         <div className="lg:col-span-3">
           {rows.length === 0 ? (
             <EmptyState
-              icon={File01Icon}
-              title="Поки що жодну заявку не взято в роботу"
-              subtitle="Коли комендант призначить виконавця, тікет з’явиться тут із дедлайном і прогресом."
+              icon={Ticket01Icon}
+              title="Поки нічого в роботі"
+              subtitle="Щойно комендант призначить виконавця, тут з’явиться тікет із дедлайном і прогресом."
             />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={InboxIcon} title="Немає тікетів за вибраними фільтрами." />
+            <EmptyState icon={Search01Icon} title="Нічого не знайшли за цими фільтрами." />
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {filtered.map(({ ticket, complaint }) => (

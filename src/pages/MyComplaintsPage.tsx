@@ -21,7 +21,7 @@ import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
 import type { CategoryOption } from "@/lib/types";
-import { File01Icon, InboxIcon } from "@hugeicons/core-free-icons";
+import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
 const MyComplaintsPage = () => {
   const { user: currentUser } = useUser();
@@ -86,13 +86,13 @@ const MyComplaintsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            Мої заявки
+            Мої звернення
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Усі звернення, які ви подали, та їх стан.
+            Усі ваші звернення та що з ними зараз відбувається.
           </p>
         </div>
-        <ArrowLinkButton to="/create-report">Створити заявку</ArrowLinkButton>
+        <ArrowLinkButton to="/create-report">Створити звернення</ArrowLinkButton>
       </div>
 
       <div className="grid lg:grid-cols-4 gap-8">
@@ -133,17 +133,17 @@ const MyComplaintsPage = () => {
         <div className="lg:col-span-3 space-y-4">
           {problems.length === 0 ? (
             <EmptyState
-              icon={File01Icon}
-              title="Ще немає заявок"
-              subtitle="Створіть першу заявку, щоб повідомити про проблему."
+              icon={CheckmarkCircle02Icon}
+              title="Тут поки порожньо"
+              subtitle="Щось зламалося? Створіть перше звернення — комендант одразу його побачить."
               action={
                 <ArrowLinkButton to="/create-report" size="sm">
-                  Створити заявку
+                  Створити звернення
                 </ArrowLinkButton>
               }
             />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={InboxIcon} title="Немає заявок за вибраними фільтрами." />
+            <EmptyState icon={Search01Icon} title="Нічого не знайшли за цими фільтрами." />
           ) : (
             filtered.map((p) => (
               <ComplaintCard

@@ -111,7 +111,7 @@ const ComplaintSidePanel = ({
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
-      setError("Не вдалось змінити статус");
+      setError("Не вдалося змінити статус. Спробуйте ще раз.");
       console.warn('Failed to change complaint status', err);
     }
   };
@@ -123,7 +123,7 @@ const ComplaintSidePanel = ({
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
-      setError("Не вдалось змінити пріоритет");
+      setError("Не вдалося змінити пріоритет. Спробуйте ще раз.");
       console.warn('Failed to change complaint priority', err);
     }
   };
@@ -135,7 +135,7 @@ const ComplaintSidePanel = ({
       onStatusChange();
       onOpenChange(false);
     } catch (err) {
-      setError("Не вдалось видалити заявку");
+      setError("Не вдалося видалити звернення. Спробуйте ще раз.");
       console.warn('Failed to delete complaint', err);
     }
   };
@@ -161,7 +161,7 @@ const ComplaintSidePanel = ({
       onStatusChange();
       onOpenChange(false);
     } catch (err) {
-      setError("Не вдалось зберегти зміни");
+      setError("Не вдалося зберегти зміни. Спробуйте ще раз.");
       console.warn('Failed to save complaint', err);
     }
   };
@@ -204,8 +204,8 @@ const ComplaintSidePanel = ({
     >
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Деталі заявки</SheetTitle>
-          <SheetDescription>Інформація про заявку та керування статусом</SheetDescription>
+          <SheetTitle>Деталі звернення</SheetTitle>
+          <SheetDescription>Інформація про звернення та керування статусом</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 px-4 py-4">
@@ -220,7 +220,7 @@ const ComplaintSidePanel = ({
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Назва заявки"
+                placeholder="Назва звернення"
               />
             ) : (
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
@@ -306,7 +306,7 @@ const ComplaintSidePanel = ({
             <Textarea
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Опис заявки"
+              placeholder="Опис звернення"
               className="min-h-24 resize-none"
             />
           ) : (

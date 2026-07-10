@@ -81,11 +81,11 @@ const CreateReportPage = () => {
     setError("");
 
     if (!formData.title.trim()) {
-      setError("Вкажи короткий заголовок проблеми.");
+      setError("Додайте короткий заголовок — так звернення легше впізнати.");
       return;
     }
     if (!formData.description.trim()) {
-      setError("Опиши проблему.");
+      setError("Опишіть, будь ласка, що сталося.");
       return;
     }
     if (!selectedCategory) {
@@ -106,7 +106,7 @@ const CreateReportPage = () => {
       navigate("/user");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(`Не вдалось створити заявку: ${msg}`);
+      setError(`Не вдалося надіслати звернення: ${msg}. Спробуйте ще раз.`);
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +133,7 @@ const CreateReportPage = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className="text-xs font-semibold text-foreground block mb-4">Що трапилось?</label>
+          <label className="text-xs font-semibold text-foreground block mb-4">Що трапилося?</label>
           <Combobox<string, false>
             items={categories.map((c) => c.name)}
             value={selectedCategory}
@@ -190,7 +190,7 @@ const CreateReportPage = () => {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                placeholder="Коротко: тече кран..."
+                placeholder="Напр.: тече кран у ванній"
                 maxLength={80}
                 required
               />
@@ -223,7 +223,7 @@ const CreateReportPage = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={6}
-                placeholder="Деталі..."
+                placeholder="Що саме зламалося, коли почалося, де саме…"
                 className="min-h-36 resize-none"
                 required
               />
@@ -231,7 +231,7 @@ const CreateReportPage = () => {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-3">Фотодоказ</label>
+            <label className="text-xs font-semibold text-foreground block mb-3">Фото (необовʼязково, але дуже допомагає)</label>
             {photoFile && previewUrl ? (
               <div className="relative w-full aspect-square border-2 border-border overflow-hidden group">
                 <img
@@ -266,7 +266,7 @@ const CreateReportPage = () => {
           className="w-full"
         >
           <HugeiconsIcon icon={Forward01Icon} className="size-4 mr-2" strokeWidth={2} />
-          {submitting ? "Публікую..." : "Опублікувати звернення"}
+          {submitting ? "Надсилаємо…" : "Надіслати звернення"}
         </Button>
       </form>
     </div>

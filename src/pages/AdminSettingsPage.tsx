@@ -303,7 +303,7 @@ function CategoriesTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Видалити категорію «{pending?.name}»?</AlertDialogTitle>
             <AlertDialogDescription>
-              Заявки з цією категорією не будуть видалені — вони залишаться без
+              Звернення з цією категорією не будуть видалені — вони залишаться без
               категорії.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -737,7 +737,7 @@ function RoomsTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Видалити кімнату «{pending?.place_name}»?</AlertDialogTitle>
             <AlertDialogDescription>
-              Заявки, привʼязані до цієї кімнати, не будуть видалені — вони
+              Звернення, привʼязані до цієї кімнати, не будуть видалені — вони
               залишаться без кімнати.
             </AlertDialogDescription>
           </AlertDialogHeader>

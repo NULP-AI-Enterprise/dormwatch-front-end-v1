@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Forward01Icon, Cancel01Icon, Message01Icon } from "@hugeicons/core-free-icons";
+import { MailSend01Icon, Cancel01Icon, Message01Icon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +83,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                   {c.author_id === currentUserId && isAdmin ? (
                     <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500 text-white hover:bg-blue-600">Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор заявки</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор звернення</Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-stone-500 border-stone-300">Студент</Badge>
                   )}
@@ -107,12 +107,12 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Написати коментар..."
+          placeholder="Напишіть коментар…"
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <Button onClick={handleSend}>
-          <HugeiconsIcon icon={Forward01Icon} className="size-3 mr-1" strokeWidth={2} />
+          <HugeiconsIcon icon={MailSend01Icon} className="size-3 mr-1" strokeWidth={2} />
           Надіслати
         </Button>
       </div>

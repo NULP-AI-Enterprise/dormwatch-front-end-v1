@@ -311,7 +311,7 @@ const ComplaintCard = ({
           <TicketInfo
             variant="callout"
             ticket={ticket}
-            heading={`Заявку взято в роботу · Тікет #${ticket.ticket_id}`}
+            heading={`Звернення взято в роботу · Тікет #${ticket.ticket_id}`}
             className="mb-4"
           />
         )}
