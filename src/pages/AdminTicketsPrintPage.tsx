@@ -5,12 +5,14 @@ import {
   fetchAllComplaints,
   fetchWorkers,
 } from "@/services/problemsApi";
-import { priorityLabel } from "@/lib/complaintUtils";
+import { priorityLabel, statusLabel, isActiveStatus } from "@/lib/complaintUtils";
 import type { Complaint, Worker, Ticket } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PrinterIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { resolveImageUrl } from "@/services/imageUtils";
 
 interface TicketWithComplaint extends Ticket {
   complaintDetail?: Complaint;
@@ -51,7 +53,10 @@ const AdminTicketsPrintPage = () => {
     ? tickets
     : tickets.filter((t) => t.worker?.worker_id === Number(workerParam));
 
-  // Map complaint details and filter out resolved/denied ones
+  // Map complaint details and keep only tickets on active complaints (not
+  // resolved, not rejected). isActiveStatus handles the normalized status
+  // vocabulary — the raw "denied" never reaches the frontend (it's mapped to
+  // "rejected"), so filtering on the helper is the correct check.
   const ticketsWithComplaints: TicketWithComplaint[] = filteredTickets
     .map((t) => {
       const complaint = complaints.find((c) => c.id === t.complaint);
@@ -60,10 +65,7 @@ const AdminTicketsPrintPage = () => {
         complaintDetail: complaint,
       };
     })
-    .filter((t) => {
-      const status = t.complaintDetail?.status;
-      return status !== "resolved" && status !== "denied";
-    });
+    .filter((t) => t.complaintDetail && isActiveStatus(t.complaintDetail.status));
 
   // Group by worker
   const groups: {
@@ -101,15 +103,9 @@ const AdminTicketsPrintPage = () => {
     return groups[a].workerName.localeCompare(groups[b].workerName, "uk");
   });
 
-  // Trigger browser print once data is rendered
-  useEffect(() => {
-    if (!loading && ticketsWithComplaints.length > 0) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, ticketsWithComplaints.length]);
+  // Flatten to a single ordered list so each ticket's detail sheet follows the
+  // same sequence as the index (worker group, then deadline ascending).
+  const orderedTickets = sortedGroupKeys.flatMap((key) => groups[key].tickets);
 
   const handlePrint = () => {
     window.print();
@@ -168,6 +164,9 @@ const AdminTicketsPrintPage = () => {
         .print-description {
           text-align: left !important;
         }
+        .print-page {
+          page-break-before: always;
+        }
         @media print {
           body {
             background-color: white !important;
@@ -184,11 +183,14 @@ const AdminTicketsPrintPage = () => {
           tr {
             page-break-inside: avoid;
           }
+          .avoid-break {
+            page-break-inside: avoid;
+          }
         }
       `}</style>
 
       {/* Control bar for screen rendering */}
-      <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-lg shadow-sm">
+      <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
             <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
@@ -206,7 +208,8 @@ const AdminTicketsPrintPage = () => {
       <div className="max-w-4xl mx-auto">
         <header className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight uppercase">DormWatch</h1>
+            {/* Shared brand mark (Building03 + wordmark) — DESIGN.md single source of truth */}
+            <Logo />
             <p className="text-xs text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
           </div>
           <div className="text-right text-sm text-gray-600">
@@ -278,6 +281,79 @@ const AdminTicketsPrintPage = () => {
             );
           })
         )}
+
+        {/* One detail sheet (work order) per ticket, each on its own printed page. */}
+        {orderedTickets.map((t) => {
+          const c = t.complaintDetail;
+          const photo = resolveImageUrl(c?.photoUrl || c?.thumbnail || null);
+          return (
+            <div key={`detail-${t.ticket_id}`} className="print-page avoid-break pt-8">
+              <header className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+                <div>
+                  <Logo />
+                  <p className="text-xs text-gray-500 font-semibold mt-1">Наряд-замовлення</p>
+                </div>
+                <div className="text-right text-sm text-gray-600">
+                  <div><strong>Тікет #{t.ticket_id}</strong></div>
+                  <div>Дата: {new Date().toLocaleDateString("uk-UA")}</div>
+                </div>
+              </header>
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">{c?.title || "Без назви"}</h2>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap mb-6">{c?.description || "Без опису"}</p>
+
+              <table className="w-full text-sm border-collapse border border-gray-300 mb-6">
+                <tbody>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50 w-1/3">Категорія</td>
+                    <td className="border border-gray-300 p-2">{c?.category || "Не вказано"}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Кімната</td>
+                    <td className="border border-gray-300 p-2">{c?.placeName || "Не вказано"}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Пріоритет</td>
+                    <td className="border border-gray-300 p-2">{c?.priority ? priorityLabel(c.priority) : "Не визначено"}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Статус</td>
+                    <td className="border border-gray-300 p-2">{c?.status ? statusLabel(c.status) : "—"}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Працівник</td>
+                    <td className="border border-gray-300 p-2">
+                      {t.worker
+                        ? `${t.worker.full_name}${[t.worker.company, t.worker.phone].filter(Boolean).length ? ` (${[t.worker.company, t.worker.phone].filter(Boolean).join(", ")})` : ""}`
+                        : "Не призначено"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Дедлайн</td>
+                    <td className="border border-gray-300 p-2 font-semibold text-red-600">
+                      {t.deadline ? new Date(t.deadline).toLocaleDateString("uk-UA") : "Не визначено"}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div>
+                <div className="text-sm font-bold text-gray-800 mb-2">Фото</div>
+                {photo ? (
+                  <img
+                    src={photo}
+                    alt={c?.title || "Фото звернення"}
+                    className="w-full h-auto border border-gray-300 rounded-none"
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500 text-sm border border-dashed border-gray-300">
+                    Фото відсутнє
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
