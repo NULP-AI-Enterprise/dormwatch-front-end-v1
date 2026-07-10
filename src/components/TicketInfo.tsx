@@ -3,8 +3,7 @@ import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import type { Ticket } from "@/lib/types";
 
-const workerName = (ticket: Ticket) =>
-  ticket.user ? `${ticket.user.first_name} ${ticket.user.last_name}` : null;
+const workerName = (ticket: Ticket) => ticket.worker?.full_name ?? null;
 
 type CalloutProps = {
   variant: "callout";

@@ -48,20 +48,17 @@ export interface Comment {
   date: string;
 }
 
-export interface Employee {
-  user: number;
-  first_name: string;
-  last_name: string;
+export interface Worker {
+  worker_id: number;
+  full_name: string;
+  company?: string;
+  phone?: string;
 }
 
 export interface Ticket {
   ticket_id: number;
   complaint: number;
-  user?: {
-    user: number;
-    first_name: string;
-    last_name: string;
-  };
+  worker?: Worker;
   deadline?: string;
 }
 

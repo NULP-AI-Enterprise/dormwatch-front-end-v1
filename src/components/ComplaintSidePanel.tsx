@@ -27,7 +27,19 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
-import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "@/services/problemsApi";
+import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson, resolveMyComplaint } from "@/services/problemsApi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS, lifecycleStage } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
@@ -113,6 +125,19 @@ const ComplaintSidePanel = ({
     } catch (err) {
       setError("Не вдалося змінити статус. Спробуйте ще раз.");
       console.warn('Failed to change complaint status', err);
+    }
+  };
+
+  // The owner marks their own request resolved once the work is done. Backed by
+  // the owner-scoped endpoint; admins keep their own resolve via ComplaintAdminActions.
+  const handleOwnerResolve = async () => {
+    try {
+      await resolveMyComplaint(complaint.id);
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
+      onStatusChange();
+    } catch (err) {
+      setError("Не вдалося позначити вирішеним. Спробуйте ще раз.");
+      console.warn('Failed to resolve own complaint', err);
     }
   };
 
@@ -372,6 +397,34 @@ const ComplaintSidePanel = ({
                 <p className="text-xs font-semibold text-foreground mb-2">Відстеження виконання</p>
                 <TicketInfo variant="detail" ticket={ticket} />
               </div>
+            </>
+          )}
+
+          {/* Owner marks their own active (approved == backend published) request
+              resolved once the work is done. Admin keeps its own resolve action. */}
+          {!isAdmin && isOwner && complaint.status === "approved" && (
+            <>
+              <Separator />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button>
+                    <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3 mr-1" strokeWidth={2} />
+                    Позначити вирішеним
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Позначити вирішеним?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Підтвердьте, що проблему усунено. Звернення перейде в статус «Вирішено».
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleOwnerResolve}>Вирішено</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
 

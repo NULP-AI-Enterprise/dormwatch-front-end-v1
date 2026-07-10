@@ -15,8 +15,8 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { fetchEmployees } from "@/services/problemsApi";
-import type { Employee } from "@/lib/types";
+import { fetchWorkers } from "@/services/problemsApi";
+import type { Worker } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ClipboardIcon, Cancel01Icon, Download01Icon } from "@hugeicons/core-free-icons";
 
@@ -26,33 +26,33 @@ interface ExportTicketsModalProps {
 }
 
 export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalProps) => {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("all");
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string>("all");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       setLoading(true);
-      fetchEmployees()
-        .then(setEmployees)
+      fetchWorkers()
+        .then(setWorkers)
         .catch(() => {})
         .finally(() => setLoading(false));
     }
   }, [open]);
 
   const handleExport = () => {
-    const url = `/admin/tickets/print?worker=${selectedEmployeeId}`;
+    const url = `/admin/tickets/print?worker=${selectedWorkerId}`;
     window.open(url, "_blank");
     onOpenChange(false);
   };
 
-  // Worker combobox operates over user-id strings, with "all" as the first item.
-  // The label map lets the input search employee names and render id → name.
-  const employeeItems = ["all", ...employees.map((e) => String(e.user))];
-  const employeeLabel = (id: string) => {
+  // Worker combobox operates over worker-id strings, with "all" as the first item.
+  // The label map lets the input search worker names and render id → name.
+  const workerItems = ["all", ...workers.map((w) => String(w.worker_id))];
+  const workerLabel = (id: string) => {
     if (id === "all") return "Всі працівники";
-    const emp = employees.find((e) => String(e.user) === id);
-    return emp ? `${emp.first_name} ${emp.last_name}` : id;
+    const w = workers.find((w) => String(w.worker_id) === id);
+    return w ? w.full_name : id;
   };
 
   return (
@@ -72,10 +72,10 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-foreground">Виберіть працівника</label>
             <Combobox<string, false>
-              items={employeeItems}
-              value={selectedEmployeeId}
-              onValueChange={(v) => setSelectedEmployeeId(v ?? "all")}
-              itemToStringLabel={employeeLabel}
+              items={workerItems}
+              value={selectedWorkerId}
+              onValueChange={(v) => setSelectedWorkerId(v ?? "all")}
+              itemToStringLabel={workerLabel}
             >
               <ComboboxInput
                 placeholder={loading ? "Завантаження..." : "Всі працівники"}
@@ -87,7 +87,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
                 <ComboboxList>
                   {(id: string) => (
                     <ComboboxItem key={id} value={id}>
-                      {employeeLabel(id)}
+                      {workerLabel(id)}
                     </ComboboxItem>
                   )}
                 </ComboboxList>

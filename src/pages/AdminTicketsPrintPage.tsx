@@ -3,10 +3,10 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   fetchTickets,
   fetchAllComplaints,
-  fetchEmployees,
+  fetchWorkers,
 } from "@/services/problemsApi";
 import { priorityLabel } from "@/lib/complaintUtils";
-import type { Complaint, Employee, Ticket } from "@/lib/types";
+import type { Complaint, Worker, Ticket } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PrinterIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -23,7 +23,7 @@ const AdminTicketsPrintPage = () => {
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,12 +31,12 @@ const AdminTicketsPrintPage = () => {
     Promise.all([
       fetchTickets(),
       fetchAllComplaints(),
-      fetchEmployees(),
+      fetchWorkers(),
     ])
-      .then(([tkts, cmplnts, emps]) => {
+      .then(([tkts, cmplnts, wkrs]) => {
         setTickets(tkts);
         setComplaints(cmplnts);
-        setEmployees(emps);
+        setWorkers(wkrs);
       })
       .catch((err) => {
         console.error("Failed to load print data", err);
@@ -49,7 +49,7 @@ const AdminTicketsPrintPage = () => {
   // Filter tickets by worker
   const filteredTickets = workerParam === "all"
     ? tickets
-    : tickets.filter((t) => t.user?.user === Number(workerParam));
+    : tickets.filter((t) => t.worker?.worker_id === Number(workerParam));
 
   // Map complaint details and filter out resolved/denied ones
   const ticketsWithComplaints: TicketWithComplaint[] = filteredTickets
@@ -66,17 +66,19 @@ const AdminTicketsPrintPage = () => {
     });
 
   // Group by worker
-  const groups: { [key: string]: { workerName: string; tickets: TicketWithComplaint[] } } = {};
+  const groups: {
+    [key: string]: { workerName: string; company?: string; phone?: string; tickets: TicketWithComplaint[] };
+  } = {};
 
   ticketsWithComplaints.forEach((item) => {
-    const workerKey = item.user?.user ? String(item.user.user) : "unassigned";
-    const workerName = item.user
-      ? `${item.user.first_name} ${item.user.last_name}`
-      : "Не призначено";
+    const workerKey = item.worker?.worker_id ? String(item.worker.worker_id) : "unassigned";
+    const workerName = item.worker ? item.worker.full_name : "Не призначено";
 
     if (!groups[workerKey]) {
       groups[workerKey] = {
         workerName,
+        company: item.worker?.company,
+        phone: item.worker?.phone,
         tickets: [],
       };
     }
@@ -132,9 +134,8 @@ const AdminTicketsPrintPage = () => {
 
   const selectedWorkerName = workerParam === "all"
     ? "Всі працівники"
-    : employees.find((e) => e.user === Number(workerParam))
-      ? `${employees.find((e) => e.user === Number(workerParam))?.first_name} ${employees.find((e) => e.user === Number(workerParam))?.last_name}`
-      : "Невідомий працівник";
+    : workers.find((w) => w.worker_id === Number(workerParam))?.full_name
+      ?? "Невідомий працівник";
 
   return (
     <div className="bg-white text-black min-h-screen p-8 print-container font-sans antialiased">
@@ -224,8 +225,15 @@ const AdminTicketsPrintPage = () => {
             const group = groups[groupKey];
             return (
               <div key={groupKey} className="mb-8 avoid-break">
-                <h2 className="text-xl font-bold text-gray-800 border-b border-gray-400 pb-1 mb-4 flex justify-between">
-                  <span>Працівник: {group.workerName}</span>
+                <h2 className="text-xl font-bold text-gray-800 border-b border-gray-400 pb-1 mb-4 flex justify-between items-baseline">
+                  <span>
+                    Працівник: {group.workerName}
+                    {(group.company || group.phone) && (
+                      <span className="text-sm font-medium text-gray-500 ml-2">
+                        ({[group.company, group.phone].filter(Boolean).join(", ")})
+                      </span>
+                    )}
+                  </span>
                   <span className="text-sm font-semibold text-gray-500">Кількість: {group.tickets.length}</span>
                 </h2>
 

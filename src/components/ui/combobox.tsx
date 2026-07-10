@@ -108,7 +108,11 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        // pointer-events-auto: the popup portals to a direct child of <body>, and
+        // a modal Sheet sets `pointer-events: none` on <body> while open. Without
+        // this, the portalled popup inherits that and its options are unclickable
+        // whenever the Combobox lives inside a Sheet (e.g. TicketSidePanel).
+        className="isolate z-50 pointer-events-auto"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
