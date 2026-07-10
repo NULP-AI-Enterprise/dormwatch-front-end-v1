@@ -21,6 +21,13 @@ export interface CategoryOption {
   name: string;
 }
 
+// A role assignable to a user (admin/student/worker/…). Roles are a backend
+// table, not an enum — any role_name can exist. Used by the admin residents page.
+export interface Role {
+  role_id: number;
+  role_name: string;
+}
+
 export interface Complaint {
   id: number;
   title: string;
