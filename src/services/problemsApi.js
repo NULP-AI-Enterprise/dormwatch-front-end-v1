@@ -502,16 +502,37 @@ export async function fetchComments(complaintId) {
   }
 }
 
-// ------------------ EMPLOYEES & TICKETS ------------------
+// ------------------ WORKERS & TICKETS ------------------
 
-export async function fetchEmployees() {
+// External contractors assignable to tickets (managed in Admin Settings). Also
+// serves the ticket assignment dropdown.
+export async function fetchWorkers() {
   try {
-      const data = await fetchJson("/admin/employees/");
+      const data = await fetchJson("/admin/workers/");
       if (Array.isArray(data)) return data;
   } catch (e) {
-      console.warn("Failed to fetch employees", e);
+      console.warn("Failed to fetch workers", e);
   }
   return [];
+}
+
+export async function createWorker({ full_name, company = "", phone = "" }) {
+  return await fetchJson("/admin/workers/", {
+      method: "POST",
+      body: { full_name, company, phone },
+  });
+}
+
+export async function updateWorker(workerId, fields) {
+  return await fetchJson(`/admin/workers/${workerId}/`, {
+      method: "PATCH",
+      body: fields,
+  });
+}
+
+export async function deleteWorker(workerId) {
+  await fetchJson(`/admin/workers/${workerId}/`, { method: "DELETE" });
+  return true;
 }
 
 export async function fetchTickets(filters = {}) {
@@ -541,13 +562,13 @@ export async function fetchMyTickets() {
 
 /**
  * @param {any} complaintId
- * @param {any} employeeId
+ * @param {any} workerId
  * @param {string | null} [deadline]
  */
-export async function createTicket(complaintId, employeeId, deadline = null) {
+export async function createTicket(complaintId, workerId, deadline = null) {
   const payload = {
       complaint: complaintId,
-      user: employeeId,
+      worker: workerId,
       deadline: deadline
   };
   return await fetchJson("/tickets/", {
@@ -558,18 +579,25 @@ export async function createTicket(complaintId, employeeId, deadline = null) {
 
 /**
  * @param {any} ticketId
- * @param {any} employeeId
+ * @param {any} workerId
  * @param {string | null} [deadline]
  */
-export async function updateTicket(ticketId, employeeId, deadline = null) {
+export async function updateTicket(ticketId, workerId, deadline = null) {
   const payload = {};
-  if (employeeId !== undefined) payload.user = employeeId;
+  if (workerId !== undefined) payload.worker = workerId;
   if (deadline !== undefined) payload.deadline = deadline;
-  
+
   return await fetchJson(`/tickets/${ticketId}/`, {
       method: "PATCH",
       body: payload
   });
+}
+
+// The complaint owner marks their own request resolved. Backed by
+// PATCH /me/complaints/<id>/resolve/ (owner-only, published -> resolved).
+export async function resolveMyComplaint(complaintId) {
+  await fetchJson(`/me/complaints/${complaintId}/resolve/`, { method: "PATCH" });
+  return { id: complaintId, status: "resolved" };
 }
 
 export async function postComment(complaintId, text) {

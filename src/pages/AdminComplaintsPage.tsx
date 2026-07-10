@@ -9,7 +9,7 @@ import {
   deleteProblem,
   fetchCategories,
   fetchTickets,
-  fetchEmployees,
+  fetchWorkers,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
@@ -48,7 +48,7 @@ import {
   Cancel01Icon,
   InboxIcon,
 } from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
+import type { Complaint, Ticket, Worker, CategoryOption } from "@/lib/types";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -80,7 +80,7 @@ const AdminComplaintsPage = () => {
   const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
   const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
   const [ticketReadOnly, setTicketReadOnly] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const buildings = useBuildings();
@@ -141,7 +141,7 @@ const AdminComplaintsPage = () => {
     if (tab === "tickets") {
       loadTickets();
       fetchApprovedComplaints().then(setApprovedForTickets);
-      fetchEmployees().then(setEmployees);
+      fetchWorkers().then(setWorkers);
     }
   }, [tab]);
 
@@ -475,7 +475,7 @@ const AdminComplaintsPage = () => {
               setTicketReadOnly(false);
             }
           }}
-          employees={employees}
+          workers={workers}
           allTickets={tickets}
           onTicketChange={loadTickets}
           readOnly={ticketReadOnly}

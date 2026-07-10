@@ -12,6 +12,10 @@ import {
   createPlace,
   updatePlace,
   deletePlace,
+  fetchWorkers,
+  createWorker,
+  updateWorker,
+  deleteWorker,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,8 +52,9 @@ import {
   Layers01Icon,
   Building03Icon,
   DoorIcon,
+  Wrench01Icon,
 } from "@hugeicons/core-free-icons";
-import type { Building, CategoryOption, Place } from "@/lib/types";
+import type { Building, CategoryOption, Place, Worker } from "@/lib/types";
 
 // Admin reference-data management: Categories, Buildings, Rooms. Deletes are
 // non-destructive by construction on the backend — categories/rooms detach
@@ -72,6 +77,9 @@ const AdminSettingsPage = () => {
             <TabsTrigger value="rooms" className="text-xs font-semibold">
               Кімнати
             </TabsTrigger>
+            <TabsTrigger value="workers" className="text-xs font-semibold">
+              Працівники
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="categories">
@@ -82,6 +90,9 @@ const AdminSettingsPage = () => {
           </TabsContent>
           <TabsContent value="rooms">
             <RoomsTab />
+          </TabsContent>
+          <TabsContent value="workers">
+            <WorkersTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -739,6 +750,254 @@ function RoomsTab() {
             <AlertDialogDescription>
               Звернення, привʼязані до цієї кімнати, не будуть видалені — вони
               залишаться без кімнати.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+            >
+              Видалити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
+// ── Workers tab ────────────────────────────────────────────────────────
+// External contractors assignable to tickets. They never log in; this is the
+// only surface to maintain them. Delete is non-destructive to tickets — the
+// backend SET_NULLs the assignment (the work order stays, just unassigned).
+function WorkersTab() {
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [addError, setAddError] = useState("");
+
+  const [editing, setEditing] = useState<Worker | null>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editCompany, setEditCompany] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [pending, setPending] = useState<Worker | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const data = await fetchWorkers();
+    setWorkers(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const add = async () => {
+    if (!fullName.trim()) return;
+    setSaving(true);
+    setAddError("");
+    try {
+      await createWorker({ full_name: fullName.trim(), company: company.trim(), phone: phone.trim() });
+      setFullName("");
+      setCompany("");
+      setPhone("");
+      await load();
+    } catch (err) {
+      setAddError("Не вдалося додати працівника");
+      console.warn("Failed to add worker", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEdit = (w: Worker) => {
+    setEditing(w);
+    setEditFullName(w.full_name);
+    setEditCompany(w.company ?? "");
+    setEditPhone(w.phone ?? "");
+  };
+
+  const commitEdit = async () => {
+    if (!editing) return;
+    setSavingEdit(true);
+    try {
+      await updateWorker(editing.worker_id, {
+        full_name: editFullName.trim(),
+        company: editCompany.trim(),
+        phone: editPhone.trim(),
+      });
+      setEditing(null);
+      await load();
+    } catch (err) {
+      console.warn("Failed to update worker", err);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!pending) return;
+    setDeleting(true);
+    try {
+      await deleteWorker(pending.worker_id);
+      await load();
+      setPending(null);
+    } catch (err) {
+      console.warn("Failed to delete worker", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Card className="border-border shadow-none bg-card">
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Ім'я</Label>
+            <Input
+              placeholder="Напр. Іван Петренко"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Компанія</Label>
+            <Input
+              placeholder="Напр. АкваСервіс"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Телефон</Label>
+            <Input
+              placeholder="Напр. 067 123 45 67"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+
+          <Button onClick={add} disabled={saving || !fullName.trim()}>
+            Додати працівника
+          </Button>
+          {addError && (
+            <p className="text-xs font-semibold text-destructive">{addError}</p>
+          )}
+        </div>
+
+        <Separator className="my-2" dashed />
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <LoadingSpinner size="md" />
+          </div>
+        ) : workers.length === 0 ? (
+          <EmptyState icon={Wrench01Icon} title="Працівників ще немає" />
+        ) : (
+          <div className="divide-y divide-border">
+            {workers.map((w) => (
+              <div key={w.worker_id} className="flex items-center gap-2 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground truncate">{w.full_name}</p>
+                  {(w.company || w.phone) && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[w.company, w.phone].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => openEdit(w)}
+                  aria-label="Редагувати"
+                >
+                  <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => setPending(w)}
+                  aria-label="Видалити"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      {/* Edit dialog */}
+      <AlertDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Редагувати працівника</AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="space-y-2 text-left">
+            <div className="space-y-1">
+              <Label className="text-xs">Ім'я</Label>
+              <Input
+                value={editFullName}
+                onChange={(e) => setEditFullName(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Компанія</Label>
+              <Input
+                value={editCompany}
+                onChange={(e) => setEditCompany(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Телефон</Label>
+              <Input
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingEdit}>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={savingEdit || !editFullName.trim()}
+              onClick={(e) => {
+                e.preventDefault();
+                commitEdit();
+              }}
+            >
+              Зберегти
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete dialog */}
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити працівника «{pending?.full_name}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Наявні тікети залишаться, але стануть непризначеними. Цю дію не можна скасувати.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

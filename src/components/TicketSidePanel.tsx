@@ -17,14 +17,14 @@ import { StatusBadge } from "@/components/StatusBadge";
 import TicketInfo from "@/components/TicketInfo";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { EditIcon } from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket } from "@/lib/types";
+import type { Complaint, Ticket, Worker } from "@/lib/types";
 
 interface TicketSidePanelProps {
   complaint: Complaint | null;
   ticket?: Ticket | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employees: Array<{ user: number; first_name: string; last_name: string }>;
+  workers: Worker[];
   allTickets: Ticket[];
   onTicketChange?: () => void;
   readOnly?: boolean;
@@ -37,11 +37,11 @@ const TicketSidePanel = ({
   ticket,
   open,
   onOpenChange,
-  employees,
+  workers,
   onTicketChange,
   readOnly = true,
 }: TicketSidePanelProps) => {
-  const [selectedEmployee, setSelectedEmployee] = useState<string>(UNASSIGNED);
+  const [selectedWorker, setSelectedWorker] = useState<string>(UNASSIGNED);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ const TicketSidePanel = ({
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    setSelectedEmployee(ticket?.user?.user ? String(ticket.user.user) : UNASSIGNED);
+    setSelectedWorker(ticket?.worker?.worker_id ? String(ticket.worker.worker_id) : UNASSIGNED);
     setDeadlineDate(ticket?.deadline ? new Date(ticket.deadline) : undefined);
     setError(null);
     setIsEditing(!readOnly && !ticket);
@@ -60,26 +60,26 @@ const TicketSidePanel = ({
 
   const categoryLabel = complaint.category;
 
-  // Assignee combobox operates over user-id strings (matching selectedEmployee),
+  // Assignee combobox operates over worker-id strings (matching selectedWorker),
   // with UNASSIGNED as the first selectable item. The label map lets search match
-  // employee names, and renders the id back to a name in the input/list.
-  const employeeItems = [UNASSIGNED, ...employees.map((e) => String(e.user))];
-  const employeeLabel = (id: string) => {
+  // worker names, and renders the id back to a name in the input/list.
+  const workerItems = [UNASSIGNED, ...workers.map((w) => String(w.worker_id))];
+  const workerLabel = (id: string) => {
     if (id === UNASSIGNED) return "Не призначено";
-    const emp = employees.find((e) => String(e.user) === id);
-    return emp ? `${emp.first_name} ${emp.last_name}` : id;
+    const w = workers.find((w) => String(w.worker_id) === id);
+    return w ? w.full_name : id;
   };
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    const employeeId = selectedEmployee === UNASSIGNED ? null : Number(selectedEmployee);
+    const workerId = selectedWorker === UNASSIGNED ? null : Number(selectedWorker);
     const deadlineStr = deadlineDate ? format(deadlineDate, "yyyy-MM-dd") : null;
     try {
       if (ticket) {
-        await updateTicket(ticket.ticket_id, employeeId, deadlineStr);
+        await updateTicket(ticket.ticket_id, workerId, deadlineStr);
       } else {
-        await createTicket(complaint.id, employeeId, deadlineStr);
+        await createTicket(complaint.id, workerId, deadlineStr);
       }
       onTicketChange?.();
       onOpenChange(false);
@@ -128,10 +128,10 @@ const TicketSidePanel = ({
                     Виконавець
                   </label>
                   <Combobox<string, false>
-                    items={employeeItems}
-                    value={selectedEmployee}
-                    onValueChange={(v) => setSelectedEmployee(v ?? UNASSIGNED)}
-                    itemToStringLabel={employeeLabel}
+                    items={workerItems}
+                    value={selectedWorker}
+                    onValueChange={(v) => setSelectedWorker(v ?? UNASSIGNED)}
+                    itemToStringLabel={workerLabel}
                   >
                     <ComboboxInput placeholder="Не призначено" className="w-full" />
                     <ComboboxContent>
@@ -139,7 +139,7 @@ const TicketSidePanel = ({
                       <ComboboxList>
                         {(id: string) => (
                           <ComboboxItem key={id} value={id}>
-                            {employeeLabel(id)}
+                            {workerLabel(id)}
                           </ComboboxItem>
                         )}
                       </ComboboxList>
