@@ -105,12 +105,20 @@ function MultiFilterCombobox({
 
 const STATUS_CODES = ["pending", "approved", "rejected", "resolved"];
 
-export function StatusFilterSelect({ value, onChange }: MultiFilterProps) {
+// `codes` lets a page restrict the option set to statuses it can actually
+// return — the public dashboard only surfaces approved/resolved, so offering
+// pending/rejected there would just yield empty results. Defaults to all four
+// for the admin panel.
+export function StatusFilterSelect({
+  value,
+  onChange,
+  codes = STATUS_CODES,
+}: MultiFilterProps & { codes?: string[] }) {
   return (
     <MultiFilterCombobox
       value={value}
       onChange={onChange}
-      items={STATUS_CODES}
+      items={codes}
       itemLabel={statusLabel}
       placeholder="Статус..."
     />

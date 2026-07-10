@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  fetchApprovedComplaints,
+  fetchPublicComplaints,
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
@@ -15,6 +15,7 @@ import {
   BuildingFilterSelect,
   PriorityFilterSelect,
   CategoryFilterCombobox,
+  StatusFilterSelect,
 } from "@/components/ComplaintFilters";
 import {
   AlertDialog,
@@ -56,6 +57,10 @@ const DashboardPage = () => {
   // filteredProblems narrows it. Revisit (server-side + pagination) at real scale.
   const [activeCorps, setActiveCorps] = useState<string[]>([]);
   const [activePriority, setActivePriority] = useState<string[]>([]);
+  // Public board carries both active ("approved") and completed ("resolved")
+  // issues; empty selection means "all of those". Only these two codes are
+  // offered — pending/rejected are never in the feed.
+  const [activeStatus, setActiveStatus] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +85,7 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchApprovedComplaints().catch(() => []);
+        const complaintsData = await fetchPublicComplaints().catch(() => []);
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
       } catch (error) {
         console.error("Critical dashboard error:", error);
@@ -96,7 +101,7 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const handler = () => {
-      fetchApprovedComplaints().then((data) => {
+      fetchPublicComplaints().then((data) => {
         const fresh = data.filter(Boolean) as Complaint[];
         setProblems(fresh);
         const current = selectedProblemRef.current;
@@ -139,11 +144,13 @@ const DashboardPage = () => {
     const matchesPriority =
       activePriority.length === 0 ||
       (p.priority != null && activePriority.includes(p.priority));
+    const matchesStatus =
+      activeStatus.length === 0 || activeStatus.includes(p.status);
     const matchesSearch =
       searchQuery === "" ||
       (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesBuilding && matchesPriority && matchesSearch;
+    return matchesCategory && matchesBuilding && matchesPriority && matchesStatus && matchesSearch;
   });
 
   const admin = isAdminUser(currentUser);
@@ -181,7 +188,7 @@ const DashboardPage = () => {
               Всі звернення
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Опубліковані звернення мешканців по гуртожитках.
+              Опубліковані та вирішені звернення мешканців по гуртожитках.
             </p>
           </div>
           <ArrowLinkButton to={admin ? "/admin" : "/create-report"}>
@@ -208,6 +215,15 @@ const DashboardPage = () => {
 
                 <h4 className="text-xs font-semibold text-muted-foreground mb-3">Пріоритет</h4>
                 <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
+
+                <Separator className="my-4" />
+
+                <h4 className="text-xs font-semibold text-muted-foreground mb-3">Статус</h4>
+                <StatusFilterSelect
+                  value={activeStatus}
+                  onChange={setActiveStatus}
+                  codes={["approved", "resolved"]}
+                />
 
                 <Separator className="my-4" />
 
@@ -265,6 +281,7 @@ const DashboardPage = () => {
                       setActiveCategories([]);
                       setActiveCorps([]);
                       setActivePriority([]);
+                      setActiveStatus([]);
                       setSearchQuery("");
                     }}
                   >
@@ -285,7 +302,7 @@ const DashboardPage = () => {
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={() => {
-            fetchApprovedComplaints().then((data) => {
+            fetchPublicComplaints().then((data) => {
               const fresh = data.filter(Boolean) as Complaint[];
               setProblems(fresh);
               const updated = fresh.find((c) => c.id === selectedProblem.id);
