@@ -535,6 +535,40 @@ export async function deleteWorker(workerId) {
   return true;
 }
 
+// ------------------ RESIDENTS (admin user management) ------------------
+
+// All user profiles with nested building/place/role, for the admin residents
+// page ("Мешканці").
+export async function fetchUsers() {
+  try {
+      const data = await fetchJson("/admin/users/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch users", e);
+  }
+  return [];
+}
+
+// Assignable roles (full role table), for the edit dialog + role filter.
+export async function fetchRoles() {
+  try {
+      const data = await fetchJson("/roles/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch roles", e);
+  }
+  return [];
+}
+
+// Admin edit of a resident's dorm assignment / role. `fields` is any subset of
+// { role_id, building_id, place_id }; the backend blocks changing your own role.
+export async function updateUser(userId, fields) {
+  return await fetchJson(`/admin/users/${userId}/`, {
+      method: "PATCH",
+      body: fields,
+  });
+}
+
 export async function fetchTickets(filters = {}) {
   try {
       const q = buildQueryParams(filters, ["worker", "priority", "date_from", "date_to"]);

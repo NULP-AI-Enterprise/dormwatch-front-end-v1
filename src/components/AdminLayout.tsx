@@ -12,6 +12,7 @@ import UserAvatar from "@/components/UserAvatar";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
+  "/admin/residents": "Мешканці",
   "/admin/complaints": "Всі звернення",
   "/admin/settings": "Налаштування",
 };
@@ -32,8 +33,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   const navItems = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
-    // TODO: implement Residents page, then wire up a real path and remove `disabled`.
-    { name: "Мешканці", path: "#", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" />, disabled: true },
+    { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
     { name: "Всі звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];

@@ -21,6 +21,17 @@ export const PRIORITY_LABELS: Record<string, string> = {
   critical: "Критичний",
 };
 
+// Role display labels for the admin residents page. Roles are a free-text
+// backend table, so unknown role_names fall back to their raw value.
+export const ROLE_LABELS: Record<string, string> = {
+  admin: "Адміністратор",
+  student: "Студент",
+  worker: "Працівник",
+};
+
+export const roleLabel = (roleName: string) =>
+  ROLE_LABELS[String(roleName || "").toLowerCase()] || roleName;
+
 // Ordered low → critical; the single source for priority selectors/forms.
 export const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"] as const;
 
