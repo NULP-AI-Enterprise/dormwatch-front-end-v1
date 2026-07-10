@@ -266,7 +266,10 @@ const AdminResidentsPage = () => {
         buildings={buildings}
         roles={roles}
         isSelf={!!editing && editing.user === currentUser?.user}
-        onSaved={init}
+        onSaved={async () => {
+          setEditing(null);
+          await init();
+        }}
       />
     </div>
   );
