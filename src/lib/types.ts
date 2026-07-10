@@ -70,7 +70,9 @@ export interface UserProfile {
   first_name: string;
   last_name: string;
   email: string;
-  building: string;
+  // Building set on the profile independently of room; a user may have a
+  // building but no place yet. Room is still derived from `place`.
+  building?: Building | null;
   room: string;
   role: {
     role_name: string;

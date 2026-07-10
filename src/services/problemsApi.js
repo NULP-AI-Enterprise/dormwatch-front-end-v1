@@ -419,13 +419,17 @@ function buildQueryParams(filters = {}, keys = ["corps", "priority"]) {
   return params.toString() ? `?${params.toString()}` : "";
 }
 
-export async function fetchComplaints({ status, filters = {} } = {}) {
+// `status` keeps the single-code shorthand; `statuses` (array) narrows to any
+// of several normalized codes — both are optional and, if given together,
+// applied in sequence.
+export async function fetchComplaints({ status, statuses, filters = {} } = {}) {
   try {
     const q = buildQueryParams(filters);
     const data = await fetchJson(`/complaints/${q}`);
     if (Array.isArray(data)) {
       let results = data.map(normalizeComplaint).filter(Boolean);
       if (status) results = results.filter((c) => c.status === status);
+      if (statuses) results = results.filter((c) => statuses.includes(c.status));
       results.sort(sortByNew);
       return results;
     }
@@ -441,6 +445,14 @@ export async function fetchAllComplaints(filters = {}) {
 
 export async function fetchApprovedComplaints(filters = {}) {
   return fetchComplaints({ status: "approved", filters });
+}
+
+// The public board feed: active ("approved" = published) plus completed
+// ("resolved") issues. Matches the server's non-admin visibility rule; excludes
+// pending/rejected. Admins get every status from the API but this same cut keeps
+// the public dashboard's meaning consistent across roles.
+export async function fetchPublicComplaints(filters = {}) {
+  return fetchComplaints({ statuses: ["approved", "resolved"], filters });
 }
 
 export async function deleteProblem(id) {
@@ -510,6 +522,19 @@ export async function fetchTickets(filters = {}) {
       if (Array.isArray(data)) return data;
   } catch (e) {
       console.warn("Failed to fetch tickets", e);
+  }
+  return [];
+}
+
+// Read-only: the tickets (work orders) opened for the current resident's own
+// complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
+// (that stays admin-gated via fetchTickets).
+export async function fetchMyTickets() {
+  try {
+      const data = await fetchJson("/me/tickets/");
+      if (Array.isArray(data)) return data;
+  } catch (e) {
+      console.warn("Failed to fetch my tickets", e);
   }
   return [];
 }

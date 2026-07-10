@@ -66,7 +66,7 @@ const HomePage = () => {
               Зламаний кран? Холодна кімната? <span className="text-blue-400">Ми допоможемо.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
-              Створюйте заявки на ремонт у вашому гуртожитку менш ніж за 15 секунд. Відстежуйте оновлення статусу в режимі реального часу. Без завантаження додатків та очікування на лінії.
+              Створюйте звернення про ремонт у вашому гуртожитку менш ніж за 15 секунд. Відстежуйте оновлення статусу в режимі реального часу. Без завантаження додатків та очікування на лінії.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg" className="gap-2">
@@ -78,7 +78,7 @@ const HomePage = () => {
               <Button asChild variant="outline" size="lg" className="gap-2">
                 <Link to="/dashboard">
                   <HugeiconsIcon icon={SearchIcon} className="size-5" strokeWidth={2} />
-                  Відстежити заявку
+                  Відстежити звернення
                 </Link>
               </Button>
             </div>
@@ -136,7 +136,7 @@ const HomePage = () => {
             </div>
             <h3 className="text-xl font-bold text-foreground mb-3">Сфотографуйте та надішліть</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить заявку до потрібного відділу.
+              Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить звернення до потрібного відділу.
             </p>
           </div>
           <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">
@@ -146,7 +146,7 @@ const HomePage = () => {
             </div>
             <h3 className="text-xl font-bold text-foreground mb-3">Прозоре відстеження</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Припиніть гадати, чи бачив хтось вашу заявку. Отримуйте оновлення статусу в реальному часі, коли ваша заявка переглядається, призначається майстру та вирішується.
+              Припиніть гадати, чи бачив хтось ваше звернення. Отримуйте оновлення статусу в реальному часі, коли ваше звернення переглядається, призначається майстру та вирішується.
             </p>
           </div>
           <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">
@@ -166,7 +166,7 @@ const HomePage = () => {
       <section className="bg-background py-20 relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl font-bold text-foreground mb-6">Потрібно щось полагодити?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Увійдіть за допомогою студентського квитка, щоб надіслати заявку безпосередньо до служби експлуатації кампусу.</p>
+          <p className="text-muted-foreground mb-8 text-lg">Увійдіть за допомогою студентського квитка, щоб надіслати звернення безпосередньо до служби експлуатації кампусу.</p>
           <div className="flex justify-center gap-4">
             <Button asChild size="lg" className="gap-2">
               <Link to="/auth">

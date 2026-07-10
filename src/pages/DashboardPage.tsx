@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import {
-  fetchApprovedComplaints,
+  fetchPublicComplaints,
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, SearchIcon as SearchIcon2, AddIcon, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, SearchIcon as SearchIcon2, Refresh01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import ArrowLinkButton from "@/components/ArrowLinkButton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   FilterSearchInput,
   BuildingFilterSelect,
   PriorityFilterSelect,
-  CategoryFilterButtons,
+  CategoryFilterCombobox,
+  StatusFilterSelect,
 } from "@/components/ComplaintFilters";
 import {
   AlertDialog,
@@ -37,15 +40,27 @@ import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useBuildings } from "@/hooks/useBuildings";
+import { useMyTicketMap } from "@/hooks/useMyComplaintsAndTickets";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [activeCorps, setActiveCorps] = useState("all");
-  const [activePriority, setActivePriority] = useState("all");
+  // Owner's own work orders, so a resident opening their own complaint here sees
+  // the same read-only tracking block as on /user and /my-complaints.
+  const myTicketByComplaint = useMyTicketMap();
+  const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  // All filters (building/priority/category/search) are multi-select and filtered
+  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage/
+  // MyComplaintsPage. Pilot-scale choice: the fetch returns all approved once and
+  // filteredProblems narrows it. Revisit (server-side + pagination) at real scale.
+  const [activeCorps, setActiveCorps] = useState<string[]>([]);
+  const [activePriority, setActivePriority] = useState<string[]>([]);
+  // Public board carries both active ("approved") and completed ("resolved")
+  // issues; empty selection means "all of those". Only these two codes are
+  // offered — pending/rejected are never in the feed.
+  const [activeStatus, setActiveStatus] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +85,7 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).catch(() => []);
+        const complaintsData = await fetchPublicComplaints().catch(() => []);
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
       } catch (error) {
         console.error("Critical dashboard error:", error);
@@ -79,14 +94,14 @@ const DashboardPage = () => {
       }
     };
     loadData();
-  }, [activeCorps, activePriority]);
+  }, []);
 
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
 
   useEffect(() => {
     const handler = () => {
-      fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+      fetchPublicComplaints().then((data) => {
         const fresh = data.filter(Boolean) as Complaint[];
         setProblems(fresh);
         const current = selectedProblemRef.current;
@@ -98,7 +113,7 @@ const DashboardPage = () => {
     };
     window.addEventListener("complaintUpdated", handler);
     return () => window.removeEventListener("complaintUpdated", handler);
-  }, [activeCorps, activePriority]);
+  }, []);
 
   const handleDelete = async (id: number) => {
     setDeleteTarget(id);
@@ -119,12 +134,23 @@ const DashboardPage = () => {
 
 
   const filteredProblems = problems.filter((p) => {
-    const matchesCategory = activeCategory === "all" || p.category === activeCategory;
+    const matchesCategory =
+      activeCategories.length === 0 ||
+      (p.category != null && activeCategories.includes(p.category));
+    // Building filters on the complaint's own location (p.building), matching the
+    // other three pages — not the reporter's residence the server join used.
+    const matchesBuilding =
+      activeCorps.length === 0 || activeCorps.includes(p.building);
+    const matchesPriority =
+      activePriority.length === 0 ||
+      (p.priority != null && activePriority.includes(p.priority));
+    const matchesStatus =
+      activeStatus.length === 0 || activeStatus.includes(p.status);
     const matchesSearch =
       searchQuery === "" ||
       (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesBuilding && matchesPriority && matchesStatus && matchesSearch;
   });
 
   const admin = isAdminUser(currentUser);
@@ -154,64 +180,74 @@ const DashboardPage = () => {
         </DialogContent>
       </Dialog>
 
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-8">
-          Стрічка проблем
-        </h1>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <div className="space-y-4">
-              <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-              <BuildingFilterSelect
-                value={activeCorps}
-                onValueChange={setActiveCorps}
-                buildings={buildings}
-              />
-              <PriorityFilterSelect value={activePriority} onValueChange={setActivePriority} />
-            </div>
-            <CategoryFilterButtons
-              value={activeCategory}
-              onChange={setActiveCategory}
-              categories={categories}
-            />
-
-            <div className="bg-primary p-6 text-primary-foreground">
-              <h4 className="text-xs font-semibold mb-4">
-                Дії
-              </h4>
-              {admin ? (
-                <Button
-                  asChild
-                  size="sm"
-                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
-                >
-                  <Link to="/admin">Перейти в комендант-центр</Link>
-                </Button>
-              ) : (
-                <Button
-                  asChild
-                  size="sm"
-                  className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/80"
-                >
-                  <Link to="/create-report"><HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />Створити нову заявку</Link>
-                </Button>
-              )}
-            </div>
+      <div>
+        {/* header + front-and-center CTA (residents create; admins jump to panel) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+              Всі звернення
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Опубліковані та вирішені звернення мешканців по гуртожитках.
+            </p>
           </div>
-          <div className="lg:col-span-2 space-y-4">
+          <ArrowLinkButton to={admin ? "/admin" : "/create-report"}>
+            {admin ? "Перейти в комендант-центр" : "Створити звернення"}
+          </ArrowLinkButton>
+        </div>
+
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1 space-y-4">
+            <Card className="border-border shadow-none bg-card">
+              <CardContent>
+                <div className="mb-4">
+                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+                </div>
+
+                <h4 className="text-xs font-semibold text-muted-foreground mb-3">Гуртожиток</h4>
+                <BuildingFilterSelect
+                  value={activeCorps}
+                  onChange={setActiveCorps}
+                  buildings={buildings}
+                />
+
+                <Separator className="my-4" />
+
+                <h4 className="text-xs font-semibold text-muted-foreground mb-3">Пріоритет</h4>
+                <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
+
+                <Separator className="my-4" />
+
+                <h4 className="text-xs font-semibold text-muted-foreground mb-3">Статус</h4>
+                <StatusFilterSelect
+                  value={activeStatus}
+                  onChange={setActiveStatus}
+                  codes={["approved", "resolved"]}
+                />
+
+                <Separator className="my-4" />
+
+                <h4 className="text-xs font-semibold text-muted-foreground mb-3">Категорії</h4>
+                <CategoryFilterCombobox
+                  value={activeCategories}
+                  onChange={setActiveCategories}
+                  categories={categories}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-3 space-y-4">
             {filteredProblems.map((problem) => {
               const manage = canManage(problem);
               return (
                 <ComplaintCard
                   key={problem.id}
                   complaint={problem}
-                  bodyPadding="p-5"
-                  footerClassName="flex items-center justify-between pt-3"
+                  footerClassName="flex items-center justify-between pt-4"
                   onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
                   showPhoto
                   photoZoom
-                  photoHeight="h-40"
+                  photoHeight="h-44"
                   onPhotoPreview={setPreviewImage}
                   footerLeft="added-date"
                   commentsMode={manage ? "inline" : "hidden"}
@@ -242,9 +278,10 @@ const DashboardPage = () => {
                     variant="outline"
                     size="xs"
                     onClick={() => {
-                      setActiveCategory("all");
-                      setActiveCorps("all");
-                      setActivePriority("all");
+                      setActiveCategories([]);
+                      setActiveCorps([]);
+                      setActivePriority([]);
+                      setActiveStatus([]);
                       setSearchQuery("");
                     }}
                   >
@@ -256,15 +293,16 @@ const DashboardPage = () => {
             )}
           </div>
         </div>
-      </main>
+      </div>
 
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
+          ticket={myTicketByComplaint.get(selectedProblem.id) ?? null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={() => {
-            fetchApprovedComplaints({ corps: activeCorps, priority: activePriority }).then((data) => {
+            fetchPublicComplaints().then((data) => {
               const fresh = data.filter(Boolean) as Complaint[];
               setProblems(fresh);
               const updated = fresh.find((c) => c.id === selectedProblem.id);
@@ -279,7 +317,7 @@ const DashboardPage = () => {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Видалити заявку?</AlertDialogTitle>
+            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
             <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

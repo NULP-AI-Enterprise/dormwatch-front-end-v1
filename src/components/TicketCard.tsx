@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
+import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import type { Complaint, Ticket } from "@/lib/types";
@@ -51,21 +52,7 @@ const TicketCard = ({ ticket, complaint, readOnly = true, onOpen }: TicketCardPr
 
         <Separator className="mb-4" />
 
-        <div className="space-y-1.5">
-          <span className="text-xs text-muted-foreground font-semibold">
-            Тікет #{ticket.ticket_id}
-          </span>
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold">Виконавець:</span>{" "}
-            {ticket.user
-              ? `${ticket.user.first_name} ${ticket.user.last_name}`
-              : "Не призначено"}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            <span className="font-semibold">Дедлайн:</span>{" "}
-            {ticket.deadline ? formatDate(ticket.deadline) : "—"}
-          </p>
-        </div>
+        <TicketInfo variant="detail" ticket={ticket} idPosition="top" />
       </div>
     </Card>
   );

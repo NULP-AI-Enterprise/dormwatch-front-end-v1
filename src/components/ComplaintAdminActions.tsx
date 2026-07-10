@@ -97,8 +97,8 @@ const ComplaintAdminActions = ({
       <>
         <ConfirmAction
           trigger={<ActionButton icon={CheckmarkCircleIcon}>Схвалити</ActionButton>}
-          title="Схвалити заявку?"
-          description={'Ви впевнені, що хочете схвалити цю заявку? Вона перейде в статус "Активно".'}
+          title="Схвалити звернення?"
+          description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Активно".'}
           confirmLabel="Схвалити"
           onConfirm={() => onStatusChange("approved")}
         />
@@ -108,8 +108,8 @@ const ComplaintAdminActions = ({
               Відхилити
             </ActionButton>
           }
-          title="Відхилити заявку?"
-          description={'Ви впевнені, що хочете відхилити цю заявку? Вона перейде в статус "Відхилено".'}
+          title="Відхилити звернення?"
+          description={'Ви впевнені, що хочете відхилити це звернення? Воно перейде в статус "Відхилено".'}
           confirmLabel="Відхилити"
           confirmClassName={destructiveActionClass}
           onConfirm={() => onStatusChange("rejected")}
@@ -119,8 +119,8 @@ const ComplaintAdminActions = ({
     {complaint.status === "approved" && (
       <ConfirmAction
         trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
-        title="Позначити як вирішену?"
-        description={'Ви впевнені, що проблема була успішно вирішена? Заявка перейде в статус "Вирішено".'}
+        title="Позначити як вирішене?"
+        description={'Ви впевнені, що проблема була успішно вирішена? Звернення перейде в статус "Вирішено".'}
         confirmLabel="Вирішити"
         onConfirm={() => onStatusChange("resolved")}
       />
@@ -132,8 +132,8 @@ const ComplaintAdminActions = ({
           Видалити
         </ActionButton>
       }
-      title="Видалити заявку?"
-      description="Ви впевнені, що хочете видалити цю заявку? Цю дію неможливо скасувати."
+      title="Видалити звернення?"
+      description="Ви впевнені, що хочете видалити це звернення? Цю дію неможливо скасувати."
       confirmLabel="Видалити"
       confirmClassName={destructiveActionClass}
       onConfirm={onDelete}

@@ -6,15 +6,17 @@ import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import PlaceCombobox from "@/components/PlaceCombobox";
 import type { CategoryOption, Place } from "@/lib/types";
 
@@ -36,7 +38,9 @@ const CreateReportPage = () => {
 
   useEffect(() => {
     fetchUserProfile().then((user) => {
-      setBuildingId(user?.place?.building?.building_id);
+      // Building is set on the profile independently of room; fall back to the
+      // room's building for users whose building is only known via their place.
+      setBuildingId(user?.building?.building_id ?? user?.place?.building?.building_id);
       if (user?.place?.place_id && user?.place?.place_name) {
         setPlace({
           place_id: user.place.place_id,
@@ -77,11 +81,11 @@ const CreateReportPage = () => {
     setError("");
 
     if (!formData.title.trim()) {
-      setError("Вкажи короткий заголовок проблеми.");
+      setError("Додайте короткий заголовок — так звернення легше впізнати.");
       return;
     }
     if (!formData.description.trim()) {
-      setError("Опиши проблему.");
+      setError("Опишіть, будь ласка, що сталося.");
       return;
     }
     if (!selectedCategory) {
@@ -99,10 +103,10 @@ const CreateReportPage = () => {
         place_id: place?.place_id,
         photoFile: photoFile,
       });
-      navigate("/");
+      navigate("/user");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(`Не вдалось створити заявку: ${msg}`);
+      setError(`Не вдалося надіслати звернення: ${msg}. Спробуйте ще раз.`);
     } finally {
       setSubmitting(false);
     }
@@ -111,12 +115,11 @@ const CreateReportPage = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <div className="flex items-center gap-4 mb-10">
-        <Link
-          to="/"
-          className="p-2 border border-border hover:border-primary hover:bg-primary/5 transition-colors"
-        >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />
-        </Link>
+        <Button asChild variant="outline" size="icon">
+          <Link to="/user">
+            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />
+          </Link>
+        </Button>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Нове звернення
         </h1>
@@ -130,40 +133,55 @@ const CreateReportPage = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
-          <label className="text-xs font-semibold text-foreground block mb-4">Що трапилось?</label>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Оберіть категорію" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.category_id} value={category.name}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="text-xs font-semibold text-foreground block mb-4">Що трапилося?</label>
+          <Combobox<string, false>
+            items={categories.map((c) => c.name)}
+            value={selectedCategory}
+            onValueChange={(v) => setSelectedCategory(v ?? "")}
+          >
+            <ComboboxInput placeholder="Оберіть категорію" className="w-full" />
+            <ComboboxContent>
+              <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+              <ComboboxList>
+                {(name: string) => (
+                  <ComboboxItem key={name} value={name}>
+                    {name}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-5">
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Пріоритет</label>
-              <div className="flex gap-2">
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                spacing={0}
+                value={formData.priority}
+                // Radix emits "" when the active item is clicked again; ignore
+                // it so a priority stays selected at all times.
+                onValueChange={(value) => {
+                  if (value) setFormData((prev) => ({ ...prev, priority: value }));
+                }}
+                className="w-full"
+              >
                 {PRIORITY_OPTIONS.map((id) => (
-                  <Button
+                  <ToggleGroupItem
                     key={id}
-                    type="button"
-                    variant={formData.priority === id ? "default" : "outline"}
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, priority: id }))
-                    }
-                    className="flex-1 py-2 text-xs transition-colors"
+                    value={id}
+                    // DESIGN.md §305/§184: selected tier carries the primary
+                    // fill (the "default button" look), not the muted on-state
+                    // shadcn ships by default.
+                    className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
                   >
                     {priorityLabel(id)}
-                  </Button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Заголовок</label>
@@ -172,7 +190,7 @@ const CreateReportPage = () => {
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                placeholder="Коротко: тече кран..."
+                placeholder="Напр.: тече кран у ванній"
                 maxLength={80}
                 required
               />
@@ -205,7 +223,7 @@ const CreateReportPage = () => {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={6}
-                placeholder="Деталі..."
+                placeholder="Що саме зламалося, коли почалося, де саме…"
                 className="min-h-36 resize-none"
                 required
               />
@@ -213,7 +231,7 @@ const CreateReportPage = () => {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-foreground block mb-3">Фотодоказ</label>
+            <label className="text-xs font-semibold text-foreground block mb-3">Фото (необовʼязково, але дуже допомагає)</label>
             {photoFile && previewUrl ? (
               <div className="relative w-full aspect-square border-2 border-border overflow-hidden group">
                 <img
@@ -248,7 +266,7 @@ const CreateReportPage = () => {
           className="w-full"
         >
           <HugeiconsIcon icon={Forward01Icon} className="size-4 mr-2" strokeWidth={2} />
-          {submitting ? "Публікую..." : "Опублікувати звернення"}
+          {submitting ? "Надсилаємо…" : "Надіслати звернення"}
         </Button>
       </form>
     </div>

@@ -1,11 +1,4 @@
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Combobox,
   ComboboxChip,
   ComboboxChips,
@@ -17,8 +10,7 @@ import {
   ComboboxValue,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
+import { PRIORITY_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
 import type { Building, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SearchIcon } from "@hugeicons/core-free-icons";
@@ -56,104 +48,111 @@ export function FilterSearchInput({
   );
 }
 
-type SelectFilterProps = {
-  value: string;
-  onValueChange: (value: string) => void;
+type MultiFilterProps = {
+  value: string[];
+  onChange: (value: string[]) => void;
 };
 
-export function StatusFilterSelect({ value, onValueChange }: SelectFilterProps) {
+// Shared multi-select filter over string codes: empty selection means "all".
+// `itemLabel` maps a stored code to its display text (identity for buildings,
+// STATUS/PRIORITY label for those). Chips render square (DESIGN.md) via
+// `ui/combobox.tsx`. Mirrors CategoryFilterCombobox — the predicate stays
+// `selected.length === 0 || selected.includes(x)` on every consumer page.
+function MultiFilterCombobox({
+  value,
+  onChange,
+  items,
+  itemLabel = (v) => v,
+  placeholder,
+}: MultiFilterProps & {
+  items: string[];
+  itemLabel?: (value: string) => string;
+  placeholder: string;
+}) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full h-8 text-xs">
-        <SelectValue placeholder="Статус" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Всі</SelectItem>
-        <SelectItem value="pending">Очікує</SelectItem>
-        <SelectItem value="approved">Активно</SelectItem>
-        <SelectItem value="rejected">Відхилено</SelectItem>
-        <SelectItem value="resolved">Вирішено</SelectItem>
-      </SelectContent>
-    </Select>
+    <Combobox<string, true>
+      multiple
+      items={items}
+      value={value}
+      onValueChange={onChange}
+      itemToStringLabel={itemLabel}
+    >
+      <ComboboxChips>
+        <ComboboxValue>
+          {(selected: string[]) =>
+            selected.map((v) => (
+              <ComboboxChip key={v} aria-label={itemLabel(v)}>
+                {itemLabel(v)}
+              </ComboboxChip>
+            ))
+          }
+        </ComboboxValue>
+        <ComboboxChipsInput placeholder={value.length ? "" : placeholder} />
+      </ComboboxChips>
+      <ComboboxContent>
+        <ComboboxEmpty>Нічого не знайдено</ComboboxEmpty>
+        <ComboboxList>
+          {(v: string) => (
+            <ComboboxItem key={v} value={v}>
+              {itemLabel(v)}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }
 
-export function PriorityFilterSelect({ value, onValueChange }: SelectFilterProps) {
+const STATUS_CODES = ["pending", "approved", "rejected", "resolved"];
+
+// `codes` lets a page restrict the option set to statuses it can actually
+// return — the public dashboard only surfaces approved/resolved, so offering
+// pending/rejected there would just yield empty results. Defaults to all four
+// for the admin panel.
+export function StatusFilterSelect({
+  value,
+  onChange,
+  codes = STATUS_CODES,
+}: MultiFilterProps & { codes?: string[] }) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full h-8 text-xs">
-        <SelectValue placeholder="Всі пріоритети" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Всі пріоритети</SelectItem>
-        {PRIORITY_OPTIONS.map((p) => (
-          <SelectItem key={p} value={p}>
-            {priorityLabel(p)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={codes}
+      itemLabel={statusLabel}
+      placeholder="Статус..."
+    />
   );
 }
 
-type BuildingFilterSelectProps = SelectFilterProps & {
+export function PriorityFilterSelect({ value, onChange }: MultiFilterProps) {
+  return (
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={[...PRIORITY_OPTIONS]}
+      itemLabel={priorityLabel}
+      placeholder="Пріоритети..."
+    />
+  );
+}
+
+type BuildingFilterSelectProps = MultiFilterProps & {
   buildings: Building[];
 };
 
 export function BuildingFilterSelect({
   value,
-  onValueChange,
+  onChange,
   buildings,
 }: BuildingFilterSelectProps) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full h-8 text-xs">
-        <SelectValue placeholder="Всі гуртожитки" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Всі гуртожитки</SelectItem>
-        {buildings.map((b) => (
-          <SelectItem key={b.building_id} value={b.name}>
-            {b.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-type CategoryFilterButtonsProps = {
-  value: string;
-  onChange: (value: string) => void;
-  categories: CategoryOption[];
-};
-
-// Toggle group: clicking the active category clears it back to "all".
-export function CategoryFilterButtons({
-  value,
-  onChange,
-  categories,
-}: CategoryFilterButtonsProps) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant={value === "all" ? "default" : "outline"}
-        size="xs"
-        onClick={() => onChange("all")}
-      >
-        Всі
-      </Button>
-      {categories.map((cat) => (
-        <Button
-          key={cat.category_id}
-          variant={value === cat.name ? "default" : "outline"}
-          size="xs"
-          onClick={() => onChange(value === cat.name ? "all" : cat.name)}
-        >
-          {cat.name}
-        </Button>
-      ))}
-    </div>
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={buildings.map((b) => b.name)}
+      placeholder="Гуртожитки..."
+    />
   );
 }
 

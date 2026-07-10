@@ -8,12 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { fetchEmployees } from "@/services/problemsApi";
 import type { Employee } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -45,6 +46,15 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
     onOpenChange(false);
   };
 
+  // Worker combobox operates over user-id strings, with "all" as the first item.
+  // The label map lets the input search employee names and render id → name.
+  const employeeItems = ["all", ...employees.map((e) => String(e.user))];
+  const employeeLabel = (id: string) => {
+    if (id === "all") return "Всі працівники";
+    const emp = employees.find((e) => String(e.user) === id);
+    return emp ? `${emp.first_name} ${emp.last_name}` : id;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-border shadow-2xl">
@@ -61,19 +71,28 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
         <div className="space-y-4 my-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-foreground">Виберіть працівника</label>
-            <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={loading ? "Завантаження..." : "Всі працівники"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Всі працівники</SelectItem>
-                {employees.map((emp) => (
-                  <SelectItem key={emp.user} value={String(emp.user)}>
-                    {emp.first_name} {emp.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox<string, false>
+              items={employeeItems}
+              value={selectedEmployeeId}
+              onValueChange={(v) => setSelectedEmployeeId(v ?? "all")}
+              itemToStringLabel={employeeLabel}
+            >
+              <ComboboxInput
+                placeholder={loading ? "Завантаження..." : "Всі працівники"}
+                className="w-full"
+                disabled={loading}
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>Працівників не знайдено</ComboboxEmpty>
+                <ComboboxList>
+                  {(id: string) => (
+                    <ComboboxItem key={id} value={id}>
+                      {employeeLabel(id)}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
         </div>
 

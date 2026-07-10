@@ -10,8 +10,10 @@ const sizeClasses = {
 };
 
 const LoadingSpinner = ({ size = "md", className = "" }: LoadingSpinnerProps) => (
+  // DESIGN.md "Shape & Radius" — sanctioned exception: a spinner must be
+  // `rounded-full`. A rotating square reads as a broken component, not motion.
   <div
-    className={`${sizeClasses[size]} border-primary border-t-transparent animate-spin ${className}`}
+    className={`${sizeClasses[size]} rounded-full border-primary border-t-transparent animate-spin ${className}`}
   />
 );
 

@@ -42,9 +42,9 @@ const AdminPage = () => {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterBuilding, setFilterBuilding] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [filterBuilding, setFilterBuilding] = useState<string[]>([]);
+  const [filterPriority, setFilterPriority] = useState<string[]>([]);
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
 
   const init = async () => {
@@ -69,9 +69,11 @@ const AdminPage = () => {
     const searchOk = !searchQuery ||
       c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const statusOk = filterStatus === "all" || c.status === filterStatus;
-    const buildingOk = filterBuilding === "all" || c.building === filterBuilding;
-    const priorityOk = filterPriority === "all" || c.priority === filterPriority;
+    const statusOk = filterStatus.length === 0 || filterStatus.includes(c.status);
+    const buildingOk =
+      filterBuilding.length === 0 || filterBuilding.includes(c.building);
+    const priorityOk =
+      filterPriority.length === 0 || (c.priority != null && filterPriority.includes(c.priority));
     const categoryOk =
       filterCategories.length === 0 ||
       (c.category != null && filterCategories.includes(c.category));
@@ -105,13 +107,13 @@ const AdminPage = () => {
               <Card className="border-border shadow-none bg-card">
                 <CardContent className="space-y-4">
                   <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-                  <StatusFilterSelect value={filterStatus} onValueChange={setFilterStatus} />
+                  <StatusFilterSelect value={filterStatus} onChange={setFilterStatus} />
                   <BuildingFilterSelect
                     value={filterBuilding}
-                    onValueChange={setFilterBuilding}
+                    onChange={setFilterBuilding}
                     buildings={buildings}
                   />
-                  <PriorityFilterSelect value={filterPriority} onValueChange={setFilterPriority} />
+                  <PriorityFilterSelect value={filterPriority} onChange={setFilterPriority} />
                   <CategoryFilterCombobox
                     value={filterCategories}
                     onChange={setFilterCategories}
@@ -150,9 +152,9 @@ const AdminPage = () => {
 
             <div className="bg-card border border-border overflow-hidden">
               <div className="px-6 py-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-foreground">Останні заявки</h2>
+                <h2 className="text-xl font-semibold text-foreground">Останні звернення</h2>
                 <Link to="/admin/complaints" className="text-sm font-semibold text-blue-500 hover:text-blue-400">
-                  Всі заявки
+                  Всі звернення
                 </Link>
               </div>
               <Separator />

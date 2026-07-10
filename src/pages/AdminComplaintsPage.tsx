@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { DatePicker } from "@/components/ui/date-picker";
-import { format } from "date-fns";
+import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
   fetchApprovedComplaints,
@@ -53,10 +53,12 @@ import type { Complaint, Ticket, Employee, CategoryOption } from "@/lib/types";
 const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
-  const [selectedStatus, setSelectedStatus] = useState(location.state?.selectedStatus || "pending");
+  const [selectedStatus, setSelectedStatus] = useState<string[]>(
+    location.state?.selectedStatus ? [location.state.selectedStatus] : ["pending"]
+  );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState("all");
-  const [selectedPriority, setSelectedPriority] = useState("all");
+  const [selectedBuilding, setSelectedBuilding] = useState<string[]>([]);
+  const [selectedPriority, setSelectedPriority] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -115,7 +117,7 @@ const AdminComplaintsPage = () => {
       setSelectedComplaint(prev => prev ? data.find(c => c.id === prev.id) || prev : prev);
     } catch (err) {
       console.warn('Failed to load complaints', err);
-      setErr("Не вдалося завантажити заявки.");
+      setErr("Не вдалося завантажити звернення.");
     } finally {
       setLoading(false);
     }
@@ -171,22 +173,21 @@ const AdminComplaintsPage = () => {
   const filteredComplaints = useMemo(
     () =>
       complaints.filter((p) => {
-        const statusOk = selectedStatus === "all" || p.status === selectedStatus;
+        const statusOk =
+          selectedStatus.length === 0 || selectedStatus.includes(p.status);
         const categoryOk =
           selectedCategories.length === 0 ||
           (p.category != null && selectedCategories.includes(p.category));
         const buildingOk =
-          selectedBuilding === "all" || p.building === selectedBuilding;
+          selectedBuilding.length === 0 || selectedBuilding.includes(p.building);
         const priorityOk =
-          selectedPriority === "all" || p.priority === selectedPriority;
+          selectedPriority.length === 0 ||
+          (p.priority != null && selectedPriority.includes(p.priority));
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
-        const dateOk =
-          !selectedDate ||
-          (p.createdAt != null &&
-            new Date(p.createdAt).toLocaleDateString('en-CA') === format(selectedDate, 'yyyy-MM-dd'));
+        const dateOk = !selectedDate || isSameLocalDay(p.createdAt, selectedDate);
         return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
       }),
     [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
@@ -234,7 +235,7 @@ const AdminComplaintsPage = () => {
           <div className="px-6 pt-6">
             <TabsList variant="line">
               <TabsTrigger value="requests" className="text-xs font-semibold">
-                Заявки
+                Звернення
               </TabsTrigger>
               <TabsTrigger value="tickets" className="text-xs font-semibold">
                 Тікети
@@ -258,7 +259,7 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Статус
                     </h4>
-                    <StatusFilterSelect value={selectedStatus} onValueChange={setSelectedStatus} />
+                    <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
 
                     <Separator className="my-4" />
 
@@ -267,7 +268,7 @@ const AdminComplaintsPage = () => {
                     </h4>
                     <BuildingFilterSelect
                       value={selectedBuilding}
-                      onValueChange={setSelectedBuilding}
+                      onChange={setSelectedBuilding}
                       buildings={buildings}
                     />
 
@@ -276,7 +277,7 @@ const AdminComplaintsPage = () => {
                     <h4 className="text-xs font-semibold text-muted-foreground mb-3">
                       Пріоритет
                     </h4>
-                    <PriorityFilterSelect value={selectedPriority} onValueChange={setSelectedPriority} />
+                    <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
 
                     <Separator className="my-4" />
 
@@ -320,8 +321,8 @@ const AdminComplaintsPage = () => {
                 {!loading && !err && filteredComplaints.length === 0 && (
                   <EmptyState
                     icon={InboxIcon}
-                    title="Заявок не знайдено"
-                    subtitle="Жодна заявка не відповідає поточним фільтрам."
+                    title="Звернень не знайдено"
+                    subtitle="Жодне звернення не відповідає поточним фільтрам."
                   />
                 )}
 
@@ -405,7 +406,7 @@ const AdminComplaintsPage = () => {
                 {filteredTickets.length === 0 ? (
                   <EmptyState
                     icon={InboxIcon}
-                    title="Жодна заявка не відповідає фільтрам."
+                    title="Жодне звернення не відповідає фільтрам."
                   />
                 ) : (
                   <div className="grid lg:grid-cols-2 gap-4">

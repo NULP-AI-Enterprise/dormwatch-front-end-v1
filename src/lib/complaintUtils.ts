@@ -41,6 +41,27 @@ export const priorityLabel = (priority: string) => {
   return PRIORITY_LABELS[p] || priority;
 };
 
+// Lifecycle stage of a complaint, shared by the progress stepper, the ticket
+// tracking strips, and the "Мої тікети" state filter so they never disagree.
+// pending → submitted, approved → in_progress, resolved/rejected are terminal.
+export type LifecycleStage = "submitted" | "in_progress" | "resolved" | "rejected";
+
+export const lifecycleStage = (status: string | null | undefined): LifecycleStage => {
+  const s = String(status || "").toLowerCase();
+  if (s === "resolved") return "resolved";
+  if (s === "rejected") return "rejected";
+  if (s === "approved") return "in_progress";
+  return "submitted";
+};
+
+// "Active" = still on the working pipeline (not resolved, not rejected). Used
+// for the "Активні" stat and to decide whether a work-order tracking strip
+// should present the complaint as ongoing.
+export const isActiveStatus = (status: string | null | undefined) => {
+  const stage = lifecycleStage(status);
+  return stage === "submitted" || stage === "in_progress";
+};
+
 export const isAdminUser = (user: any) =>
   !!(
     user?.role &&

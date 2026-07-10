@@ -32,9 +32,12 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const isAdmin = isAdminUser(user);
 
   // Per-dorm emergency contacts come from the user's building config; a building
-  // without a number simply omits that row (no fabricated placeholder).
-  const commandantPhone = user?.place?.building?.commandant_phone;
-  const dutyMasterPhone = user?.place?.building?.duty_master_phone;
+  // without a number simply omits that row (no fabricated placeholder). Prefer
+  // the room's building, falling back to the profile building for users who have
+  // a building set but no room yet.
+  const building = user?.place?.building ?? user?.building;
+  const commandantPhone = building?.commandant_phone;
+  const dutyMasterPhone = building?.duty_master_phone;
 
   const handleLogout = async () => {
     await logoutUser();

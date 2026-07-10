@@ -13,6 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -20,14 +28,15 @@ import {
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson } from "@/services/problemsApi";
-import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS } from "@/lib/complaintUtils";
+import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS, lifecycleStage } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
+import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Ticket01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import type { Complaint, CategoryOption } from "@/lib/types";
+import type { Complaint, CategoryOption, Ticket } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -37,6 +46,9 @@ interface ComplaintSidePanelProps {
   currentUserId?: number | string;
   isAdmin: boolean;
   onCreateTicket?: (complaint: Complaint) => void;
+  // Read-only work-order info surfaced to the complaint owner (assignee /
+  // deadline). Assigning stays admin-only in the admin ticket flow.
+  ticket?: Ticket | null;
 }
 
 const ComplaintSidePanel = ({
@@ -47,6 +59,7 @@ const ComplaintSidePanel = ({
   currentUserId,
   isAdmin,
   onCreateTicket,
+  ticket,
 }: ComplaintSidePanelProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isPrioritySelectOpen = useRef(false);
@@ -98,7 +111,7 @@ const ComplaintSidePanel = ({
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
-      setError("Не вдалось змінити статус");
+      setError("Не вдалося змінити статус. Спробуйте ще раз.");
       console.warn('Failed to change complaint status', err);
     }
   };
@@ -110,7 +123,7 @@ const ComplaintSidePanel = ({
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
-      setError("Не вдалось змінити пріоритет");
+      setError("Не вдалося змінити пріоритет. Спробуйте ще раз.");
       console.warn('Failed to change complaint priority', err);
     }
   };
@@ -122,7 +135,7 @@ const ComplaintSidePanel = ({
       onStatusChange();
       onOpenChange(false);
     } catch (err) {
-      setError("Не вдалось видалити заявку");
+      setError("Не вдалося видалити звернення. Спробуйте ще раз.");
       console.warn('Failed to delete complaint', err);
     }
   };
@@ -148,7 +161,7 @@ const ComplaintSidePanel = ({
       onStatusChange();
       onOpenChange(false);
     } catch (err) {
-      setError("Не вдалось зберегти зміни");
+      setError("Не вдалося зберегти зміни. Спробуйте ще раз.");
       console.warn('Failed to save complaint', err);
     }
   };
@@ -191,8 +204,8 @@ const ComplaintSidePanel = ({
     >
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Деталі заявки</SheetTitle>
-          <SheetDescription>Інформація про заявку та керування статусом</SheetDescription>
+          <SheetTitle>Деталі звернення</SheetTitle>
+          <SheetDescription>Інформація про звернення та керування статусом</SheetDescription>
         </SheetHeader>
 
         <div className="space-y-4 px-4 py-4">
@@ -207,7 +220,7 @@ const ComplaintSidePanel = ({
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Назва заявки"
+                placeholder="Назва звернення"
               />
             ) : (
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
@@ -218,18 +231,23 @@ const ComplaintSidePanel = ({
           <div className="flex flex-wrap items-center gap-2">
             {isEditing ? (
               <div className="w-full space-y-2">
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Категорія" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.category_id} value={cat.name}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox<string, false>
+                  items={categories.map((c) => c.name)}
+                  value={editCategory}
+                  onValueChange={(v) => setEditCategory(v ?? "")}
+                >
+                  <ComboboxInput placeholder="Категорія" className="w-full h-8 text-xs" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+                    <ComboboxList>
+                      {(name: string) => (
+                        <ComboboxItem key={name} value={name}>
+                          {name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
                 <Select value={editPriority} onValueChange={setEditPriority}>
                   <SelectTrigger className="w-full h-8 text-xs">
                     <SelectValue placeholder="Пріоритет" />
@@ -288,7 +306,7 @@ const ComplaintSidePanel = ({
             <Textarea
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Опис заявки"
+              placeholder="Опис звернення"
               className="min-h-24 resize-none"
             />
           ) : (
@@ -343,31 +361,46 @@ const ComplaintSidePanel = ({
             </Button>
           )}
 
-          <Separator />
+          {/* Owner-facing read-only work-order tracking. Shown while in progress
+              and after resolution (informational: who handled it, deadline), but
+              not for a rejected request — there is no work order to track. Each
+              block owns its leading Separator so rules never double up. */}
+          {!isAdmin && isOwner && ticket && lifecycleStage(complaint.status) !== "rejected" && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-xs font-semibold text-foreground mb-2">Відстеження виконання</p>
+                <TicketInfo variant="detail" ticket={ticket} />
+              </div>
+            </>
+          )}
 
           {isAdmin && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <ComplaintAdminActions
-                  complaint={complaint}
-                  onStatusChange={handleStatusChange}
-                  onDelete={handleDelete}
-                  hideDeleteWhenClosed
-                />
-                {onCreateTicket && complaint.status === "approved" && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      onOpenChange(false);
-                      onCreateTicket(complaint);
-                    }}
-                  >
-                    <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
-                    Створити тікет
-                  </Button>
-                )}
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <ComplaintAdminActions
+                    complaint={complaint}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    hideDeleteWhenClosed
+                  />
+                  {onCreateTicket && complaint.status === "approved" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        onOpenChange(false);
+                        onCreateTicket(complaint);
+                      }}
+                    >
+                      <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
+                      Створити тікет
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           <Separator dashed />
