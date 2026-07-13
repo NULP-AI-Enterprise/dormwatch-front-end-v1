@@ -68,26 +68,44 @@ export async function registerUser(data) {
 
 // Mutex-guarded refresh: only one refresh request at a time.
 // Concurrent callers await the same promise and reuse the result.
+//
+// Failure semantics matter for "don't log the user out on a blip":
+//   - An explicit 401 from /auth/refresh/ means the refresh cookie is gone,
+//     expired, or blacklisted → the session is truly dead. Clear the token
+//     and throw "AUTH_REQUIRED".
+//   - A network error or any non-401 (5xx, offline, CORS) is TRANSIENT →
+//     leave the existing token in place and throw "REFRESH_TRANSIENT" so the
+//     caller can keep the session and retry later, rather than logging out.
 export async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
+    let res;
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh/`, {
+      res = await fetch(`${API_BASE}/auth/refresh/`, {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) {
-        setAccessToken(null);
-        throw new Error("AUTH_REQUIRED");
-      }
-      const data = await res.json();
-      setAccessToken(data.access);
-      return data;
-    } finally {
-      refreshPromise = null;
+    } catch (netErr) {
+      // Network/transport failure — do NOT clear the session.
+      throw new Error("REFRESH_TRANSIENT");
     }
-  })();
+
+    if (res.status === 401) {
+      // Explicit auth-required: the session is genuinely over.
+      setAccessToken(null);
+      throw new Error("AUTH_REQUIRED");
+    }
+    if (!res.ok) {
+      // 5xx / unexpected — transient, keep whatever token we have.
+      throw new Error("REFRESH_TRANSIENT");
+    }
+    const data = await res.json();
+    setAccessToken(data.access);
+    return data;
+  })().finally(() => {
+    refreshPromise = null;
+  });
 
   return refreshPromise;
 }
@@ -115,19 +133,38 @@ export function clearProactiveRefresh() {
   }
 }
 
-// Schedule proactive refresh on module load if an access token already exists
-if (accessToken) {
-  // The token may be partially expired already; schedule conservatively.
-  // We don't know the exact issued-at time, so do one early refresh
-  // to catch most cases on page reload within the same tab.
-  setTimeout(async () => {
+// ── Session bootstrap (runs once, awaited by every authenticated request) ──
+// The access token lives only in sessionStorage (per-tab), but the refresh
+// token is an httpOnly cookie that survives reloads and new tabs. So the
+// absence of a sessionStorage access token does NOT mean "logged out" — it
+// may just be a fresh tab. Attempt exactly ONE silent refresh before any
+// authenticated call concludes the user is unauthenticated.
+let bootstrapPromise = null;
+export function ensureSession() {
+  if (bootstrapPromise) return bootstrapPromise;
+  bootstrapPromise = (async () => {
+    if (accessToken) {
+      // Same-tab reload with a (possibly stale) token: keep the ongoing
+      // proactive-refresh cycle alive so it slides before expiry.
+      scheduleProactiveRefresh();
+      return;
+    }
+    // New tab / full reload with no in-memory token: try to recover the
+    // session from the refresh cookie. Swallow the outcome — a 401
+    // (AUTH_REQUIRED) already cleared the token; a transient failure leaves
+    // things untouched so a later call can retry rather than logging out.
     try {
       await refreshAccessToken();
-    } catch {
-      setAccessToken(null);
+    } catch (_) {
+      // AUTH_REQUIRED → genuinely logged out; REFRESH_TRANSIENT → retry later.
     }
-  }, 2 * 60 * 1000); // 2 min after initial load
+  })();
+  return bootstrapPromise;
 }
+
+// Kick off the recovery attempt immediately on module load so it overlaps
+// with React mounting, but every authenticated request also awaits it.
+ensureSession();
 
 export async function logoutUser() {
   clearProactiveRefresh();
@@ -244,6 +281,12 @@ export async function deletePlace(id) {
  * @param {{ method?: string, body?: any }} [options]
  */
 export async function fetchJson(path, { method = "GET", body } = {}) {
+  // Wait for the one-shot session bootstrap: on a fresh tab / full reload the
+  // access token isn't in memory yet, so give the silent cookie-refresh a
+  // chance to populate it before we send the request (and before any 401
+  // concludes the user is logged out).
+  await ensureSession();
+
   // Build headers INSIDE a function so they always pick up the
   // current (potentially refreshed) access token — no stale closure.
   const buildHeaders = () => {
@@ -286,7 +329,13 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
       if (res.status === 401 || tokenChanged) {
         res = await doFetch();      // ← rebuilds headers with the NEW token
       }
-    } catch {
+    } catch (e) {
+      // A transient refresh failure (network/5xx) must NOT log the user out —
+      // the token is still in place, so surface a retryable error instead of
+      // tearing down the session. Only an explicit AUTH_REQUIRED is fatal.
+      if (e instanceof Error && e.message === "REFRESH_TRANSIENT") {
+        throw new Error("REFRESH_TRANSIENT");
+      }
       throw new Error("AUTH_REQUIRED");
     }
   }
