@@ -52,6 +52,7 @@ export interface Comment {
   text: string;
   author: string;
   author_id: number;
+  authorIsAdmin: boolean;
   date: string;
 }
 

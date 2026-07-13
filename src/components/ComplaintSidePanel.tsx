@@ -456,9 +456,17 @@ const ComplaintSidePanel = ({
             </>
           )}
 
-          <Separator dashed />
+          {/* Comments are owner/admin-only on the backend (GET & POST 403 for
+              others). Only render the section for those roles so residents
+              viewing someone else's published complaint don't see an
+              unusable list + input. */}
+          {(isOwner || isAdmin) && (
+            <>
+              <Separator dashed />
 
-          <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />
+              <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>

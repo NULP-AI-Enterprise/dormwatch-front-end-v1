@@ -553,6 +553,7 @@ export async function fetchComments(complaintId) {
       text: c.description,
       author: c.user_name || "Користувач",
       author_id: c.user,
+      authorIsAdmin: !!c.author_is_admin,
       date: c.created_at,
     }));
   } catch (e) {
@@ -703,6 +704,7 @@ export async function postComment(complaintId, text) {
     text: data.description,
     author: data.user_name || "Ви",
     author_id: data.user,
+    authorIsAdmin: !!data.author_is_admin,
     date: data.created_at,
   };
 }
