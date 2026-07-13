@@ -98,6 +98,8 @@ const AdminResidentsPage = () => {
         seen.set(u.place.place_id, {
           place_id: u.place.place_id,
           place_name: u.place.place_name,
+          capacity: 0,
+          isShared: false,
         });
       }
     }
@@ -308,7 +310,12 @@ function EditResidentDialog({
     setBuildingId(editing.building?.building_id ?? null);
     setPlace(
       editing.place?.place_id != null
-        ? { place_id: editing.place.place_id, place_name: editing.place.place_name }
+        ? {
+            place_id: editing.place.place_id,
+            place_name: editing.place.place_name,
+            capacity: 0,
+            isShared: false,
+          }
         : null
     );
     setRoleId(editing.role?.role_id ?? null);

@@ -185,9 +185,22 @@ export async function fetchBuildings() {
   }
 }
 
+// Maps the backend Place payload (snake_case) to the app's Place shape.
+// capacity/occupancy pass through as-is; is_shared → isShared.
+function mapPlace(p) {
+  return {
+    place_id: p.place_id,
+    place_name: p.place_name,
+    capacity: p.capacity ?? 0,
+    isShared: !!p.is_shared,
+    occupancy: p.occupancy,
+  };
+}
+
 export async function fetchPlaces(buildingId) {
   try {
-    return await fetchJson(`/places/?building_id=${buildingId}`);
+    const data = await fetchJson(`/places/?building_id=${buildingId}`);
+    return Array.isArray(data) ? data.map(mapPlace) : [];
   } catch (e) {
     console.warn("Failed to fetch places", e);
     return [];
@@ -257,18 +270,29 @@ export async function deleteBuilding(id, { force = false } = {}) {
 }
 
 // Returns the full Place (with place_id) — powers the combobox "create room".
-export async function createPlace(buildingId, placeName) {
-  return await fetchJson("/places/", {
-    method: "POST",
-    body: { building_id: buildingId, place_name: placeName },
-  });
+// capacity/isShared are optional; a shared room defaults to capacity 0.
+export async function createPlace(buildingId, placeName, { capacity, isShared } = {}) {
+  const body = { building_id: buildingId, place_name: placeName };
+  if (capacity !== undefined) body.capacity = capacity;
+  if (isShared !== undefined) body.is_shared = isShared;
+  return mapPlace(
+    await fetchJson("/places/", {
+      method: "POST",
+      body,
+    })
+  );
 }
 
-export async function updatePlace(id, placeName) {
-  return await fetchJson(`/admin/places/${id}/`, {
-    method: "PATCH",
-    body: { place_name: placeName },
-  });
+export async function updatePlace(id, placeName, { capacity, isShared } = {}) {
+  const body = { place_name: placeName };
+  if (capacity !== undefined) body.capacity = capacity;
+  if (isShared !== undefined) body.is_shared = isShared;
+  return mapPlace(
+    await fetchJson(`/admin/places/${id}/`, {
+      method: "PATCH",
+      body,
+    })
+  );
 }
 
 // Non-destructive: returns { detached_complaints }.

@@ -45,6 +45,8 @@ const CreateReportPage = () => {
         setPlace({
           place_id: user.place.place_id,
           place_name: user.place.place_name,
+          capacity: 0,
+          isShared: false,
         });
       }
     }).catch(() => {});
