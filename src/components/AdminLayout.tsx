@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ArrowRight01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { type ReactNode, useState } from "react";
+import React, { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
@@ -31,7 +31,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const placeName = user?.place?.place_name || "";
   const title = ROUTE_TITLES[currentPath] || "";
 
-  const navItems = [
+  const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
     { name: "Всі звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
