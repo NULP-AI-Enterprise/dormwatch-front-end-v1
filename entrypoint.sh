@@ -5,7 +5,7 @@ set -e
 # upstream hostnames lazily at request time (not at startup).
 NAMESERVER=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
 export NAMESERVER
-export BACKEND_URL="${BACKEND_URL:-http://dormwatch-back.dormwatch-back.svc.cluster.local:8000}"
+export BACKEND_URL="${BACKEND_URL:-http://dormwatch-backend-v1.dormwatch-backend-v1.svc.cluster.local:8000}"
 
 # Substitute only our two placeholders; nginx $variables are left intact.
 envsubst '${NAMESERVER} ${BACKEND_URL}' \
