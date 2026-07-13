@@ -183,7 +183,7 @@ const AdminPage = () => {
                   ) : recentComplaints.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="px-6 py-8 text-center">
-                        <p className="text-sm text-muted-foreground">Заявок поки немає.</p>
+                        <p className="text-sm text-muted-foreground">Звернень поки немає.</p>
                       </TableCell>
                     </TableRow>
                   ) : (

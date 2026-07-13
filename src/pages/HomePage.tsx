@@ -125,8 +125,8 @@ const HomePage = () => {
 
       <section className="py-24 max-w-7xl mx-auto px-6" id="how-it-works">
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Більше жодних загублених заявок.</h2>
-          <p className="text-muted-foreground max-w-2xl text-lg">Ми замінили незручні паперові форми та проігноровані електронні листи на чітку, прозору систему заявок, яка дійсно працює.</p>
+          <h2 className="text-3xl font-bold text-foreground mb-4">Більше жодних загублених звернень.</h2>
+          <p className="text-muted-foreground max-w-2xl text-lg">Ми замінили незручні паперові форми та проігноровані електронні листи на чітку, прозору систему звернень, яка дійсно працює.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">

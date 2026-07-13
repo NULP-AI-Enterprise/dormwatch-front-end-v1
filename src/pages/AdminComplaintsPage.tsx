@@ -252,7 +252,7 @@ const AdminComplaintsPage = () => {
                       <FilterSearchInput
                         value={searchQuery}
                         onChange={setSearchQuery}
-                        placeholder="Пошук заявок..."
+                        placeholder="Пошук звернень..."
                       />
                     </div>
 
@@ -401,7 +401,7 @@ const AdminComplaintsPage = () => {
 
               <div className="lg:col-span-3 space-y-6">
                 <h3 className="text-sm font-semibold text-foreground">
-                  Тікети для підтверджених заявок
+                  Тікети для підтверджених звернень
                 </h3>
                 {filteredTickets.length === 0 ? (
                   <EmptyState
