@@ -27,14 +27,24 @@ try {
   accessToken = sessionStorage.getItem("access_token");
 } catch (_) {}
 
+const AUTH_HEADERS = { "Content-Type": "application/json", "Accept": "application/json" };
+
+async function parseErrorBody(res) {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return null; }
+}
+
 export async function loginUser(email, password) {
   const res = await fetch(`${API_BASE}/auth/login/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: AUTH_HEADERS,
     credentials: "include",
     body: JSON.stringify({ email, password }),
   });
-  if (!res.ok) throw new Error((await res.json()).detail || "Invalid credentials");
+  if (!res.ok) {
+    const body = await parseErrorBody(res);
+    throw new Error(body?.detail || "Invalid credentials");
+  }
   const data = await res.json();
   setAccessToken(data.access);
   return data;
@@ -43,13 +53,13 @@ export async function loginUser(email, password) {
 export async function registerUser(data) {
   const res = await fetch(`${API_BASE}/auth/register/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: AUTH_HEADERS,
     credentials: "include",
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const errBody = await res.json();
-    throw new Error(JSON.stringify(errBody));
+    const body = await parseErrorBody(res);
+    throw new Error(body ? JSON.stringify(body) : `Error ${res.status}`);
   }
   const tokenData = await res.json();
   setAccessToken(tokenData.access);
@@ -237,7 +247,7 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
   // Build headers INSIDE a function so they always pick up the
   // current (potentially refreshed) access token — no stale closure.
   const buildHeaders = () => {
-    const h = {};
+    const h = { "Accept": "application/json" };
     if (accessToken) h["Authorization"] = `Bearer ${accessToken}`;
     if (body && !(body instanceof FormData)) h["Content-Type"] = "application/json";
     return h;
