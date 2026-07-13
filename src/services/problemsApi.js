@@ -207,6 +207,19 @@ export async function fetchPlaces(buildingId) {
   }
 }
 
+// The bounded set of rooms the current resident may file a звернення against:
+// their own assigned room + all shared rooms in their building. Backed by
+// GET /me/complaint-places/ (server also re-validates the choice on POST).
+export async function fetchMyComplaintPlaces() {
+  try {
+    const data = await fetchJson("/me/complaint-places/");
+    return Array.isArray(data) ? data.map(mapPlace) : [];
+  } catch (e) {
+    console.warn("Failed to fetch complaint places", e);
+    return [];
+  }
+}
+
 export async function fetchCategories() {
   try {
     const data = await fetchJson("/categories/");

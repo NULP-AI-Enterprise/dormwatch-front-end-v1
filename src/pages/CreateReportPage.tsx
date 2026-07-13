@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem, fetchUserProfile, fetchCategories } from "@/services/problemsApi";
+import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlaces } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
@@ -17,14 +17,15 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import PlaceCombobox from "@/components/PlaceCombobox";
 import type { CategoryOption, Place } from "@/lib/types";
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [buildingId, setBuildingId] = useState<number | undefined>(undefined);
+  // The bounded set a resident may file against: their own room + shared rooms
+  // in their building. Fetched from /me/complaint-places/; NO inline creation.
+  const [allowedPlaces, setAllowedPlaces] = useState<Place[]>([]);
   const [place, setPlace] = useState<Place | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -37,10 +38,11 @@ const CreateReportPage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    fetchMyComplaintPlaces().then((places) => {
+      setAllowedPlaces(places);
+    }).catch(() => {});
     fetchUserProfile().then((user) => {
-      // Building is set on the profile independently of room; fall back to the
-      // room's building for users whose building is only known via their place.
-      setBuildingId(user?.building?.building_id ?? user?.place?.building?.building_id);
+      // Default the selection to the resident's own assigned room, if any.
       if (user?.place?.place_id && user?.place?.place_name) {
         setPlace({
           place_id: user.place.place_id,
@@ -201,20 +203,32 @@ const CreateReportPage = () => {
               <label className="text-xs font-semibold text-foreground block mb-2">
                 Місце проблеми
               </label>
-              {buildingId ? (
-                <PlaceCombobox
-                  buildingId={buildingId}
+              {allowedPlaces.length > 0 ? (
+                <Combobox<Place, false>
+                  items={allowedPlaces}
                   value={place}
-                  onChange={setPlace}
-                  allowCreate
-                  placeholder="Пошук або створення кімнати..."
-                />
+                  onValueChange={(p) => setPlace(p)}
+                  itemToStringLabel={(p) => p.place_name}
+                  isItemEqualToValue={(a, b) => a.place_id === b.place_id}
+                >
+                  <ComboboxInput placeholder="Оберіть кімнату" className="w-full" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>Кімнат не знайдено</ComboboxEmpty>
+                    <ComboboxList>
+                      {(p: Place) => (
+                        <ComboboxItem key={p.place_id} value={p}>
+                          {p.place_name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               ) : (
                 <Input
                   type="text"
                   value=""
                   disabled
-                  placeholder="Спочатку вкажіть гуртожиток у профілі"
+                  placeholder="Немає доступних кімнат — вкажіть гуртожиток у профілі"
                 />
               )}
             </div>
