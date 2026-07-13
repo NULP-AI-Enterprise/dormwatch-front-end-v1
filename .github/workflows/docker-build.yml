@@ -9,6 +9,7 @@ on:
       - "public/**"
       - "Dockerfile"
       - "nginx.conf"
+      - "entrypoint.sh"
       - "package.json"
       - "vite.config.ts"
 
