@@ -8,6 +8,7 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -20,6 +21,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
+import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
@@ -110,6 +112,7 @@ const AdminPage = () => {
                     <TableHead className="px-6 py-3 font-semibold">Проблема</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Категорія</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Дата подання</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Пріоритет</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Статус</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -123,12 +126,13 @@ const AdminPage = () => {
                         </TableCell>
                         <TableCell className="px-6 py-4"><div className="h-5 w-1/3 bg-muted/50" /></TableCell>
                         <TableCell className="px-6 py-4"><div className="h-5 w-1/2 bg-muted/50" /></TableCell>
+                        <TableCell className="px-6 py-4"><div className="h-5 w-1/3 bg-muted/50" /></TableCell>
                         <TableCell className="px-6 py-4"><div className="h-6 w-1/4 bg-muted/50" /></TableCell>
                       </TableRow>
                     ))
                   ) : recentComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="px-6 py-8 text-center">
+                      <TableCell colSpan={5} className="px-6 py-8 text-center">
                         <p className="text-sm text-muted-foreground">Звернень поки немає.</p>
                       </TableCell>
                     </TableRow>
@@ -152,6 +156,11 @@ const AdminPage = () => {
                         </TableCell>
                         <TableCell className="px-6 py-4 text-sm text-muted-foreground">
                           {formatDate(c.createdAt)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          <Badge variant="outline" className={priorityBadgeClass(c.priority)}>
+                            {priorityLabel(c.priority)}
+                          </Badge>
                         </TableCell>
                         <TableCell className="px-6 py-4">
                           <StatusBadge status={c.status} />
