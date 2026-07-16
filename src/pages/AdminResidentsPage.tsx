@@ -98,6 +98,8 @@ const AdminResidentsPage = () => {
         seen.set(u.place.place_id, {
           place_id: u.place.place_id,
           place_name: u.place.place_name,
+          capacity: 0,
+          isShared: false,
         });
       }
     }
@@ -301,14 +303,21 @@ function EditResidentDialog({
   const [place, setPlace] = useState<Place | null>(null);
   const [roleId, setRoleId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // Seed local state each time a different user opens the dialog.
   useEffect(() => {
     if (!editing) return;
+    setError("");
     setBuildingId(editing.building?.building_id ?? null);
     setPlace(
       editing.place?.place_id != null
-        ? { place_id: editing.place.place_id, place_name: editing.place.place_name }
+        ? {
+            place_id: editing.place.place_id,
+            place_name: editing.place.place_name,
+            capacity: 0,
+            isShared: false,
+          }
         : null
     );
     setRoleId(editing.role?.role_id ?? null);
@@ -323,6 +332,7 @@ function EditResidentDialog({
   const handleSave = async () => {
     if (!editing) return;
     setSaving(true);
+    setError("");
     try {
       const fields: {
         building_id?: number | null;
@@ -337,7 +347,23 @@ function EditResidentDialog({
       await updateUser(editing.user, fields);
       await onSaved();
     } catch (e) {
-      console.warn("Failed to update user", e);
+      // fetchJson throws with the raw JSON body as the message on 400 (e.g. a
+      // capacity/shared-room block keyed to place_id). Surface the first field
+      // error inline, mirroring RegisterForm's handling.
+      let msg = "Не вдалося зберегти зміни. Спробуйте ще раз.";
+      if (e instanceof Error) {
+        try {
+          const parsed = JSON.parse(e.message);
+          if (typeof parsed === "object" && parsed !== null) {
+            const firstKey = Object.keys(parsed)[0];
+            const val = (parsed as Record<string, unknown>)[firstKey];
+            msg = Array.isArray(val) ? String(val[0]) : String(val);
+          }
+        } catch {
+          msg = e.message || msg;
+        }
+      }
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -411,6 +437,10 @@ function EditResidentDialog({
             )}
           </div>
         </div>
+
+        {error && (
+          <p className="text-xs font-semibold text-destructive">{error}</p>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>

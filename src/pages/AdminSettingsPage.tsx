@@ -22,6 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Combobox,
@@ -629,6 +631,220 @@ function BuildingsTab() {
   );
 }
 
+// ── Room add form: name + capacity + shared checkbox ───────────────────
+// A room is either a residence (capacity > 0) or a shared space (kitchen/
+// laundry/common). When "shared" is checked the capacity input is hidden,
+// because a shared room is a complaint location only, never a residence.
+function RoomInlineAdd({
+  onAdd,
+}: {
+  onAdd: (value: { name: string; capacity: number; isShared: boolean }) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [isShared, setIsShared] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    setError("");
+    try {
+      await onAdd({
+        name: trimmed,
+        capacity: isShared ? 0 : Number(capacity) || 0,
+        isShared,
+      });
+      setName("");
+      setCapacity("");
+      setIsShared(false);
+    } catch (err) {
+      setError("Не вдалося додати");
+      console.warn("Failed to add room", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <Input
+          placeholder="Номер кімнати..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+          }}
+          className="h-8 text-xs"
+        />
+        {!isShared && (
+          <Input
+            type="number"
+            min={0}
+            placeholder="Місць"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+            }}
+            className="h-8 w-24 text-xs"
+          />
+        )}
+        <Button onClick={submit} disabled={saving || !name.trim()}>
+          Додати
+        </Button>
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="room-add-shared"
+          checked={isShared}
+          onCheckedChange={(c) => setIsShared(c === true)}
+        />
+        <Label htmlFor="room-add-shared" className="text-xs font-normal text-muted-foreground">
+          Спільна кімната (кухня, пральня, місця спільного користування)
+        </Label>
+      </div>
+      {error && <p className="text-xs font-semibold text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ── Room row: inline rename + capacity/shared edit + occupancy display ──
+function RoomEditableRow({
+  place,
+  onSave,
+  onDelete,
+}: {
+  place: Place;
+  onSave: (next: { name: string; capacity: number; isShared: boolean }) => Promise<void>;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(place.place_name);
+  const [capacity, setCapacity] = useState(String(place.capacity ?? 0));
+  const [isShared, setIsShared] = useState(place.isShared);
+  const [saving, setSaving] = useState(false);
+
+  const start = () => {
+    setName(place.place_name);
+    setCapacity(String(place.capacity ?? 0));
+    setIsShared(place.isShared);
+    setEditing(true);
+  };
+
+  const commit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave({
+        name: trimmed,
+        capacity: isShared ? 0 : Number(capacity) || 0,
+        isShared,
+      });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-2 py-2">
+        <div className="flex items-center gap-2">
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            placeholder="Номер кімнати..."
+            className="h-8 text-xs"
+          />
+          {!isShared && (
+            <Input
+              type="number"
+              min={0}
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                if (e.key === "Escape") setEditing(false);
+              }}
+              placeholder="Місць"
+              className="h-8 w-24 text-xs"
+            />
+          )}
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={commit}
+            disabled={saving}
+            aria-label="Зберегти"
+          >
+            <HugeiconsIcon icon={Tick02Icon} className="size-4" strokeWidth={2} />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => setEditing(false)}
+            disabled={saving}
+            aria-label="Скасувати"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={`room-shared-${place.place_id}`}
+            checked={isShared}
+            onCheckedChange={(c) => setIsShared(c === true)}
+          />
+          <Label
+            htmlFor={`room-shared-${place.place_id}`}
+            className="text-xs font-normal text-muted-foreground"
+          >
+            Спільна кімната (кухня, пральня, місця спільного користування)
+          </Label>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 py-2">
+      <span className="flex-1 text-sm text-foreground truncate">{place.place_name}</span>
+      {place.isShared ? (
+        <Badge variant="secondary">Спільна</Badge>
+      ) : (
+        <span className="text-xs font-normal text-muted-foreground">
+          {place.occupancy ?? 0} / {place.capacity ?? 0}
+        </span>
+      )}
+      <Button size="icon-sm" variant="ghost" onClick={start} aria-label="Редагувати">
+        <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        onClick={onDelete}
+        aria-label="Видалити"
+        className="text-destructive hover:text-destructive"
+      >
+        <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+      </Button>
+    </div>
+  );
+}
+
 // ── Rooms tab ──────────────────────────────────────────────────────────
 function RoomsTab() {
   const [buildings, setBuildings] = useState<Building[]>([]);
@@ -700,10 +916,9 @@ function RoomsTab() {
         {building && (
           <>
             <Separator className="my-2" dashed />
-            <InlineAdd
-              placeholder="Номер кімнати..."
-              onAdd={async (placeName) => {
-                await createPlace(building.building_id, placeName);
+            <RoomInlineAdd
+              onAdd={async ({ name, capacity, isShared }) => {
+                await createPlace(building.building_id, name, { capacity, isShared });
                 await loadPlaces(building.building_id);
               }}
             />
@@ -718,12 +933,11 @@ function RoomsTab() {
             ) : (
               <div className="divide-y divide-border">
                 {places.map((p) => (
-                  <EditableRow
+                  <RoomEditableRow
                     key={p.place_id}
-                    label={p.place_name}
-                    renamePlaceholder="Номер кімнати..."
-                    onRename={async (next) => {
-                      await updatePlace(p.place_id, next);
+                    place={p}
+                    onSave={async ({ name, capacity, isShared }) => {
+                      await updatePlace(p.place_id, name, { capacity, isShared });
                       await loadPlaces(building.building_id);
                     }}
                     onDelete={() => setPending(p)}

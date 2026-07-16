@@ -29,7 +29,7 @@ type FilterSearchInputProps = {
 export function FilterSearchInput({
   value,
   onChange,
-  placeholder = "Пошук заявок...",
+  placeholder = "Пошук звернень...",
 }: FilterSearchInputProps) {
   return (
     <div className="relative">

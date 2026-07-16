@@ -138,7 +138,7 @@ const ComplaintCard = ({
               </Badge>
             )}
             <span className="text-xs text-muted-foreground">
-              {p.building ? `Корпус ${p.building}` : "Корпус ?"}
+              {p.building || "?"}
               <Dot />
               {p.placeName || "?"}
             </span>
@@ -190,7 +190,7 @@ const ComplaintCard = ({
       <>
         {p.category}
         <Dot />
-        {p.building ? `Корпус ${p.building}` : "Корпус ?"}
+        {p.building || "?"}
         <Dot />
         {p.placeName || "?"}
       </>

@@ -243,9 +243,9 @@ const AdminTicketsPrintPage = () => {
                 <table className="w-full text-sm border-collapse border border-gray-300 mb-6">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "40%" }}>Проблема / Опис</th>
-                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "18%" }}>Категорія</th>
-                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Кімната</th>
+                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "36%" }}>Проблема / Опис</th>
+                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "16%" }}>Категорія</th>
+                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "20%" }}>Гуртожиток / Кімната</th>
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Пріоритет</th>
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Дедлайн</th>
                     </tr>
@@ -264,7 +264,8 @@ const AdminTicketsPrintPage = () => {
                             {category || "Не вказано"}
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
-                            {t.complaintDetail?.placeName || "Не вказано"}
+                            <div className="font-semibold">{t.complaintDetail?.building || "Не вказано"}</div>
+                            <div className="text-gray-600">{t.complaintDetail?.placeName || "—"}</div>
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
                             {priority ? priorityLabel(priority) : "Не визначено"}
@@ -309,8 +310,12 @@ const AdminTicketsPrintPage = () => {
                     <td className="border border-gray-300 p-2">{c?.category || "Не вказано"}</td>
                   </tr>
                   <tr>
+                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Гуртожиток</td>
+                    <td className="border border-gray-300 p-2 font-semibold">{c?.building || "Не вказано"}</td>
+                  </tr>
+                  <tr>
                     <td className="border border-gray-300 p-2 font-bold bg-gray-50">Кімната</td>
-                    <td className="border border-gray-300 p-2">{c?.placeName || "Не вказано"}</td>
+                    <td className="border border-gray-300 p-2 font-semibold">{c?.placeName || "Не вказано"}</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-2 font-bold bg-gray-50">Пріоритет</td>

@@ -14,6 +14,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import StudentLayout from "@/components/StudentLayout";
 import AdminLayout from "@/components/AdminLayout";
 import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
+import AdminCompletedReportPrintPage from "@/pages/AdminCompletedReportPrintPage";
 
 function App() {
   return (
@@ -115,6 +116,14 @@ function App() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminTicketsPrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports/completed/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminCompletedReportPrintPage />
           </ProtectedRoute>
         }
       />

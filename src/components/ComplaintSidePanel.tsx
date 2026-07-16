@@ -250,7 +250,7 @@ const ComplaintSidePanel = ({
             ) : (
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
             )}
-            <p className="text-xs font-normal text-muted-foreground">{complaint.building ? `Корпус ${complaint.building}` : "Корпус ?"}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName || "?"}</p>
+            <p className="text-xs font-normal text-muted-foreground">{complaint.building || "?"}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName || "?"}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -456,9 +456,17 @@ const ComplaintSidePanel = ({
             </>
           )}
 
-          <Separator dashed />
+          {/* Comments are owner/admin-only on the backend (GET & POST 403 for
+              others). Only render the section for those roles so residents
+              viewing someone else's published complaint don't see an
+              unusable list + input. */}
+          {(isOwner || isAdmin) && (
+            <>
+              <Separator dashed />
 
-          <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />
+              <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>

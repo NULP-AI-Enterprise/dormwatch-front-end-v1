@@ -68,26 +68,44 @@ export async function registerUser(data) {
 
 // Mutex-guarded refresh: only one refresh request at a time.
 // Concurrent callers await the same promise and reuse the result.
+//
+// Failure semantics matter for "don't log the user out on a blip":
+//   - An explicit 401 from /auth/refresh/ means the refresh cookie is gone,
+//     expired, or blacklisted → the session is truly dead. Clear the token
+//     and throw "AUTH_REQUIRED".
+//   - A network error or any non-401 (5xx, offline, CORS) is TRANSIENT →
+//     leave the existing token in place and throw "REFRESH_TRANSIENT" so the
+//     caller can keep the session and retry later, rather than logging out.
 export async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
+    let res;
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh/`, {
+      res = await fetch(`${API_BASE}/auth/refresh/`, {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) {
-        setAccessToken(null);
-        throw new Error("AUTH_REQUIRED");
-      }
-      const data = await res.json();
-      setAccessToken(data.access);
-      return data;
-    } finally {
-      refreshPromise = null;
+    } catch (netErr) {
+      // Network/transport failure — do NOT clear the session.
+      throw new Error("REFRESH_TRANSIENT");
     }
-  })();
+
+    if (res.status === 401) {
+      // Explicit auth-required: the session is genuinely over.
+      setAccessToken(null);
+      throw new Error("AUTH_REQUIRED");
+    }
+    if (!res.ok) {
+      // 5xx / unexpected — transient, keep whatever token we have.
+      throw new Error("REFRESH_TRANSIENT");
+    }
+    const data = await res.json();
+    setAccessToken(data.access);
+    return data;
+  })().finally(() => {
+    refreshPromise = null;
+  });
 
   return refreshPromise;
 }
@@ -115,19 +133,38 @@ export function clearProactiveRefresh() {
   }
 }
 
-// Schedule proactive refresh on module load if an access token already exists
-if (accessToken) {
-  // The token may be partially expired already; schedule conservatively.
-  // We don't know the exact issued-at time, so do one early refresh
-  // to catch most cases on page reload within the same tab.
-  setTimeout(async () => {
+// ── Session bootstrap (runs once, awaited by every authenticated request) ──
+// The access token lives only in sessionStorage (per-tab), but the refresh
+// token is an httpOnly cookie that survives reloads and new tabs. So the
+// absence of a sessionStorage access token does NOT mean "logged out" — it
+// may just be a fresh tab. Attempt exactly ONE silent refresh before any
+// authenticated call concludes the user is unauthenticated.
+let bootstrapPromise = null;
+export function ensureSession() {
+  if (bootstrapPromise) return bootstrapPromise;
+  bootstrapPromise = (async () => {
+    if (accessToken) {
+      // Same-tab reload with a (possibly stale) token: keep the ongoing
+      // proactive-refresh cycle alive so it slides before expiry.
+      scheduleProactiveRefresh();
+      return;
+    }
+    // New tab / full reload with no in-memory token: try to recover the
+    // session from the refresh cookie. Swallow the outcome — a 401
+    // (AUTH_REQUIRED) already cleared the token; a transient failure leaves
+    // things untouched so a later call can retry rather than logging out.
     try {
       await refreshAccessToken();
-    } catch {
-      setAccessToken(null);
+    } catch (_) {
+      // AUTH_REQUIRED → genuinely logged out; REFRESH_TRANSIENT → retry later.
     }
-  }, 2 * 60 * 1000); // 2 min after initial load
+  })();
+  return bootstrapPromise;
 }
+
+// Kick off the recovery attempt immediately on module load so it overlaps
+// with React mounting, but every authenticated request also awaits it.
+ensureSession();
 
 export async function logoutUser() {
   clearProactiveRefresh();
@@ -148,11 +185,37 @@ export async function fetchBuildings() {
   }
 }
 
+// Maps the backend Place payload (snake_case) to the app's Place shape.
+// capacity/occupancy pass through as-is; is_shared → isShared.
+function mapPlace(p) {
+  return {
+    place_id: p.place_id,
+    place_name: p.place_name,
+    capacity: p.capacity ?? 0,
+    isShared: !!p.is_shared,
+    occupancy: p.occupancy,
+  };
+}
+
 export async function fetchPlaces(buildingId) {
   try {
-    return await fetchJson(`/places/?building_id=${buildingId}`);
+    const data = await fetchJson(`/places/?building_id=${buildingId}`);
+    return Array.isArray(data) ? data.map(mapPlace) : [];
   } catch (e) {
     console.warn("Failed to fetch places", e);
+    return [];
+  }
+}
+
+// The bounded set of rooms the current resident may file a звернення against:
+// their own assigned room + all shared rooms in their building. Backed by
+// GET /me/complaint-places/ (server also re-validates the choice on POST).
+export async function fetchMyComplaintPlaces() {
+  try {
+    const data = await fetchJson("/me/complaint-places/");
+    return Array.isArray(data) ? data.map(mapPlace) : [];
+  } catch (e) {
+    console.warn("Failed to fetch complaint places", e);
     return [];
   }
 }
@@ -220,18 +283,29 @@ export async function deleteBuilding(id, { force = false } = {}) {
 }
 
 // Returns the full Place (with place_id) — powers the combobox "create room".
-export async function createPlace(buildingId, placeName) {
-  return await fetchJson("/places/", {
-    method: "POST",
-    body: { building_id: buildingId, place_name: placeName },
-  });
+// capacity/isShared are optional; a shared room defaults to capacity 0.
+export async function createPlace(buildingId, placeName, { capacity, isShared } = {}) {
+  const body = { building_id: buildingId, place_name: placeName };
+  if (capacity !== undefined) body.capacity = capacity;
+  if (isShared !== undefined) body.is_shared = isShared;
+  return mapPlace(
+    await fetchJson("/places/", {
+      method: "POST",
+      body,
+    })
+  );
 }
 
-export async function updatePlace(id, placeName) {
-  return await fetchJson(`/admin/places/${id}/`, {
-    method: "PATCH",
-    body: { place_name: placeName },
-  });
+export async function updatePlace(id, placeName, { capacity, isShared } = {}) {
+  const body = { place_name: placeName };
+  if (capacity !== undefined) body.capacity = capacity;
+  if (isShared !== undefined) body.is_shared = isShared;
+  return mapPlace(
+    await fetchJson(`/admin/places/${id}/`, {
+      method: "PATCH",
+      body,
+    })
+  );
 }
 
 // Non-destructive: returns { detached_complaints }.
@@ -244,6 +318,12 @@ export async function deletePlace(id) {
  * @param {{ method?: string, body?: any }} [options]
  */
 export async function fetchJson(path, { method = "GET", body } = {}) {
+  // Wait for the one-shot session bootstrap: on a fresh tab / full reload the
+  // access token isn't in memory yet, so give the silent cookie-refresh a
+  // chance to populate it before we send the request (and before any 401
+  // concludes the user is logged out).
+  await ensureSession();
+
   // Build headers INSIDE a function so they always pick up the
   // current (potentially refreshed) access token — no stale closure.
   const buildHeaders = () => {
@@ -286,7 +366,13 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
       if (res.status === 401 || tokenChanged) {
         res = await doFetch();      // ← rebuilds headers with the NEW token
       }
-    } catch {
+    } catch (e) {
+      // A transient refresh failure (network/5xx) must NOT log the user out —
+      // the token is still in place, so surface a retryable error instead of
+      // tearing down the session. Only an explicit AUTH_REQUIRED is fatal.
+      if (e instanceof Error && e.message === "REFRESH_TRANSIENT") {
+        throw new Error("REFRESH_TRANSIENT");
+      }
       throw new Error("AUTH_REQUIRED");
     }
   }
@@ -504,6 +590,7 @@ export async function fetchComments(complaintId) {
       text: c.description,
       author: c.user_name || "Користувач",
       author_id: c.user,
+      authorIsAdmin: !!c.author_is_admin,
       date: c.created_at,
     }));
   } catch (e) {
@@ -591,6 +678,24 @@ export async function fetchTickets(filters = {}) {
   return [];
 }
 
+// Admin completed-tickets report: resolved complaints that have a ticket,
+// filtered by resolution date within [date_from, date_to] (inclusive by day).
+// Backed by GET /admin/reports/completed/. Returns the raw report rows
+// (complaint title, resolved_at, building/room, category, tickets[]).
+export async function fetchCompletedReport({ date_from, date_to } = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (date_from) params.append("date_from", date_from);
+    if (date_to) params.append("date_to", date_to);
+    const q = params.toString() ? `?${params.toString()}` : "";
+    const data = await fetchJson(`/admin/reports/completed/${q}`);
+    if (Array.isArray(data)) return data;
+  } catch (e) {
+    console.warn("Failed to fetch completed report", e);
+  }
+  return [];
+}
+
 // Read-only: the tickets (work orders) opened for the current resident's own
 // complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
 // (that stays admin-gated via fetchTickets).
@@ -654,6 +759,7 @@ export async function postComment(complaintId, text) {
     text: data.description,
     author: data.user_name || "Ви",
     author_id: data.user,
+    authorIsAdmin: !!data.author_is_admin,
     date: data.created_at,
   };
 }

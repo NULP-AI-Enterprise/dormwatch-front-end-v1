@@ -14,6 +14,13 @@ export interface Building {
 export interface Place {
   place_id: number;
   place_name: string;
+  // Residents the room holds; 0 = not a residence (kitchen/common area).
+  capacity: number;
+  // A shared room (kitchen/laundry/common) is a complaint location only, never
+  // a resident's assigned residence. Maps from backend `is_shared`.
+  isShared: boolean;
+  // Live count of residents assigned here. Read-only; maps from backend `occupancy`.
+  occupancy?: number;
 }
 
 export interface CategoryOption {
@@ -52,6 +59,7 @@ export interface Comment {
   text: string;
   author: string;
   author_id: number;
+  authorIsAdmin: boolean;
   date: string;
 }
 

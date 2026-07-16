@@ -76,7 +76,10 @@ export function PlaceCombobox({
   const items: (Place | CreateSentinel)[] = useMemo(
     () =>
       showCreate
-        ? [...filtered, { place_id: -1, place_name: trimmed, __create: true }]
+        ? [
+            ...filtered,
+            { place_id: -1, place_name: trimmed, capacity: 0, isShared: false, __create: true },
+          ]
         : filtered,
     [filtered, showCreate, trimmed],
   );

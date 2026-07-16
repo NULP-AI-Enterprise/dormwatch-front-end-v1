@@ -272,7 +272,7 @@ const DashboardPage = () => {
             {filteredProblems.length === 0 && (
               <EmptyState
                 icon={SearchIcon2}
-                title="Немає заявок за вибраними фільтрами."
+                title="Немає звернень за вибраними фільтрами."
                 action={
                   <Button
                     variant="outline"

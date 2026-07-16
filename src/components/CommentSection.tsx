@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MailSend01Icon, Cancel01Icon, Message01Icon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
@@ -24,24 +24,41 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
   const [comments, setComments] = useState<Comment[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  // Tracks the complaint currently displayed, so async handlers can tell
+  // whether the user switched complaints mid-flight.
+  const currentComplaintIdRef = useRef(complaintId);
+  currentComplaintIdRef.current = complaintId;
 
-  const loadComments = async () => {
-    setLoading(true);
-    const data = await fetchComments(complaintId);
-    setComments(data);
-    setLoading(false);
-  };
-
+  // Guard against a cross-complaint async race: the same component instance is
+  // reused as the user switches complaints in the side panel, so a slow fetch
+  // for a previous complaintId must not overwrite state for the current one.
   useEffect(() => {
-    loadComments();
+    let ignore = false;
+    (async () => {
+      setLoading(true);
+      const data = await fetchComments(complaintId);
+      if (!ignore) {
+        setComments(data);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
   }, [complaintId]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    const targetComplaintId = complaintId;
     try {
-      await postComment(complaintId, input);
+      await postComment(targetComplaintId, input);
       setInput("");
-      loadComments();
+      // Refetch for the complaint we posted to, and only apply if the user
+      // hasn't switched complaints in the meantime.
+      const data = await fetchComments(targetComplaintId);
+      if (targetComplaintId === currentComplaintIdRef.current) {
+        setComments(data);
+      }
     } catch (err) {
       console.warn('Failed to send comment', err);
     }
@@ -80,7 +97,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
               <div className="flex justify-between items-baseline mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-foreground">{c.author}</span>
-                  {c.author_id === currentUserId && isAdmin ? (
+                  {c.authorIsAdmin ? (
                     <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500 text-white hover:bg-blue-600">Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор звернення</Badge>
