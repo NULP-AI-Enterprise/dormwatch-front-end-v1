@@ -8,13 +8,6 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  FilterSearchInput,
-  StatusFilterSelect,
-  BuildingFilterSelect,
-  PriorityFilterSelect,
-  CategoryFilterCombobox,
-} from "@/components/ComplaintFilters";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -27,7 +20,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
-import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
@@ -38,15 +30,6 @@ const AdminPage = () => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const buildings = useBuildings();
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterBuilding, setFilterBuilding] = useState<string[]>([]);
-  const [filterPriority, setFilterPriority] = useState<string[]>([]);
-  const [filterCategories, setFilterCategories] = useState<string[]>([]);
-
   const init = async () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
@@ -55,7 +38,6 @@ const AdminPage = () => {
 
   useEffect(() => {
     init();
-    fetchCategories().then(setCategories).catch(() => {});
 
     window.addEventListener("adminComplaintUpdated", init);
     return () => window.removeEventListener("adminComplaintUpdated", init);
@@ -65,22 +47,7 @@ const AdminPage = () => {
   const inProgressCount = complaints.filter((c) => c.status === "approved").length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
 
-  const filteredComplaints = complaints.filter((c) => {
-    const searchOk = !searchQuery ||
-      c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const statusOk = filterStatus.length === 0 || filterStatus.includes(c.status);
-    const buildingOk =
-      filterBuilding.length === 0 || filterBuilding.includes(c.building);
-    const priorityOk =
-      filterPriority.length === 0 || (c.priority != null && filterPriority.includes(c.priority));
-    const categoryOk =
-      filterCategories.length === 0 ||
-      (c.category != null && filterCategories.includes(c.category));
-    return searchOk && statusOk && buildingOk && priorityOk && categoryOk;
-  });
-
-  const recentComplaints = [...filteredComplaints]
+  const recentComplaints = [...complaints]
     .sort((a, b) => {
       // Records without a timestamp sort last.
       const ta = a.createdAt ? new Date(a.createdAt).getTime() : -Infinity;
@@ -102,28 +69,7 @@ const AdminPage = () => {
   return (
     <div className="flex-1 flex flex-col min-h-screen">
         <div className="flex-1 overflow-auto p-6">
-          <div className="mx-auto grid lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-1 space-y-4">
-              <Card className="border-border shadow-none bg-card">
-                <CardContent className="space-y-4">
-                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-                  <StatusFilterSelect value={filterStatus} onChange={setFilterStatus} />
-                  <BuildingFilterSelect
-                    value={filterBuilding}
-                    onChange={setFilterBuilding}
-                    buildings={buildings}
-                  />
-                  <PriorityFilterSelect value={filterPriority} onChange={setFilterPriority} />
-                  <CategoryFilterCombobox
-                    value={filterCategories}
-                    onChange={setFilterCategories}
-                    categories={categories}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="lg:col-span-3 space-y-8">
+          <div className="mx-auto max-w-6xl space-y-8">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -215,7 +161,6 @@ const AdminPage = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
             </div>
           </div>
         </div>
