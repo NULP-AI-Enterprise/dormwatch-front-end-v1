@@ -346,7 +346,6 @@ function BuildingsTab() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [commandantPhone, setCommandantPhone] = useState("");
-  const [dutyMasterPhone, setDutyMasterPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -354,7 +353,6 @@ function BuildingsTab() {
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editCommandantPhone, setEditCommandantPhone] = useState("");
-  const [editDutyMasterPhone, setEditDutyMasterPhone] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [pending, setPending] = useState<Building | null>(null);
@@ -379,12 +377,10 @@ function BuildingsTab() {
     try {
       await createBuilding(name.trim(), address.trim(), {
         commandantPhone: commandantPhone.trim(),
-        dutyMasterPhone: dutyMasterPhone.trim(),
       });
       setName("");
       setAddress("");
       setCommandantPhone("");
-      setDutyMasterPhone("");
       await load();
     } catch (err) {
       setAddError("Не вдалося додати гуртожиток");
@@ -399,7 +395,6 @@ function BuildingsTab() {
     setEditName(b.name);
     setEditAddress(b.address ?? "");
     setEditCommandantPhone(b.commandant_phone ?? "");
-    setEditDutyMasterPhone(b.duty_master_phone ?? "");
   };
 
   const commitEdit = async () => {
@@ -410,7 +405,6 @@ function BuildingsTab() {
         name: editName.trim(),
         address: editAddress.trim(),
         commandantPhone: editCommandantPhone.trim(),
-        dutyMasterPhone: editDutyMasterPhone.trim(),
       });
       setEditing(null);
       await load();
@@ -472,15 +466,6 @@ function BuildingsTab() {
               placeholder="Напр. 032 123 45 67"
               value={commandantPhone}
               onChange={(e) => setCommandantPhone(e.target.value)}
-              className="h-8 text-xs"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Черговий майстер</Label>
-            <Input
-              placeholder="Напр. 067 987 65 43"
-              value={dutyMasterPhone}
-              onChange={(e) => setDutyMasterPhone(e.target.value)}
               className="h-8 text-xs"
             />
           </div>
@@ -569,15 +554,6 @@ function BuildingsTab() {
                 placeholder="Напр. 032 123 45 67"
                 value={editCommandantPhone}
                 onChange={(e) => setEditCommandantPhone(e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Черговий майстер</Label>
-              <Input
-                placeholder="Напр. 067 987 65 43"
-                value={editDutyMasterPhone}
-                onChange={(e) => setEditDutyMasterPhone(e.target.value)}
                 className="h-8 text-xs"
               />
             </div>

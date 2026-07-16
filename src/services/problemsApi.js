@@ -251,24 +251,22 @@ export async function deleteCategory(id) {
   return await fetchJson(`/admin/categories/${id}/`, { method: "DELETE" });
 }
 
-export async function createBuilding(name, address, { commandantPhone, dutyMasterPhone } = {}) {
+export async function createBuilding(name, address, { commandantPhone } = {}) {
   return await fetchJson("/admin/buildings/", {
     method: "POST",
     body: {
       name,
       address,
       commandant_phone: commandantPhone ?? "",
-      duty_master_phone: dutyMasterPhone ?? "",
     },
   });
 }
 
-export async function updateBuilding(id, { name, address, commandantPhone, dutyMasterPhone }) {
+export async function updateBuilding(id, { name, address, commandantPhone }) {
   const body = {};
   if (name !== undefined) body.name = name;
   if (address !== undefined) body.address = address;
   if (commandantPhone !== undefined) body.commandant_phone = commandantPhone;
-  if (dutyMasterPhone !== undefined) body.duty_master_phone = dutyMasterPhone;
   return await fetchJson(`/admin/buildings/${id}/`, {
     method: "PATCH",
     body,
