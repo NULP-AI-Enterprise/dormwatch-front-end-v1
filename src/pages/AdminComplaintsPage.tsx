@@ -54,7 +54,7 @@ const AdminComplaintsPage = () => {
   const location = useLocation();
   const { user: currentUser } = useUser();
   const [selectedStatus, setSelectedStatus] = useState<string[]>(
-    location.state?.selectedStatus ? [location.state.selectedStatus] : ["pending"]
+    location.state?.selectedStatus ? [location.state.selectedStatus] : []
   );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<string[]>([]);
