@@ -678,6 +678,24 @@ export async function fetchTickets(filters = {}) {
   return [];
 }
 
+// Admin completed-tickets report: resolved complaints that have a ticket,
+// filtered by resolution date within [date_from, date_to] (inclusive by day).
+// Backed by GET /admin/reports/completed/. Returns the raw report rows
+// (complaint title, resolved_at, building/room, category, tickets[]).
+export async function fetchCompletedReport({ date_from, date_to } = {}) {
+  try {
+    const params = new URLSearchParams();
+    if (date_from) params.append("date_from", date_from);
+    if (date_to) params.append("date_to", date_to);
+    const q = params.toString() ? `?${params.toString()}` : "";
+    const data = await fetchJson(`/admin/reports/completed/${q}`);
+    if (Array.isArray(data)) return data;
+  } catch (e) {
+    console.warn("Failed to fetch completed report", e);
+  }
+  return [];
+}
+
 // Read-only: the tickets (work orders) opened for the current resident's own
 // complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
 // (that stays admin-gated via fetchTickets).
