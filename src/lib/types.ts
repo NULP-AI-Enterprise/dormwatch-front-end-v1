@@ -77,6 +77,23 @@ export interface Ticket {
   deadline?: string;
 }
 
+// An admin-posted announcement. `building` null = global (all buildings);
+// `building_name` is the read label. `is_expired` is server-derived (expiry
+// only marks/hides — the row stays reachable — and clears `is_pinned`).
+export interface Announcement {
+  announcement_id: number;
+  title: string;
+  body: string;
+  building: number | null;
+  building_name: string | null;
+  is_pinned: boolean;
+  expires_at: string | null;
+  is_expired: boolean;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+}
+
 export interface UserProfile {
   user: number;
   first_name: string;
