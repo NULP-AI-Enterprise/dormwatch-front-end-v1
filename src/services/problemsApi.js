@@ -799,6 +799,50 @@ export async function markAllNotificationsRead() {
   }
 }
 
+// Announcements — resident feed + dashboard widget (global + own building).
+export async function fetchAnnouncements() {
+  try {
+    const d = await fetchJson("/announcements/");
+    return Array.isArray(d) ? d : [];
+  } catch (e) {
+    console.warn("Failed to fetch announcements", e);
+    return [];
+  }
+}
+
+// Admin management list (all announcements).
+export async function fetchAdminAnnouncements() {
+  try {
+    const d = await fetchJson("/admin/announcements/");
+    return Array.isArray(d) ? d : [];
+  } catch (e) {
+    console.warn("Failed to fetch admin announcements", e);
+    return [];
+  }
+}
+
+// buildingId null = global (all buildings). expiresAt is a "YYYY-MM-DD" string or null.
+export async function createAnnouncement({ title, body, buildingId, isPinned, expiresAt }) {
+  return await fetchJson("/admin/announcements/", {
+    method: "POST",
+    body: {
+      title,
+      body,
+      building: buildingId ?? null,
+      is_pinned: !!isPinned,
+      expires_at: expiresAt ?? null,
+    },
+  });
+}
+
+export async function updateAnnouncement(id, fields) {
+  return await fetchJson(`/admin/announcements/${id}/`, { method: "PATCH", body: fields });
+}
+
+export async function deleteAnnouncement(id) {
+  return await fetchJson(`/admin/announcements/${id}/`, { method: "DELETE" });
+}
+
 export async function fetchComplaintDetail(id) {
   const raw = await fetchJson(`/complaints/${id}/`);
   return normalizeComplaint(raw);

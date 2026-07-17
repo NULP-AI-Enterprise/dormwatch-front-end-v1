@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ArrowRight01Icon, Settings01Icon } from "@hugeicons/core-free-icons";
+import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ArrowRight01Icon, Settings01Icon, Megaphone01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import React, { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
@@ -14,6 +14,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
   "/admin/residents": "Мешканці",
   "/admin/complaints": "Всі звернення",
+  "/admin/announcements": "Оголошення",
   "/admin/settings": "Налаштування",
 };
 
@@ -35,6 +36,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
     { name: "Всі звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
+    { name: "Оголошення", path: "/admin/announcements", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];
 

@@ -39,6 +39,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
         { to: "/my-complaints", label: "Мої звернення" },
         { to: "/dashboard", label: "Всі звернення" },
         { to: "/my-tickets", label: "Мої тікети" },
+        { to: "/announcements", label: "Оголошення" },
       ];
 
   return (
