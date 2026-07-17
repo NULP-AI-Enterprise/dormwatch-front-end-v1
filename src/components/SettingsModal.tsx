@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +17,10 @@ import {
   ShieldIcon,
   Briefcase01Icon,
   Logout01Icon,
+  Settings02Icon,
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 
@@ -28,6 +31,7 @@ interface SettingsModalProps {
 
 const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { user } = useUser();
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const isAdmin = isAdminUser(user);
 
@@ -117,6 +121,28 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                     Екстрені ситуації — телефонуйте 101 або 112
                   </p>
                 </div>
+              </div>
+
+              <Separator dashed className="my-5" />
+
+              <div className="mb-5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                >
+                  <span className="flex items-center">
+                    <HugeiconsIcon icon={Settings02Icon} className="size-4 mr-2" />
+                    Змінити пароль
+                  </span>
+                  <span>{showPasswordChange ? "−" : "+"}</span>
+                </Button>
+                {showPasswordChange && (
+                  <div className="mt-4 p-4 border border-border rounded-lg bg-card">
+                    <ChangePasswordForm />
+                  </div>
+                )}
               </div>
 
               <Separator dashed className="my-5" />
