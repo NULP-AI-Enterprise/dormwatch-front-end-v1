@@ -4,7 +4,7 @@ import RegisterForm from "@/components/RegisterForm";
 
 const AuthPage = () => {
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get("tab") === "register" ? "register" : "login";
+  const mode = searchParams.get("tab") === "register" || searchParams.has("invite") ? "register" : "login";
 
   // Render login/register as distinct component types so switching modes
   // remounts the subtree instead of reconciling the two forms onto the same

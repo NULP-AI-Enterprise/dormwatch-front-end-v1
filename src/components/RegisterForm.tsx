@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,13 +35,17 @@ import { AuthLayout, ErrorBanner } from "@/components/AuthLayout";
 // Building is required once buildings exist; on an empty DB (first-user/admin
 // bootstrap there is nothing to pick) it stays optional — mirrors the server-side
 // guard in RegisterSerializer.validate().
-const makeRegisterSchema = (buildingRequired: boolean) => z.object({
+const makeRegisterSchema = (buildingRequired: boolean, hasInvite: boolean) => z.object({
   first_name: z.string().min(1, "Ім'я обов'язкове"),
   last_name: z.string().min(1, "Прізвище обов'язкове"),
-  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
-    (v) => v.endsWith("@lpnu.ua"),
-    "Дозволені тільки домени @lpnu.ua"
-  ),
+  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").superRefine((val, ctx) => {
+    if (!hasInvite && !val.endsWith("@lpnu.ua")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Дозволені тільки домени @lpnu.ua",
+      });
+    }
+  }),
   password: z.string().min(8, "Пароль має бути щонайменше 8 символів"),
   confirm_password: z.string().min(1, "Підтвердження пароля обов'язкове"),
   building_id: buildingRequired
@@ -76,9 +80,12 @@ function RegisterForm() {
   const buildings = useBuildings();
   const [regPlace, setRegPlace] = useState<Place | null>(null);
 
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
   const registerSchema = useMemo(
-    () => makeRegisterSchema(buildings.length > 0),
-    [buildings.length],
+    () => makeRegisterSchema(buildings.length > 0 && !inviteToken, !!inviteToken),
+    [buildings.length, inviteToken],
   );
 
   const registerForm = useForm<RegisterData>({
@@ -111,6 +118,7 @@ function RegisterForm() {
         last_name: data.last_name,
         ...(data.building_id ? { building_id: data.building_id } : {}),
         ...(data.place_id ? { place_id: data.place_id } : {}),
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
       });
       window.dispatchEvent(new Event("profileUpdated"));
       navigate("/");
@@ -188,57 +196,61 @@ function RegisterForm() {
                 )}
               />
 
-              <FormField
-                control={registerForm.control}
-                name="building_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Гуртожиток</FormLabel>
-                    <Combobox<string, false>
-                      items={buildings.map((b) => String(b.building_id))}
-                      value={field.value}
-                      onValueChange={(v) => field.onChange(v ?? "")}
-                      itemToStringLabel={(id) =>
-                        buildings.find((b) => String(b.building_id) === id)?.name ?? id
-                      }
-                    >
-                      <ComboboxField placeholder="Оберіть свій гуртожиток..." className="w-full" />
-                      <ComboboxContent>
-                        <ComboboxEmpty>Гуртожитків не знайдено</ComboboxEmpty>
-                        <ComboboxList>
-                          {(id: string) => (
-                            <ComboboxItem key={id} value={id}>
-                              {buildings.find((b) => String(b.building_id) === id)?.name ?? id}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxList>
-                      </ComboboxContent>
-                    </Combobox>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {!inviteToken && (
+                <>
+                  <FormField
+                    control={registerForm.control}
+                    name="building_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Гуртожиток</FormLabel>
+                        <Combobox<string, false>
+                          items={buildings.map((b) => String(b.building_id))}
+                          value={field.value}
+                          onValueChange={(v) => field.onChange(v ?? "")}
+                          itemToStringLabel={(id) =>
+                            buildings.find((b) => String(b.building_id) === id)?.name ?? id
+                          }
+                        >
+                          <ComboboxField placeholder="Оберіть свій гуртожиток..." className="w-full" />
+                          <ComboboxContent>
+                            <ComboboxEmpty>Гуртожитків не знайдено</ComboboxEmpty>
+                            <ComboboxList>
+                              {(id: string) => (
+                                <ComboboxItem key={id} value={id}>
+                                  {buildings.find((b) => String(b.building_id) === id)?.name ?? id}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              {regBuildingId && (
-                <FormField
-                  control={registerForm.control}
-                  name="place_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Кімната</FormLabel>
-                      <PlaceCombobox
-                        buildingId={Number(regBuildingId)}
-                        value={regPlace}
-                        onChange={(p) => {
-                          setRegPlace(p);
-                          field.onChange(String(p.place_id));
-                        }}
-                        placeholder="Оберіть кімнату..."
-                      />
-                      <FormMessage />
-                    </FormItem>
+                  {regBuildingId && (
+                    <FormField
+                      control={registerForm.control}
+                      name="place_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Кімната</FormLabel>
+                          <PlaceCombobox
+                            buildingId={Number(regBuildingId)}
+                            value={regPlace}
+                            onChange={(p) => {
+                              setRegPlace(p);
+                              field.onChange(String(p.place_id));
+                            }}
+                            placeholder="Оберіть кімнату..."
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
+                </>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
