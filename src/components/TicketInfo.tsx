@@ -50,6 +50,9 @@ export default function TicketInfo(props: TicketInfoProps) {
       >
         <p className={cn("text-xs font-semibold", headingColor)}>{props.heading}</p>
         {name && <p className={cn("text-xs mt-1", line1)}>Виконавець: {name}</p>}
+        {ticket.worker && (
+          <p className={cn("text-xs mt-1", line1)}>Телефон: {ticket.worker.phone || "Не вказано"}</p>
+        )}
         {ticket.deadline && (
           <p className={cn("text-xs mt-1", line2)}>Дедлайн: {formatDate(ticket.deadline)}</p>
         )}
@@ -69,6 +72,11 @@ export default function TicketInfo(props: TicketInfoProps) {
         <span className="font-semibold">Виконавець:</span>{" "}
         {workerName(ticket) ?? "Не призначено"}
       </p>
+      {ticket.worker && (
+        <p className="text-xs text-muted-foreground">
+          <span className="font-semibold">Телефон:</span> {ticket.worker.phone || "Не вказано"}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground">
         <span className="font-semibold">Дедлайн:</span>{" "}
         {ticket.deadline ? formatDate(ticket.deadline) : "—"}

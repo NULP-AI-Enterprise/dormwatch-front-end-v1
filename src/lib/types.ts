@@ -5,7 +5,6 @@ export interface Building {
   address?: string;
   // Per-dorm emergency contacts, shown in the profile modal. Optional/blank when unset.
   commandant_phone?: string;
-  duty_master_phone?: string;
 }
 
 // A selectable room/place within a building. Kept distinct from Building on
