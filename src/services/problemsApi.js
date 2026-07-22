@@ -919,4 +919,9 @@ export async function fetchComplaintDetail(id) {
   return normalizeComplaint(raw);
 }
 
-
+export async function generateInviteLink(payload) {
+  return fetchJson("/admin/invites/", {
+    method: "POST",
+    body: payload,
+  });
+}

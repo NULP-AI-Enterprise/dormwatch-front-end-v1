@@ -20,7 +20,7 @@ const AuthPage = () => {
     return <ResetPasswordForm email={email} />;
   }
 
-  const mode = tab === "register" ? "register" : "login";
+  const mode = tab === "register" || searchParams.has("invite") ? "register" : "login";
 
   // Render login/register as distinct component types so switching modes
   // remounts the subtree instead of reconciling the two forms onto the same
