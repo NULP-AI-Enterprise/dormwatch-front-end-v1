@@ -4,7 +4,9 @@ import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
 import AdminResidentsPage from "@/pages/AdminResidentsPage";
+import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
+import AnnouncementsPage from "@/pages/AnnouncementsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
 import MyComplaintsPage from "@/pages/MyComplaintsPage";
 import MyTicketsPage from "@/pages/MyTicketsPage";
@@ -62,6 +64,16 @@ function App() {
         }
       />
       <Route
+        path="/announcements"
+        element={
+          <ProtectedRoute blockAdmin>
+            <StudentLayout>
+              <AnnouncementsPage />
+            </StudentLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
@@ -97,6 +109,16 @@ function App() {
           <ProtectedRoute requireAdmin>
             <AdminLayout>
               <AdminComplaintsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/announcements"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminLayout>
+              <AdminAnnouncementsPage />
             </AdminLayout>
           </ProtectedRoute>
         }

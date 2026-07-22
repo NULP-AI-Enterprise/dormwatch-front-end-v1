@@ -47,8 +47,12 @@ function LoginForm() {
       await loginUser(data.email, data.password);
       window.dispatchEvent(new Event("profileUpdated"));
       navigate("/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
+    } catch (err: any) {
+      if (err.requiresVerification) {
+        navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
+      } else {
+        setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
+      }
     } finally {
       setLoading(false);
     }
@@ -83,9 +87,9 @@ function LoginForm() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Пароль</FormLabel>
-                      <a href="#" tabIndex={-1} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                      <Link to="/auth?tab=forgot" tabIndex={-1} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
                         Забули пароль?
-                      </a>
+                      </Link>
                     </div>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />

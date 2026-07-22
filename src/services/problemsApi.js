@@ -43,7 +43,12 @@ export async function loginUser(email, password) {
   });
   if (!res.ok) {
     const body = await parseErrorBody(res);
-    throw new Error(body?.detail || "Invalid credentials");
+    const err = new Error(body?.detail || "Invalid credentials");
+    if (body?.email_verified === false) {
+      err.requiresVerification = true;
+      err.email = body.email;
+    }
+    throw err;
   }
   const data = await res.json();
   setAccessToken(data.access);
@@ -62,8 +67,76 @@ export async function registerUser(data) {
     throw new Error(body ? JSON.stringify(body) : `Error ${res.status}`);
   }
   const tokenData = await res.json();
+  if (tokenData?.email_verified === false) {
+    const err = new Error(tokenData.detail);
+    err.requiresVerification = true;
+    err.email = tokenData.email;
+    throw err;
+  }
   setAccessToken(tokenData.access);
   return tokenData;
+}
+
+export async function verifyEmail(email, code) {
+  const res = await fetch(`${API_BASE}/auth/verify-email/`, {
+    method: "POST",
+    headers: AUTH_HEADERS,
+    credentials: "include",
+    body: JSON.stringify({ email, code }),
+  });
+  if (!res.ok) {
+    const body = await parseErrorBody(res);
+    throw new Error(body?.detail || "Invalid or expired verification code");
+  }
+  const data = await res.json();
+  setAccessToken(data.access);
+  return data;
+}
+
+export async function requestPasswordReset(email) {
+  const res = await fetch(`${API_BASE}/auth/password-reset/request/`, {
+    method: "POST",
+    headers: AUTH_HEADERS,
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const body = await parseErrorBody(res);
+    throw new Error(body?.detail || "Failed to request password reset");
+  }
+  return await res.json();
+}
+
+export async function confirmPasswordReset(email, code, password, confirmPassword) {
+  const res = await fetch(`${API_BASE}/auth/password-reset/confirm/`, {
+    method: "POST",
+    headers: AUTH_HEADERS,
+    body: JSON.stringify({ email, code, password, confirm_password: confirmPassword }),
+  });
+  if (!res.ok) {
+    const body = await parseErrorBody(res);
+    throw new Error(body?.detail || "Failed to reset password");
+  }
+  return await res.json();
+}
+
+export async function changePassword(oldPassword, newPassword, confirmNewPassword) {
+  const res = await fetch(`${API_BASE}/auth/password-change/`, {
+    method: "POST",
+    headers: {
+      ...AUTH_HEADERS,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      old_password: oldPassword,
+      new_password: newPassword,
+      confirm_new_password: confirmNewPassword,
+    }),
+  });
+  if (!res.ok) {
+    const body = await parseErrorBody(res);
+    throw new Error(body?.detail || "Failed to change password");
+  }
+  return await res.json();
 }
 
 // Mutex-guarded refresh: only one refresh request at a time.
@@ -251,24 +324,22 @@ export async function deleteCategory(id) {
   return await fetchJson(`/admin/categories/${id}/`, { method: "DELETE" });
 }
 
-export async function createBuilding(name, address, { commandantPhone, dutyMasterPhone } = {}) {
+export async function createBuilding(name, address, { commandantPhone } = {}) {
   return await fetchJson("/admin/buildings/", {
     method: "POST",
     body: {
       name,
       address,
       commandant_phone: commandantPhone ?? "",
-      duty_master_phone: dutyMasterPhone ?? "",
     },
   });
 }
 
-export async function updateBuilding(id, { name, address, commandantPhone, dutyMasterPhone }) {
+export async function updateBuilding(id, { name, address, commandantPhone }) {
   const body = {};
   if (name !== undefined) body.name = name;
   if (address !== undefined) body.address = address;
   if (commandantPhone !== undefined) body.commandant_phone = commandantPhone;
-  if (dutyMasterPhone !== undefined) body.duty_master_phone = dutyMasterPhone;
   return await fetchJson(`/admin/buildings/${id}/`, {
     method: "PATCH",
     body,
@@ -797,6 +868,50 @@ export async function markAllNotificationsRead() {
     console.warn("Failed to mark all notifications as read", e);
     return null;
   }
+}
+
+// Announcements — resident feed + dashboard widget (global + own building).
+export async function fetchAnnouncements() {
+  try {
+    const d = await fetchJson("/announcements/");
+    return Array.isArray(d) ? d : [];
+  } catch (e) {
+    console.warn("Failed to fetch announcements", e);
+    return [];
+  }
+}
+
+// Admin management list (all announcements).
+export async function fetchAdminAnnouncements() {
+  try {
+    const d = await fetchJson("/admin/announcements/");
+    return Array.isArray(d) ? d : [];
+  } catch (e) {
+    console.warn("Failed to fetch admin announcements", e);
+    return [];
+  }
+}
+
+// buildingId null = global (all buildings). expiresAt is a "YYYY-MM-DD" string or null.
+export async function createAnnouncement({ title, body, buildingId, isPinned, expiresAt }) {
+  return await fetchJson("/admin/announcements/", {
+    method: "POST",
+    body: {
+      title,
+      body,
+      building: buildingId ?? null,
+      is_pinned: !!isPinned,
+      expires_at: expiresAt ?? null,
+    },
+  });
+}
+
+export async function updateAnnouncement(id, fields) {
+  return await fetchJson(`/admin/announcements/${id}/`, { method: "PATCH", body: fields });
+}
+
+export async function deleteAnnouncement(id) {
+  return await fetchJson(`/admin/announcements/${id}/`, { method: "DELETE" });
 }
 
 export async function fetchComplaintDetail(id) {

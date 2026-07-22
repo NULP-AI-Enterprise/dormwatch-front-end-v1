@@ -48,13 +48,23 @@ const makeRegisterSchema = (buildingRequired: boolean, hasInvite: boolean) => z.
   }),
   password: z.string().min(8, "Пароль має бути щонайменше 8 символів"),
   confirm_password: z.string().min(1, "Підтвердження пароля обов'язкове"),
-  building_id: buildingRequired
-    ? z.string().min(1, "Оберіть гуртожиток")
-    : z.string().optional(),
+  building_id: z.string().optional(),
   place_id: z.string().optional(),
-}).refine((data) => data.password === data.confirm_password, {
-  message: "Паролі не співпадають",
-  path: ["confirm_password"],
+}).superRefine((data, ctx) => {
+  if (data.password !== data.confirm_password) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Паролі не співпадають",
+      path: ["confirm_password"],
+    });
+  }
+  if (buildingRequired && (!data.building_id || data.building_id.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Оберіть гуртожиток",
+      path: ["building_id"],
+    });
+  }
 });
 
 type RegisterData = z.infer<ReturnType<typeof makeRegisterSchema>>;
@@ -122,7 +132,11 @@ function RegisterForm() {
       });
       window.dispatchEvent(new Event("profileUpdated"));
       navigate("/");
-    } catch (err) {
+    } catch (err: any) {
+      if (err.requiresVerification) {
+        navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
+        return;
+      }
       let msg = "Не вдалося зареєструватися. Перевірте дані й спробуйте ще раз.";
       if (err instanceof Error) {
         try {
@@ -131,6 +145,13 @@ function RegisterForm() {
             const firstKey = Object.keys(parsed)[0];
             const val = (parsed as Record<string, unknown>)[firstKey];
             msg = Array.isArray(val) ? String(val[0]) : String(val);
+            
+            // Map common backend errors to form fields
+            if (firstKey in registerForm.getValues()) {
+              registerForm.setError(firstKey as any, { type: "server", message: msg });
+              setLoading(false);
+              return;
+            }
           }
         } catch {
           msg = err.message || msg;

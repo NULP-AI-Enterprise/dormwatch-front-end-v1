@@ -5,7 +5,6 @@ export interface Building {
   address?: string;
   // Per-dorm emergency contacts, shown in the profile modal. Optional/blank when unset.
   commandant_phone?: string;
-  duty_master_phone?: string;
 }
 
 // A selectable room/place within a building. Kept distinct from Building on
@@ -75,6 +74,23 @@ export interface Ticket {
   complaint: number;
   worker?: Worker;
   deadline?: string;
+}
+
+// An admin-posted announcement. `building` null = global (all buildings);
+// `building_name` is the read label. `is_expired` is server-derived (expiry
+// only marks/hides — the row stays reachable — and clears `is_pinned`).
+export interface Announcement {
+  announcement_id: number;
+  title: string;
+  body: string;
+  building: number | null;
+  building_name: string | null;
+  is_pinned: boolean;
+  expires_at: string | null;
+  is_expired: boolean;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
 }
 
 export interface UserProfile {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +17,10 @@ import {
   ShieldIcon,
   Briefcase01Icon,
   Logout01Icon,
+  Settings02Icon,
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 
@@ -28,6 +31,7 @@ interface SettingsModalProps {
 
 const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { user } = useUser();
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const isAdmin = isAdminUser(user);
 
@@ -37,7 +41,6 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   // a building set but no room yet.
   const building = user?.place?.building ?? user?.building;
   const commandantPhone = building?.commandant_phone;
-  const dutyMasterPhone = building?.duty_master_phone;
 
   const handleLogout = async () => {
     await logoutUser();
@@ -96,27 +99,35 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                     </div>
                   </div>
                 )}
-                {dutyMasterPhone && (
-                  <div className="flex items-center gap-4 bg-muted border border-border p-4">
-                    <div className="p-2 bg-card border border-border shrink-0">
-                      <HugeiconsIcon icon={AiPhone01Icon} className="size-4 text-primary" strokeWidth={2} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground">
-                        Черговий майстер
-                      </p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">
-                        {dutyMasterPhone}
-                      </p>
-                    </div>
-                  </div>
-                )}
+
                 <div className="p-3 border border-dashed border-border text-center">
                   <HugeiconsIcon icon={ShieldIcon} className="size-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
                   <p className="text-xs text-muted-foreground font-semibold">
                     Екстрені ситуації — телефонуйте 101 або 112
                   </p>
                 </div>
+              </div>
+
+              <Separator dashed className="my-5" />
+
+              <div className="mb-5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                >
+                  <span className="flex items-center">
+                    <HugeiconsIcon icon={Settings02Icon} className="size-4 mr-2" />
+                    Змінити пароль
+                  </span>
+                  <span>{showPasswordChange ? "−" : "+"}</span>
+                </Button>
+                {showPasswordChange && (
+                  <div className="mt-4 p-4 border border-border rounded-lg bg-card">
+                    <ChangePasswordForm />
+                  </div>
+                )}
               </div>
 
               <Separator dashed className="my-5" />
