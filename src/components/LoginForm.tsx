@@ -20,10 +20,7 @@ import {
 import { AuthLayout, ErrorBanner } from "@/components/AuthLayout";
 
 const loginSchema = z.object({
-  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
-    (v) => v.endsWith("@lpnu.ua"),
-    "Дозволені тільки домени @lpnu.ua"
-  ),
+  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email"),
   password: z.string().min(1, "Пароль обов'язковий"),
 });
 
