@@ -3,12 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { fetchUserProfile } from "@/services/problemsApi";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, SearchIcon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
 import PageSpinner from "@/components/PageSpinner";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
-import { isAdminUser } from "@/lib/complaintUtils";
+import { isAdminUser, statusBadgeClass } from "@/lib/complaintUtils";
+import { FeatureCard } from "@/components/FeatureCard";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -72,13 +73,7 @@ const HomePage = () => {
               <Button asChild size="lg" className="gap-2">
                 <Link to="/auth">
                   Повідомити про проблему
-                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-5" strokeWidth={2} />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="gap-2">
-                <Link to="/dashboard">
-                  <HugeiconsIcon icon={SearchIcon} className="size-5" strokeWidth={2} />
-                  Відстежити звернення
+                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" strokeWidth={2} />
                 </Link>
               </Button>
             </div>
@@ -87,7 +82,7 @@ const HomePage = () => {
           <div className="relative w-full aspect-square max-w-lg mx-auto lg:ml-auto">
             <div className="absolute inset-0 bg-card border border-border transform rotate-3 scale-95 opacity-50" />
             <div className="absolute inset-0 bg-card border border-border transform -rotate-2 scale-100 opacity-80" />
-            <div className="absolute inset-0 bg-background border border-border shadow-2xl p-6 flex flex-col gap-4">
+            <div className="absolute inset-0 bg-background border border-border p-6 flex flex-col gap-4">
               <div className="flex justify-between items-center pb-4">
                 <div className="w-32 h-4 bg-card" />
                 <div className="w-8 h-8 bg-primary/90 border border-blue-800" />
@@ -95,8 +90,8 @@ const HomePage = () => {
               <Separator />
               <div className="bg-card border border-border p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs text-muted-foreground font-semibold">Сантехніка</span>
-                  <span className="px-2 py-0.5 bg-yellow-900/30 text-yellow-500 border border-yellow-700/50 text-xs font-semibold">Очікує</span>
+                  <span className="text-xs text-muted-foreground font-normal">Сантехніка</span>
+                  <span className={`px-2 py-0.5 ${statusBadgeClass("pending")} text-xs font-semibold`}>Очікує</span>
                 </div>
                 <div className="w-3/4 h-3 bg-muted mb-2" />
                 <div className="w-full h-2 bg-muted mb-1" />
@@ -104,8 +99,8 @@ const HomePage = () => {
               </div>
               <div className="bg-card border border-border p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs text-muted-foreground font-semibold">Опалення</span>
-                  <span className="px-2 py-0.5 bg-primary/30 text-blue-500 border border-blue-700/50 text-xs font-semibold">В роботі</span>
+                  <span className="text-xs text-muted-foreground font-normal">Опалення</span>
+                  <span className={`px-2 py-0.5 ${statusBadgeClass("approved")} text-xs font-semibold`}>В роботі</span>
                 </div>
                 <div className="w-1/2 h-3 bg-muted mb-2" />
                 <div className="w-full h-2 bg-muted mb-1" />
@@ -125,40 +120,25 @@ const HomePage = () => {
 
       <section className="py-24 max-w-7xl mx-auto px-6" id="how-it-works">
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Більше жодних загублених звернень.</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Більше жодних загублених звернень.</h2>
           <p className="text-muted-foreground max-w-2xl text-lg">Ми замінили незручні паперові форми та проігноровані електронні листи на чітку, прозору систему звернень, яка дійсно працює.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 bg-background border border-border mb-6 flex items-center justify-center">
-              <HugeiconsIcon icon={Camera01Icon} className="size-6 text-blue-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-3">Сфотографуйте та надішліть</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить звернення до потрібного відділу.
-            </p>
-          </div>
-          <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 bg-background border border-border mb-6 flex items-center justify-center">
-              <HugeiconsIcon icon={Activity01Icon} className="size-6 text-blue-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-3">Прозоре відстеження</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Припиніть гадати, чи бачив хтось ваше звернення. Отримуйте оновлення статусу в реальному часі, коли ваше звернення переглядається, призначається майстру та вирішується.
-            </p>
-          </div>
-          <div className="bg-card border border-border p-8 relative group hover:border-stone-500 transition-colors">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-12 h-12 bg-background border border-border mb-6 flex items-center justify-center">
-              <HugeiconsIcon icon={ShieldIcon} className="size-6 text-blue-400" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-3">Екстрене реагування</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Критичні проблеми, такі як відключення електроенергії або затоплення, миттєво позначаються та надсилаються черговій бригаді аварійної служби.
-            </p>
-          </div>
+        <div className="grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+          <FeatureCard
+            icon={Camera01Icon}
+            title="Сфотографуйте та надішліть"
+            description="Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить звернення до потрібного відділу."
+          />
+          <FeatureCard
+            icon={Activity01Icon}
+            title="Прозоре відстеження"
+            description="Припиніть гадати, чи бачив хтось ваше звернення. Отримуйте оновлення статусу в реальному часі, коли ваше звернення переглядається, призначається майстру та вирішується."
+          />
+          <FeatureCard
+            icon={ShieldIcon}
+            title="Екстрене реагування"
+            description="Критичні проблеми, такі як відключення електроенергії або затоплення, миттєво позначаються та надсилаються черговій бригаді аварійної служби."
+          />
         </div>
       </section>
 
@@ -171,7 +151,7 @@ const HomePage = () => {
             <Button asChild size="lg" className="gap-2">
               <Link to="/auth">
                 Розпочати
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-5" strokeWidth={2} />
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" strokeWidth={2} />
               </Link>
             </Button>
           </div>

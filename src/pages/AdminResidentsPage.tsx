@@ -166,7 +166,7 @@ const AdminResidentsPage = () => {
                   />
                 </div>
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Гуртожиток
                 </h4>
                 <BuildingSingleFilter
@@ -177,7 +177,7 @@ const AdminResidentsPage = () => {
 
                 <Separator className="my-4" />
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Кімната
                 </h4>
                 <PlaceFilterSelect
@@ -189,7 +189,7 @@ const AdminResidentsPage = () => {
 
                 <Separator className="my-4" />
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Роль
                 </h4>
                 <RoleFilterSelect
@@ -232,12 +232,12 @@ const AdminResidentsPage = () => {
                   <TableBody className="divide-y divide-border">
                     {filteredUsers.map((u) => (
                       <TableRow key={u.user} className="bg-card hover:bg-muted/50 transition-colors">
-                        <TableCell className="px-6 py-4">
-                          <div className="flex items-center gap-3">
+                        <TableCell className="px-6 py-4 truncate max-w-xs">
+                          <div className="flex items-center gap-3 min-w-0">
                             <UserAvatar user={u} size="sm" />
-                            <div>
-                              <p className="font-semibold text-foreground">{fullName(u)}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">{u.email}</p>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-foreground truncate">{fullName(u)}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{u.email}</p>
                             </div>
                           </div>
                         </TableCell>

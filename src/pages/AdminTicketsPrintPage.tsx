@@ -210,7 +210,7 @@ const AdminTicketsPrintPage = () => {
           <div>
             {/* Shared brand mark (Building03 + wordmark) — DESIGN.md single source of truth */}
             <Logo />
-            <p className="text-xs text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
+            <p className="text-sm text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
           </div>
           <div className="text-right text-sm text-gray-600">
             <div><strong>Звіт по тікетах</strong></div>
@@ -258,7 +258,7 @@ const AdminTicketsPrintPage = () => {
                         <tr key={t.ticket_id} className="hover:bg-gray-50/50">
                           <td className="border border-gray-300 p-2 break-words">
                             <div className="font-bold text-gray-900 break-words print-title">{t.complaintDetail?.title || "Без назви"}</div>
-                            <div className="text-xs text-gray-500 break-words whitespace-pre-wrap mt-1 print-description">{t.complaintDetail?.description || "Без опису"}</div>
+                            <div className="text-sm text-gray-500 break-words whitespace-pre-wrap mt-1 print-description">{t.complaintDetail?.description || "Без опису"}</div>
                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
                             {category || "Не вказано"}

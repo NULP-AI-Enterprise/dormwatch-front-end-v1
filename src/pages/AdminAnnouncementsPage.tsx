@@ -114,8 +114,8 @@ const AdminAnnouncementsPage = () => {
                     className="bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => setSelected(a)}
                   >
-                    <TableCell className="px-6 py-4">
-                      <p className="font-semibold text-foreground">{a.title}</p>
+                    <TableCell className="px-6 py-4 truncate max-w-xs">
+                      <p className="font-semibold text-foreground truncate">{a.title}</p>
                     </TableCell>
                     <TableCell className="px-6 py-4">
                       <Badge variant="secondary">{a.building_name || "Всі гуртожитки"}</Badge>

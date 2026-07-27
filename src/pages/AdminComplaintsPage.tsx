@@ -256,14 +256,14 @@ const AdminComplaintsPage = () => {
                       />
                     </div>
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Статус
                     </h4>
                     <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
 
                     <Separator className="my-4" />
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Гуртожиток
                     </h4>
                     <BuildingFilterSelect
@@ -274,14 +274,14 @@ const AdminComplaintsPage = () => {
 
                     <Separator className="my-4" />
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Пріоритет
                     </h4>
                     <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
 
                     <Separator className="my-4" />
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Категорії
                     </h4>
                     <CategoryFilterCombobox
@@ -292,7 +292,7 @@ const AdminComplaintsPage = () => {
 
                     <Separator className="my-4" />
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Дата подання
                     </h4>
                     <div className="space-y-2">
@@ -371,7 +371,7 @@ const AdminComplaintsPage = () => {
                       />
                     </div>
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Статус тікету
                     </h4>
                     <Select value={ticketStatus} onValueChange={setTicketStatus}>
@@ -387,7 +387,7 @@ const AdminComplaintsPage = () => {
 
                     <Separator className="my-4" />
 
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Категорії
                     </h4>
                     <CategoryFilterCombobox

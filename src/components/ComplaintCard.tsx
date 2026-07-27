@@ -143,7 +143,7 @@ const ComplaintCard = ({
               {p.placeName || "?"}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">
             {p.description}
           </p>
 
@@ -262,14 +262,14 @@ const ComplaintCard = ({
           <div className="flex flex-wrap gap-2 mb-3">
             <PriorityBadge priority={p.priority} prefix />
             {p.createdAt && (
-              <span className="text-xs text-muted-foreground font-semibold">
+              <span className="text-xs text-muted-foreground font-normal">
                 {formatDate(p.createdAt)}
               </span>
             )}
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
           {p.description || descriptionFallback}
         </p>
 
@@ -324,7 +324,7 @@ const ComplaintCard = ({
               </span>
             )}
             {footerLeft === "id" && (
-              <span className="text-xs text-muted-foreground font-semibold">ID: {p.id}</span>
+              <span className="text-xs text-muted-foreground font-normal">ID: {p.id}</span>
             )}
             {commentsSide === "left" && commentButton}
           </div>

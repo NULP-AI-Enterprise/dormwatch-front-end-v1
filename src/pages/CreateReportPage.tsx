@@ -260,7 +260,7 @@ const CreateReportPage = () => {
                   variant="ghost"
                   size="icon-xs"
                   onClick={handleRemovePhoto}
-                  className="absolute top-2 right-2 bg-card/80 border border-border text-destructive hover:bg-card transition-all"
+                  className="absolute top-2 right-2 bg-card border border-border text-destructive hover:bg-card transition-all"
                 >
                   <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
                 </Button>

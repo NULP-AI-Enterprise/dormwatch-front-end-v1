@@ -110,7 +110,7 @@ const MyTicketsPage = () => {
                 />
               </div>
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Стан</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Стан</h4>
               <Select value={state} onValueChange={setState}>
                 <SelectTrigger className="w-full h-8 text-xs">
                   <SelectValue placeholder="Всі" />
@@ -124,7 +124,7 @@ const MyTicketsPage = () => {
 
               <Separator className="my-4" />
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Категорії</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Категорії</h4>
               <CategoryFilterCombobox
                 value={selectedCategories}
                 onChange={setSelectedCategories}
@@ -133,7 +133,7 @@ const MyTicketsPage = () => {
 
               <Separator className="my-4" />
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Дедлайн до</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Дедлайн до</h4>
               <DatePicker date={deadline} setDate={setDeadline} placeholder="Оберіть дату" />
             </CardContent>
           </Card>

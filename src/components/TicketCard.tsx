@@ -46,7 +46,7 @@ const TicketCard = ({ ticket, complaint, readOnly = true, onOpen }: TicketCardPr
         <h3 className="text-sm font-semibold text-foreground mb-2">
           {p.title || "Без назви"}
         </h3>
-        <p className="text-xs text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
+        <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
           {p.description || "—"}
         </p>
 

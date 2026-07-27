@@ -165,7 +165,7 @@ function RegisterForm() {
 
   return (
     <AuthLayout heading="Реєстрація" subtitle="Кілька секунд — і можна подавати звернення про ремонт.">
-      <Card className="py-0 border-border shadow-2xl">
+      <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

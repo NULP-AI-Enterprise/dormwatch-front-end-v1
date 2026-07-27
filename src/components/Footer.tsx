@@ -11,22 +11,21 @@ const Footer = () => {
             <HugeiconsIcon icon={Building03Icon} className="size-5 text-primary" />
             <span className="text-lg font-bold">DormWatch</span>
           </div>
-          <p className="text-muted-foreground text-xs">Система прямої комунікації між студентами та адміністрацією.</p>
+          <p className="text-muted-foreground text-sm">Система прямої комунікації між студентами та адміністрацією.</p>
         </div>
 
         <div className="flex gap-6 text-sm text-muted-foreground font-semibold">
           {/* TODO: add privacy/terms pages, then re-enable these as links. */}
           <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Конфіденційність</span>
           <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Умови використання</span>
-          <Link to="/dashboard" className="hover:text-foreground transition-colors">Статус системи</Link>
         </div>
 
         <div className="flex flex-col items-center md:items-end gap-1">
-          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-300 font-bold text-sm text-xs transition-colors">
+          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-400 font-bold text-xs transition-colors">
             support@dormwatch.edu.ua
           </a>
-          <span className="text-muted-foreground text-xs">
-            &copy; 2025 DormWatch Systems. Всі права захищено.
+          <span className="text-muted-foreground text-sm">
+            &copy; 2025 DormWatch. Всі права захищено.
           </span>
         </div>
       </div>

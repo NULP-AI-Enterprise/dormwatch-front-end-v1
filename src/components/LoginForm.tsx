@@ -57,7 +57,7 @@ function LoginForm() {
 
   return (
     <AuthLayout heading="З поверненням!" subtitle="Увійдіть, щоб подати або відстежити звернення про ремонт.">
-      <Card className="py-0 border-border shadow-2xl">
+      <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

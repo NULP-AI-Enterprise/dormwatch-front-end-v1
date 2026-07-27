@@ -54,7 +54,7 @@ export default function ResetPasswordForm({ email }: { email: string }) {
 
   return (
     <AuthLayout heading="Новий пароль" subtitle={`Введіть код з листа на ${email} та новий пароль.`}>
-      <Card className="py-0 border-border shadow-2xl">
+      <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

@@ -50,7 +50,7 @@ export default function VerifyEmailForm({ email }: { email: string }) {
 
   return (
     <AuthLayout heading="Підтвердження Email" subtitle={`Ми надіслали код на ${email}`}>
-      <Card className="py-0 border-border shadow-2xl">
+      <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

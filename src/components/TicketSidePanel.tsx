@@ -104,7 +104,7 @@ const TicketSidePanel = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <StatusBadge status={complaint.status} />
-              <span className="text-xs text-muted-foreground font-semibold">
+              <span className="text-xs text-muted-foreground font-normal">
                 {categoryLabel}
               </span>
             </div>
@@ -124,7 +124,7 @@ const TicketSidePanel = ({
               {/* Ticket fields (editable) */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                  <label className="text-xs font-normal text-muted-foreground mb-2 block">
                     Виконавець
                   </label>
                   <Combobox<string, false>
@@ -148,7 +148,7 @@ const TicketSidePanel = ({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-2 block">
+                  <label className="text-xs font-normal text-muted-foreground mb-2 block">
                     Дедлайн
                   </label>
                   <DatePicker
@@ -159,7 +159,7 @@ const TicketSidePanel = ({
                 </div>
 
                 {ticket && (
-                  <p className="text-xs text-muted-foreground font-semibold">
+                  <p className="text-xs text-muted-foreground font-normal">
                     Тікет #{ticket.ticket_id}
                   </p>
                 )}

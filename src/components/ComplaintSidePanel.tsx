@@ -237,7 +237,7 @@ const ComplaintSidePanel = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <StatusBadge status={complaint.status} />
-              <span className="text-xs font-semibold text-muted-foreground">
+              <span className="text-xs font-normal text-muted-foreground">
                 {String(complaint.id) !== "new" && `#${complaint.id}`}
               </span>
             </div>
@@ -288,7 +288,7 @@ const ComplaintSidePanel = ({
               </div>
             ) : (
               <>
-                <span className="text-xs text-muted-foreground font-semibold">
+                <span className="text-xs text-muted-foreground font-normal">
                   {categoryLabel}
                 </span>
                 <span className="w-1 h-1 bg-border" />
@@ -319,7 +319,7 @@ const ComplaintSidePanel = ({
                   <PriorityBadge priority={complaint.priority} prefix />
                 )}
                 {complaint.createdAt && (
-                  <span className="text-xs text-muted-foreground font-semibold">
+                  <span className="text-xs text-muted-foreground font-normal">
                     {formatDate(complaint.createdAt)}
                   </span>
                 )}
