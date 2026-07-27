@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { fetchUserProfile } from "@/services/problemsApi";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, SearchIcon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
+import { ArrowRight01Icon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
 import PageSpinner from "@/components/PageSpinner";
 import Logo from "@/components/Logo";
 import Footer from "@/components/Footer";
@@ -73,12 +73,6 @@ const HomePage = () => {
                 <Link to="/auth">
                   Повідомити про проблему
                   <HugeiconsIcon icon={ArrowRight01Icon} className="size-5" strokeWidth={2} />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="gap-2">
-                <Link to="/dashboard">
-                  <HugeiconsIcon icon={SearchIcon} className="size-5" strokeWidth={2} />
-                  Відстежити звернення
                 </Link>
               </Button>
             </div>

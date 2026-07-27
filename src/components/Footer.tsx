@@ -18,7 +18,6 @@ const Footer = () => {
           {/* TODO: add privacy/terms pages, then re-enable these as links. */}
           <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Конфіденційність</span>
           <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Умови використання</span>
-          <Link to="/dashboard" className="hover:text-foreground transition-colors">Статус системи</Link>
         </div>
 
         <div className="flex flex-col items-center md:items-end gap-1">
