@@ -102,7 +102,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
                 <div className="p-3 border border-dashed border-border text-center">
                   <HugeiconsIcon icon={ShieldIcon} className="size-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
-                  <p className="text-xs text-muted-foreground font-semibold">
+                  <p className="text-xs text-muted-foreground font-normal">
                     Екстрені ситуації — телефонуйте 101 або 112
                   </p>
                 </div>

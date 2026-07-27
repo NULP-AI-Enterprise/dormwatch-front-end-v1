@@ -52,7 +52,7 @@ export default function ForgotPasswordForm() {
 
   return (
     <AuthLayout heading="Відновлення пароля" subtitle="Введіть свій email, щоб отримати код для відновлення.">
-      <Card className="py-0 border-border shadow-2xl">
+      <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
 

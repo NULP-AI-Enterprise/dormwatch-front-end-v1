@@ -151,7 +151,7 @@ const AdminPage = () => {
                             {c.description}
                           </p>
                         </TableCell>
-                        <TableCell className="px-6 py-4 text-xs text-muted-foreground font-semibold">
+                        <TableCell className="px-6 py-4 text-sm text-muted-foreground font-normal">
                           {c.category}
                         </TableCell>
                         <TableCell className="px-6 py-4 text-sm text-muted-foreground">

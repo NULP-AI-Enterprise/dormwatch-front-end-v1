@@ -85,7 +85,7 @@ export function InviteLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border-border shadow-2xl">
+      <DialogContent className="max-w-md border-border">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
             <HugeiconsIcon icon={Link01Icon} className="size-5" />

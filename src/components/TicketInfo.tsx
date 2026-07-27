@@ -63,7 +63,7 @@ export default function TicketInfo(props: TicketInfoProps) {
 
   const idPosition = props.idPosition ?? "bottom";
   const idLine = (
-    <p className="text-xs text-muted-foreground font-semibold">Тікет #{ticket.ticket_id}</p>
+    <p className="text-xs text-muted-foreground font-normal">Тікет #{ticket.ticket_id}</p>
   );
   return (
     <div className={cn("space-y-2", props.className)}>

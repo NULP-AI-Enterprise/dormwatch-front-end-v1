@@ -86,7 +86,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               <span className="text-sm font-bold text-foreground truncate">
                 {user ? `${user.first_name} ${user.last_name}` : "Адмін"}
               </span>
-              <span className="text-xs text-muted-foreground font-semibold truncate">
+              <span className="text-xs text-muted-foreground font-normal truncate">
                 {placeName}
               </span>
             </div>

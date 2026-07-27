@@ -27,7 +27,7 @@ const StatCard = ({ icon, label, value, loading }: StatCardProps) => {
       <div className="relative z-10">
         <div className="flex items-center gap-2 text-muted-foreground mb-4">
           <span className="text-muted-foreground">{icon}</span>
-          <span className="text-xs font-semibold">{label}</span>
+          <span className="text-xs font-normal">{label}</span>
         </div>
         <div className="text-3xl font-bold text-foreground mb-2">{value}</div>
       </div>

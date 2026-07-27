@@ -459,7 +459,7 @@ function BuildingsTab() {
           </div>
 
           <Separator className="my-1" dashed />
-          <p className="text-xs font-semibold text-muted-foreground">Екстрені контакти</p>
+          <p className="text-xs font-normal text-muted-foreground">Екстрені контакти</p>
           <div className="space-y-1">
             <Label className="text-xs">Комендант</Label>
             <Input
@@ -547,7 +547,7 @@ function BuildingsTab() {
             </div>
 
             <Separator className="my-1" dashed />
-            <p className="text-xs font-semibold text-muted-foreground">Екстрені контакти</p>
+            <p className="text-xs font-normal text-muted-foreground">Екстрені контакти</p>
             <div className="space-y-1">
               <Label className="text-xs">Комендант</Label>
               <Input

@@ -162,7 +162,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
                   <span className={`text-xs font-semibold leading-tight ${item.is_read ? "text-foreground" : "text-foreground font-bold"}`}>
                     {item.title}
                   </span>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 mt-0.5">
                     {formatRelativeTime(item.created_at)}
                   </span>
                 </div>

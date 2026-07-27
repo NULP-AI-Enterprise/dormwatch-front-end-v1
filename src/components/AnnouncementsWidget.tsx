@@ -26,7 +26,7 @@ const AnnouncementsWidget = () => {
   return (
     <Card className="border-border shadow-none bg-card">
       <CardContent>
-        <h4 className="text-xs font-semibold text-muted-foreground mb-3">Оголошення</h4>
+        <h4 className="text-xs font-normal text-muted-foreground mb-3">Оголошення</h4>
 
         {loaded && items.length === 0 ? (
           <div className="border border-dashed border-border p-8 text-center">
@@ -37,7 +37,7 @@ const AnnouncementsWidget = () => {
                 strokeWidth={1.5}
               />
             </div>
-            <p className="text-xs text-muted-foreground">Оголошень поки немає</p>
+            <p className="text-sm text-muted-foreground">Оголошень поки немає</p>
           </div>
         ) : (
           <div className="flex flex-col">

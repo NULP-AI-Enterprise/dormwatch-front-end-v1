@@ -30,7 +30,7 @@ const EmptyState = ({ icon, title, subtitle, action }: EmptyStateProps) => (
       </EmptyMedia>
       <EmptyTitle>{title}</EmptyTitle>
       {subtitle && (
-        <EmptyDescription className="text-xs">{subtitle}</EmptyDescription>
+        <EmptyDescription className="text-sm">{subtitle}</EmptyDescription>
       )}
     </EmptyHeader>
     {action && <EmptyContent>{action}</EmptyContent>}

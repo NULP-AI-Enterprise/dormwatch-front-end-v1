@@ -104,17 +104,17 @@ const MyComplaintsPage = () => {
                 <FilterSearchInput value={search} onChange={setSearch} />
               </div>
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Статус</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Статус</h4>
               <StatusFilterSelect value={status} onChange={setStatus} />
 
               <Separator className="my-4" />
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Пріоритет</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Пріоритет</h4>
               <PriorityFilterSelect value={priority} onChange={setPriority} />
 
               <Separator className="my-4" />
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Категорії</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Категорії</h4>
               <CategoryFilterCombobox
                 value={selectedCategories}
                 onChange={setSelectedCategories}
@@ -123,7 +123,7 @@ const MyComplaintsPage = () => {
 
               <Separator className="my-4" />
 
-              <h4 className="text-xs font-semibold text-muted-foreground mb-3">Дата подання</h4>
+              <h4 className="text-xs font-normal text-muted-foreground mb-3">Дата подання</h4>
               <DatePicker date={date} setDate={setDate} placeholder="Оберіть дату" />
             </CardContent>
           </Card>

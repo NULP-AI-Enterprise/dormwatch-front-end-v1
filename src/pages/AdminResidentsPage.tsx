@@ -166,7 +166,7 @@ const AdminResidentsPage = () => {
                   />
                 </div>
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Гуртожиток
                 </h4>
                 <BuildingSingleFilter
@@ -177,7 +177,7 @@ const AdminResidentsPage = () => {
 
                 <Separator className="my-4" />
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Кімната
                 </h4>
                 <PlaceFilterSelect
@@ -189,7 +189,7 @@ const AdminResidentsPage = () => {
 
                 <Separator className="my-4" />
 
-                <h4 className="text-xs font-semibold text-muted-foreground mb-3">
+                <h4 className="text-xs font-normal text-muted-foreground mb-3">
                   Роль
                 </h4>
                 <RoleFilterSelect
