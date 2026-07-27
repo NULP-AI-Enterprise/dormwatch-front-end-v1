@@ -143,8 +143,8 @@ const AdminPage = () => {
                         className="group relative bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => handleRowClick(c)}
                       >
-                        <TableCell className="px-6 py-4">
-                          <p className="font-semibold text-foreground">
+                        <TableCell className="px-6 py-4 truncate max-w-xs">
+                          <p className="font-semibold text-foreground truncate">
                             {c.title}
                           </p>
                           <p className="text-sm text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">
