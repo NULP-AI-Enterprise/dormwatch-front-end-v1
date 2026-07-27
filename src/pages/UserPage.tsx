@@ -31,6 +31,7 @@ const UserPage = () => {
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [announcementSheetOpen, setAnnouncementSheetOpen] = useState(false);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -170,7 +171,7 @@ const UserPage = () => {
                 key={a.announcement_id}
                 announcement={a}
                 clickable
-                onClick={() => setSelectedAnnouncement(a)}
+                onClick={() => { setSelectedAnnouncement(a); setAnnouncementSheetOpen(true); }}
               />
             ))
           )}
@@ -191,10 +192,10 @@ const UserPage = () => {
 
       {selectedAnnouncement && (
         <AnnouncementSidePanel
-          open={selectedAnnouncement !== null}
+          open={announcementSheetOpen}
           announcement={selectedAnnouncement}
           readOnly
-          onOpenChange={(o) => !o && setSelectedAnnouncement(null)}
+          onOpenChange={setAnnouncementSheetOpen}
         />
       )}
     </>
