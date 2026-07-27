@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ComplaintCard from "@/components/ComplaintCard";
-import { TicketCard } from "@/components/TicketCard";
+import AnnouncementCard from "@/components/AnnouncementCard";
+import AnnouncementSidePanel from "@/components/AnnouncementSidePanel";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard } from "@/components/StatCard";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { isAdminUser, isActiveStatus, lifecycleStage } from "@/lib/complaintUtils";
+import { isAdminUser, isActiveStatus } from "@/lib/complaintUtils";
 import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
+import { fetchAnnouncements } from "@/services/problemsApi";
+import type { Announcement } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   MapPinIcon,
@@ -18,7 +21,7 @@ import {
   Clock01Icon,
   ArrowRight02Icon,
   Wrench01Icon,
-  Ticket01Icon,
+  Megaphone01Icon,
 } from "@hugeicons/core-free-icons";
 
 const UserPage = () => {
@@ -26,10 +29,17 @@ const UserPage = () => {
   const { problems, loading, reload, complaintById, ticketByComplaint } =
     useMyComplaintsAndTickets();
 
-  // Select by id so the open sheet always reflects the freshest complaint from
-  // the hook (no stale snapshot, no manual re-sync ref).
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    fetchAnnouncements()
+      .then((all) => setAnnouncements(all.filter((a) => !a.is_expired)))
+      .catch(() => {});
+  }, []);
 
   if (loading) return <PageSpinner />;
 
@@ -42,21 +52,7 @@ const UserPage = () => {
 
   const recent = problems.slice(0, 4);
 
-  // Active work orders for the right-column glance: resolve each ticket to its
-  // complaint FIRST, drop any that don't resolve or aren't in progress, THEN
-  // cap — so the cap never yields blank slots.
-  const activeTickets = ticketByComplaint.size
-    ? [...ticketByComplaint.values()]
-        .map((t) => ({ ticket: t, complaint: complaintById.get(t.complaint) }))
-        .filter(
-          (r): r is { ticket: (typeof r)["ticket"]; complaint: NonNullable<(typeof r)["complaint"]> } =>
-            !!r.complaint && lifecycleStage(r.complaint.status) === "in_progress"
-        )
-        .slice(0, 3)
-    : [];
-
   const selectedProblem = selectedId != null ? complaintById.get(selectedId) ?? null : null;
-  const selectedTicket = selectedId != null ? ticketByComplaint.get(selectedId) ?? null : null;
 
   const openSheet = (id: number) => {
     setSelectedId(id);
@@ -124,7 +120,7 @@ const UserPage = () => {
         />
       </div>
 
-      {/* two columns: recent requests + active tickets glance */}
+      {/* two columns: recent requests + announcements */}
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
@@ -159,25 +155,22 @@ const UserPage = () => {
 
         <div className="lg:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg md:text-xl font-semibold text-foreground">У роботі</h2>
-            <Link to="/my-tickets" className="text-sm font-semibold text-primary hover:underline">
-              Мої тікети →
-            </Link>
+            <h2 className="text-lg md:text-xl font-semibold text-foreground">Оголошення</h2>
           </div>
 
-          {activeTickets.length === 0 ? (
+          {announcements.length === 0 ? (
             <EmptyState
-              icon={Ticket01Icon}
-              title="Поки нічого в роботі"
-              subtitle="Щойно комендант візьме звернення в роботу, воно з’явиться тут."
+              icon={Megaphone01Icon}
+              title="Поки немає оголошень"
+              subtitle="Оголошення від адміністрації з'являться тут."
             />
           ) : (
-            activeTickets.map(({ ticket, complaint }) => (
-              <TicketCard
-                key={ticket.ticket_id}
-                ticket={ticket}
-                complaint={complaint}
-                onOpen={() => openSheet(complaint.id)}
+            announcements.map((a) => (
+              <AnnouncementCard
+                key={a.announcement_id}
+                announcement={a}
+                clickable
+                onClick={() => setSelectedAnnouncement(a)}
               />
             ))
           )}
@@ -187,12 +180,21 @@ const UserPage = () => {
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={selectedTicket}
+          ticket={null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={reload}
           currentUserId={currentUser?.user}
           isAdmin={isAdminUser(currentUser)}
+        />
+      )}
+
+      {selectedAnnouncement && (
+        <AnnouncementSidePanel
+          open={selectedAnnouncement !== null}
+          announcement={selectedAnnouncement}
+          readOnly
+          onOpenChange={(o) => !o && setSelectedAnnouncement(null)}
         />
       )}
     </>
