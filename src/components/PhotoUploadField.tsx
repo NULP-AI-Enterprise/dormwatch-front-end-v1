@@ -13,9 +13,9 @@ interface PhotoUploadFieldProps {
   className?: string;
 }
 
-// Shared drag-drop-style photo upload `<label>` (DESIGN.md §7 Create Report /
-// §8). Replaces the near-identical dashed dropzones in ComplaintSidePanel and
-// CreateReportPage.
+// Shared drag-drop-style photo upload `<label>` (design-system.md: dashed
+// square drop zone, sharp corners). Replaces the near-identical dashed
+// dropzones in ComplaintSidePanel and CreateReportPage.
 const PhotoUploadField = ({
   onFileSelect,
   label,

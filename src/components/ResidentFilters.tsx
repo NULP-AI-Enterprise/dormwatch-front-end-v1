@@ -16,7 +16,7 @@ import type { Building, Place, Role } from "@/lib/types";
 // Filter primitives for the admin residents page ("Мешканці"). Kept in their
 // own file per the acceptance criteria, but built from the exact same
 // `ui/combobox` primitives as ComplaintFilters — no styling is added here, so
-// the square/`text-xs` house style (DESIGN.md) is inherited identically.
+// the square/`text-xs` house style (design-system.md) is inherited identically.
 //
 // Building + place are a CASCADE: building is single-select and scopes the
 // place multi-select. A room's `place_name` is only unique within a building

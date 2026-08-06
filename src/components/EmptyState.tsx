@@ -17,8 +17,8 @@ interface EmptyStateProps {
   action?: ReactNode;
 }
 
-// Shared dashed-border empty-state placeholder (DESIGN.md §5 "Intentional
-// Empty States"). The `Empty` primitive itself is DESIGN.md-compliant — the
+// Shared dashed-border empty-state placeholder (design-system.md §5 "Intentional
+// Empty States"). The `Empty` primitive itself is design-system.md-compliant — the
 // `icon` media variant renders the `w-12 h-12 border border-border bg-card`
 // box and the title uses `text-sm font-semibold` — so this only supplies the
 // content (icon, copy, action) around it.

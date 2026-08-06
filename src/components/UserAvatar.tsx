@@ -18,7 +18,7 @@ interface UserAvatarProps {
   className?: string;
 }
 
-// Single square avatar (DESIGN.md §5 — sharp corners, no radius). Renders the
+// Single square avatar (design-system.md §5 — sharp corners, no radius). Renders the
 // user's `photo_url` when present, otherwise falls back to initials. Replaces
 // the copy-pasted initials circles that had drifted across the layouts.
 const UserAvatar = ({ user, size = "sm", fallback = "U", className }: UserAvatarProps) => {

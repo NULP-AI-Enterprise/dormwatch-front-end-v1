@@ -177,7 +177,7 @@ const CreateReportPage = () => {
                   <ToggleGroupItem
                     key={id}
                     value={id}
-                    // DESIGN.md §305/§184: selected tier carries the primary
+                    // design-system.md §7: selected tiers carry the primary
                     // fill (the "default button" look), not the muted on-state
                     // shadcn ships by default.
                     className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"

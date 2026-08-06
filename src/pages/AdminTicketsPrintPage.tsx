@@ -208,7 +208,7 @@ const AdminTicketsPrintPage = () => {
       <div className="max-w-4xl mx-auto">
         <header className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
           <div>
-            {/* Shared brand mark (Building03 + wordmark) — DESIGN.md single source of truth */}
+            {/* Shared brand mark (Building03 + wordmark) — design-system.md §6: canonical in Logo.tsx */}
             <Logo />
             <p className="text-sm text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
           </div>

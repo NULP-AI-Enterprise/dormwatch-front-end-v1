@@ -10,7 +10,8 @@ import type { Announcement } from "@/lib/types";
 
 // Compact read-only announcements board for the dashboard sidebar. Active only
 // (expired posts are filtered out here — they still live on /announcements),
-// pinned-first, capped to a handful. Realizes the DESIGN.md "CommunityBoard".
+// pinned-first, capped to a handful. Realizes the design-system.md "Intentional
+// Empty States" pattern.
 const MAX_ITEMS = 4;
 
 const AnnouncementsWidget = () => {
