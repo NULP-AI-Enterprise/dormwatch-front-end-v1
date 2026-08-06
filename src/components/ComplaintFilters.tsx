@@ -55,7 +55,7 @@ type MultiFilterProps = {
 
 // Shared multi-select filter over string codes: empty selection means "all".
 // `itemLabel` maps a stored code to its display text (identity for buildings,
-// STATUS/PRIORITY label for those). Chips render square (DESIGN.md) via
+// STATUS/PRIORITY label for those). Chips render square (design-system.md) via
 // `ui/combobox.tsx`. Mirrors CategoryFilterCombobox — the predicate stays
 // `selected.length === 0 || selected.includes(x)` on every consumer page.
 function MultiFilterCombobox({
@@ -163,7 +163,7 @@ type CategoryFilterComboboxProps = {
 };
 
 // Multi-select category filter: an empty selection means "all". Chips render
-// square (DESIGN.md) — styling is inherited from `ui/combobox.tsx`. Operates
+// square (design-system.md) — styling is inherited from `ui/combobox.tsx`. Operates
 // over category *names* so the predicate stays `cats.includes(p.category)`.
 export function CategoryFilterCombobox({
   value,

@@ -435,7 +435,7 @@ function EditResidentDialog({
               onValueChange={(v) => setRoleId(Number(v))}
               disabled={isSelf}
             >
-              {/* DESIGN.md §5 Inputs mandates a disabled fill (`dark:disabled:bg-input/80`),
+              {/* design-system.md §5 Inputs mandates a disabled fill (`dark:disabled:bg-input/80`),
                   which Input/Combobox honor but SelectTrigger omits. Add it here so the
                   disabled role field matches the disabled room Combobox beside it. */}
               <SelectTrigger className="w-full h-8 text-xs disabled:bg-input/50 dark:disabled:bg-input/80">
