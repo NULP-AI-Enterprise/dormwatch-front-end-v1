@@ -8,6 +8,7 @@ import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/SettingsModal";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -67,6 +68,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
 
             <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="h-auto gap-2 py-1.5">

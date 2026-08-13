@@ -5,8 +5,8 @@ interface ProgressStepperProps {
 }
 
 const stages = [
-  { key: "submitted", label: "Створено", accent: "text-blue-400" },
-  { key: "in_progress", label: "В роботі", accent: "text-blue-400" },
+  { key: "submitted", label: "Створено", accent: "text-blue-600 dark:text-blue-400" },
+  { key: "in_progress", label: "В роботі", accent: "text-blue-600 dark:text-blue-400" },
   { key: "resolved", label: "Вирішено", accent: "text-green-500" },
 ] as const;
 
@@ -39,7 +39,7 @@ const ProgressStepper = ({ stage }: ProgressStepperProps) => {
               i === currentIdx
                 ? s.accent
                 : i < currentIdx
-                ? "text-blue-400"
+                ? "text-blue-600 dark:text-blue-400"
                 : "text-muted-foreground"
             )}
           >

@@ -2,10 +2,14 @@ import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Building03Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function AuthLayout({ children, heading, subtitle }: { children: ReactNode; heading: string; subtitle: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-lg">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 text-primary font-bold text-2xl mb-2">

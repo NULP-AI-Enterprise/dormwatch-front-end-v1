@@ -7,6 +7,7 @@ import { useUser } from "@/context/UserContext";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
 import { AdminGlobalActions } from "@/components/AdminGlobalActions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -100,6 +101,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">
             {pageActions}
+            <ThemeToggle />
             <AdminGlobalActions />
           </div>
         </header>
