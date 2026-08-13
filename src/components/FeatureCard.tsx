@@ -8,7 +8,7 @@ interface FeatureCardProps {
   description: string;
 }
 
-export function FeatureCard({ icon, iconColor = "text-blue-400", title, description }: FeatureCardProps) {
+export function FeatureCard({ icon, iconColor = "text-blue-600 dark:text-blue-400", title, description }: FeatureCardProps) {
   return (
     <div className="bg-card border border-border p-8 relative group hover:border-border/80 transition-colors">
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />

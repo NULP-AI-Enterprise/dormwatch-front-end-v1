@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
 import PageSpinner from "@/components/PageSpinner";
 import Logo from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
 import { isAdminUser, statusBadgeClass } from "@/lib/complaintUtils";
@@ -50,6 +51,7 @@ const HomePage = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Button asChild>
               <Link to="/auth">
                 Вхід для студентів
@@ -64,7 +66,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative z-10">
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
-              Зламаний кран? Холодна кімната? <span className="text-blue-400">Ми допоможемо.</span>
+              Зламаний кран? Холодна кімната? <span className="text-blue-600 dark:text-blue-400">Ми допоможемо.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
               Створюйте звернення про ремонт у вашому гуртожитку менш ніж за 15 секунд. Відстежуйте оновлення статусу в режимі реального часу. Без завантаження додатків та очікування на лінії.

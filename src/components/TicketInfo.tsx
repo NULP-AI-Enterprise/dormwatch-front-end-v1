@@ -36,9 +36,9 @@ export default function TicketInfo(props: TicketInfoProps) {
 
   if (props.variant === "callout") {
     const tone = props.tone ?? "accent";
-    const headingColor = tone === "primary" ? "text-primary" : "text-blue-400";
-    const line1 = tone === "primary" ? "text-primary/80" : "text-blue-300/80";
-    const line2 = tone === "primary" ? "text-primary/70" : "text-blue-300/70";
+    const headingColor = tone === "primary" ? "text-primary" : "text-blue-600 dark:text-blue-400";
+    const line1 = tone === "primary" ? "text-primary/80" : "text-blue-600/80 dark:text-blue-300/80";
+    const line2 = tone === "primary" ? "text-primary/70" : "text-blue-600/70 dark:text-blue-300/70";
     const name = workerName(ticket);
     return (
       <div

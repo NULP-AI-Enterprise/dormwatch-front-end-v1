@@ -21,7 +21,7 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-col items-center md:items-end gap-1">
-          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-400 font-bold text-xs transition-colors">
+          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs transition-colors">
             support@dormwatch.edu.ua
           </a>
           <span className="text-muted-foreground text-sm">

@@ -159,7 +159,7 @@ const ComplaintCard = ({
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => onTicketAction?.(p, ticket)}
-                    className="absolute top-2 right-2 text-primary hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 text-primary hover:text-blue-600 dark:hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
                   >
                     <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
                   </Button>

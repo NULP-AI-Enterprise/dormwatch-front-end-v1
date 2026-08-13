@@ -68,7 +68,7 @@ const AnnouncementsWidget = () => {
         <Separator className="my-4" />
         <Link
           to="/announcements"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
         >
           Усі оголошення
           <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" strokeWidth={2} />

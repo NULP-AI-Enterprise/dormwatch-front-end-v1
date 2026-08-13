@@ -45,7 +45,7 @@ const AnnouncementCard = ({
             {formatDate(a.created_at)}
           </span>
         </div>
-        <h3 className={`text-sm font-semibold text-foreground mb-2 ${clickable ? "group-hover:text-blue-400 transition-colors" : ""}`}>
+        <h3 className={`text-sm font-semibold text-foreground mb-2 ${clickable ? "group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" : ""}`}>
           {a.title || "Без назви"}
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 break-words whitespace-pre-wrap">
