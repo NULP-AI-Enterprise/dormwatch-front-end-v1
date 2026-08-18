@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ComplaintCard from "@/components/ComplaintCard";
 import AnnouncementCard from "@/components/AnnouncementCard";
-import AnnouncementSidePanel from "@/components/AnnouncementSidePanel";
+import AnnouncementsModal from "@/components/AnnouncementsModal";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import PhoneNumbersWidget from "@/components/PhoneNumbersWidget";
 import { StatCard } from "@/components/StatCard";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
@@ -31,7 +32,7 @@ const UserPage = () => {
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  const [announcementSheetOpen, setAnnouncementSheetOpen] = useState(false);
+  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -157,6 +158,16 @@ const UserPage = () => {
         <div className="lg:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg md:text-xl font-semibold text-foreground">Оголошення</h2>
+            {announcements.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs font-semibold text-primary h-auto p-0 hover:bg-transparent hover:underline"
+                onClick={() => { setSelectedAnnouncement(null); setAnnouncementsModalOpen(true); }}
+              >
+                Усі
+              </Button>
+            )}
           </div>
 
           {announcements.length === 0 ? (
@@ -166,15 +177,17 @@ const UserPage = () => {
               subtitle="Оголошення від адміністрації з'являться тут."
             />
           ) : (
-            announcements.map((a) => (
+            announcements.slice(0, 2).map((a) => (
               <AnnouncementCard
                 key={a.announcement_id}
                 announcement={a}
                 clickable
-                onClick={() => { setSelectedAnnouncement(a); setAnnouncementSheetOpen(true); }}
+                onClick={() => { setSelectedAnnouncement(a); setAnnouncementsModalOpen(true); }}
               />
             ))
           )}
+
+          <PhoneNumbersWidget />
         </div>
       </div>
 
@@ -190,14 +203,12 @@ const UserPage = () => {
         />
       )}
 
-      {selectedAnnouncement && (
-        <AnnouncementSidePanel
-          open={announcementSheetOpen}
-          announcement={selectedAnnouncement}
-          readOnly
-          onOpenChange={setAnnouncementSheetOpen}
-        />
-      )}
+      <AnnouncementsModal
+        open={announcementsModalOpen}
+        onOpenChange={setAnnouncementsModalOpen}
+        announcements={announcements}
+        initialAnnouncementId={selectedAnnouncement?.announcement_id}
+      />
     </>
   );
 };
