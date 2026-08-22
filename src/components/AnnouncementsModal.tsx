@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -21,6 +14,7 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
+import { sortAnnouncements } from "@/lib/announcementUtils";
 import { fetchAnnouncements } from "@/services/problemsApi";
 import type { Announcement } from "@/lib/types";
 
@@ -49,6 +43,9 @@ const AnnouncementsModal = ({
   const [loading, setLoading] = useState(!providedAnnouncements);
   const [currentPage, setCurrentPage] = useState(1);
   const [detailedAnnouncement, setDetailedAnnouncement] = useState<Announcement | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
+  // Announcement id awaiting automatic selection; undefined once resolved or navigated away.
+  const [pendingTargetId, setPendingTargetId] = useState<number | null | undefined>(undefined);
 
   useEffect(() => {
     if (providedAnnouncements) {
@@ -66,37 +63,32 @@ const AnnouncementsModal = ({
   }, [open, providedAnnouncements]);
 
   // Sort pinned announcements first, then newest first
-  const sortedItems = [...items].sort((a, b) => {
-    if (a.is_pinned !== b.is_pinned) {
-      return a.is_pinned ? -1 : 1;
-    }
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  const sortedItems = sortAnnouncements(items);
 
-  useEffect(() => {
-    if (open) {
-      if (initialAnnouncementId) {
-        const found = items.find((a) => a.announcement_id === initialAnnouncementId);
-        if (found) {
-          setDetailedAnnouncement(found);
-          const sorted = [...items].sort((a, b) => {
-            if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-          const index = sorted.findIndex((a) => a.announcement_id === initialAnnouncementId);
-          if (index !== -1) {
-            setCurrentPage(Math.floor(index / ITEMS_PER_PAGE) + 1);
-          }
-        } else {
-          setDetailedAnnouncement(null);
-          setCurrentPage(1);
-        }
-      } else {
-        setDetailedAnnouncement(null);
-        setCurrentPage(1);
-      }
+  // Reset on close and seed the initial target synchronously during render,
+  // so the first committed paint already shows the right view (no list flash).
+  if (!open && wasOpen) {
+    setWasOpen(false);
+    setDetailedAnnouncement(null);
+    setCurrentPage(1);
+    setPendingTargetId(undefined);
+  } else if (open && !wasOpen) {
+    setWasOpen(true);
+    setDetailedAnnouncement(null);
+    setCurrentPage(1);
+    setPendingTargetId(initialAnnouncementId ?? null);
+  }
+
+  // Resolve the pending target as soon as it is found in the list, or as soon
+  // as the full list is known to not contain it.
+  if (open && pendingTargetId !== undefined && !loading) {
+    const index = sortedItems.findIndex((a) => a.announcement_id === pendingTargetId);
+    if (index !== -1) {
+      setDetailedAnnouncement(sortedItems[index]);
+      setCurrentPage(Math.floor(index / ITEMS_PER_PAGE) + 1);
     }
-  }, [open, initialAnnouncementId, items]);
+    setPendingTargetId(undefined);
+  }
 
   const totalPages = Math.max(1, Math.ceil(sortedItems.length / ITEMS_PER_PAGE));
   const paginatedItems = sortedItems.slice(
@@ -108,22 +100,15 @@ const AnnouncementsModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] p-0 gap-0 overflow-hidden rounded-none border-border flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 border border-border bg-muted/50 shrink-0">
-              <HugeiconsIcon icon={Megaphone01Icon} className="size-5 text-primary" strokeWidth={1.5} />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold text-foreground">
-                Оголошення
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Важлива інформація та повідомлення від адміністрації
-              </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="text-lg font-bold text-foreground">
+            Оголошення
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Важлива інформація та повідомлення від адміністрації
+          </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-6 space-y-4">
             {loading ? (
               <div className="p-8 text-center text-xs font-semibold text-muted-foreground">
@@ -158,7 +143,7 @@ const AnnouncementsModal = ({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {detailedAnnouncement.is_pinned && (
-                        <Badge variant="outline" className="gap-1 border-blue-500/30 bg-blue-500/10 text-blue-500 font-semibold">
+                        <Badge variant="outline" className="gap-1 border-blue-700/50 bg-blue-500/10 text-blue-500 font-semibold">
                           <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
                           Закріплено
                         </Badge>
@@ -181,11 +166,11 @@ const AnnouncementsModal = ({
                     </span>
                   </div>
 
-                  <h2 className="text-base md:text-lg font-bold text-foreground leading-snug">
+                  <h2 className="text-base md:text-lg font-bold text-foreground leading-snug break-words">
                     {detailedAnnouncement.title}
                   </h2>
 
-                  <div className="text-xs md:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                  <div className="text-xs md:text-sm text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
                     {detailedAnnouncement.body}
                   </div>
 
@@ -222,7 +207,7 @@ const AnnouncementsModal = ({
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {item.is_pinned && (
-                          <Badge variant="outline" className="gap-1 border-blue-500/30 bg-blue-500/10 text-blue-500 font-semibold">
+                          <Badge variant="outline" className="gap-1 border-blue-700/50 bg-blue-500/10 text-blue-500 font-semibold">
                             <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
                             Закріплено
                           </Badge>
@@ -239,11 +224,11 @@ const AnnouncementsModal = ({
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-foreground leading-snug">
+                    <h3 className="text-sm font-bold text-foreground leading-snug break-words">
                       {item.title}
                     </h3>
 
-                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2 break-words leading-relaxed">
                       {item.body}
                     </p>
 
@@ -275,7 +260,7 @@ const AnnouncementsModal = ({
               })
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {!detailedAnnouncement && totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-card shrink-0">

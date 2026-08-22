@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Megaphone01Icon, PinIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
+import { sortAnnouncements } from "@/lib/announcementUtils";
 import type { Announcement } from "@/lib/types";
 import AnnouncementsModal from "@/components/AnnouncementsModal";
 
@@ -24,11 +25,7 @@ const AnnouncementsWidget = () => {
     fetchAnnouncements()
       .then((all) => {
         const active = all.filter((a) => !a.is_expired);
-        const sorted = [...active].sort((a, b) => {
-          if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-        setItems(sorted.slice(0, MAX_ITEMS));
+        setItems(sortAnnouncements(active).slice(0, MAX_ITEMS));
       })
       .finally(() => setLoaded(true));
   }, []);
@@ -43,19 +40,7 @@ const AnnouncementsWidget = () => {
     <>
       <Card className="border-border shadow-none bg-card">
         <CardContent>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-normal text-muted-foreground">Оголошення</h4>
-            {items.length > 0 && (
-              <Button
-                variant="ghost"
-                size="xs"
-                className="text-xs font-semibold text-primary h-auto p-0 hover:bg-transparent hover:underline"
-                onClick={() => openAnnouncement()}
-              >
-                Усі оголошення →
-              </Button>
-            )}
-          </div>
+          <h4 className="text-xs font-normal text-muted-foreground mb-3">Оголошення</h4>
 
           {loaded && items.length === 0 ? (
             <div className="border border-dashed border-border p-8 text-center">
