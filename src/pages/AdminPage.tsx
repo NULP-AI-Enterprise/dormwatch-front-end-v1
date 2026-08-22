@@ -44,7 +44,7 @@ const AdminPage = () => {
   }, []);
 
   const pendingCount = complaints.filter((c) => c.status === "pending").length;
-  const inProgressCount = complaints.filter((c) => c.status === "approved").length;
+  const inProgressCount = complaints.filter((c) => c.status === "in_progress").length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
 
   const recentComplaints = [...complaints]

@@ -144,6 +144,9 @@ ActionButton.displayName = "ActionButton";
 // The approve/reject/resolve/delete AlertDialog cluster used both on admin
 // complaint cards (AdminComplaintsPage) and in the ComplaintSidePanel. Extracted
 // so a change to any flow updates both places.
+//
+// Finalize (Вирішити) is legal only from На перевірці (review → resolved)
+// under the single status machine the server enforces via ADMIN_TRANSITIONS.
 const ComplaintAdminActions = ({
   complaint,
   onStatusChange,
@@ -156,7 +159,7 @@ const ComplaintAdminActions = ({
         <ConfirmAction
           trigger={<ActionButton icon={CheckmarkCircleIcon}>Схвалити</ActionButton>}
           title="Схвалити звернення?"
-          description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Активно".'}
+          description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Схвалено".'}
           confirmLabel="Схвалити"
           onConfirm={() => onStatusChange("approved")}
         />
@@ -170,7 +173,7 @@ const ComplaintAdminActions = ({
         />
       </>
     )}
-    {complaint.status === "approved" && (
+    {complaint.status === "review" && (
       <ConfirmAction
         trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
         title="Позначити як вирішене?"

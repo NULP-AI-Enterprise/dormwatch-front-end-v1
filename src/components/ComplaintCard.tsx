@@ -9,18 +9,14 @@ import {
   ChevronDownIcon,
   Message01Icon,
   Delete01Icon,
-  EditIcon,
-  AddIcon,
 } from "@hugeicons/core-free-icons";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ProgressStepper from "@/components/ProgressStepper";
-import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
-import { lifecycleStage } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
-import type { Complaint, Ticket } from "@/lib/types";
+import type { Complaint } from "@/lib/types";
 
 interface ComplaintCardProps {
   complaint: Complaint;
@@ -70,15 +66,6 @@ interface ComplaintCardProps {
   showAdminActions?: boolean;
   onStatusChange?: (id: number, status: string, reason?: string) => void;
   onAdminDelete?: (id: number) => void;
-
-  // Ticket controls (compact variant)
-  ticket?: Ticket | null;
-  showTicketControls?: boolean;
-  onTicketAction?: (complaint: Complaint, ticket?: Ticket) => void;
-
-  // Read-only ticket tracking strip (default variant, resident-facing): shows
-  // assignee + deadline when a work order exists. No edit affordance.
-  showTicketTracking?: boolean;
 }
 
 const Dot = ({ className }: { className?: string }) => (
@@ -113,14 +100,10 @@ const ComplaintCard = ({
   showAdminActions = false,
   onStatusChange,
   onAdminDelete,
-  ticket,
-  showTicketControls = false,
-  onTicketAction,
-  showTicketTracking = false,
 }: ComplaintCardProps) => {
   const p = complaint;
 
-  // ── Compact variant (ticket cards) ──────────────────────────────
+  // ── Compact variant ──────────────────────────────────────────────
   if (variant === "compact") {
     return (
       <Card className={cn("py-0 border-border shadow-none bg-card", cardClassName)}>
@@ -146,31 +129,6 @@ const ComplaintCard = ({
           <p className="text-sm text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">
             {p.description}
           </p>
-
-          {showTicketControls &&
-            (ticket ? (
-              <TicketInfo
-                variant="callout"
-                ticket={ticket}
-                tone="primary"
-                heading={`Тікет створено (ID: ${ticket.ticket_id})`}
-                action={
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => onTicketAction?.(p, ticket)}
-                    className="absolute top-2 right-2 text-primary hover:text-blue-600 dark:hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
-                  >
-                    <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
-                  </Button>
-                }
-              />
-            ) : (
-              <Button onClick={() => onTicketAction?.(p)}>
-                <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
-                Створити тікет
-              </Button>
-            ))}
         </div>
       </Card>
     );
@@ -197,7 +155,6 @@ const ComplaintCard = ({
     );
 
   const statusBadge = <StatusBadge status={p.status} />;
-
   const commentButton = commentsMode === "inline" && (
     <Button
       variant="ghost"
@@ -247,9 +204,10 @@ const ComplaintCard = ({
       <div className={bodyPadding}>
         {/* Unified header: status badge left, meta line right, bold title below.
             Same across admin / feed / reports — role-specific controls live in
-            the footer, not the header. */}
+            the footer, not the header. Cards showing the progress stepper omit
+            the badge: the stepper already names the current state. */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-          <div className="flex flex-wrap gap-2">{statusBadge}</div>
+          {!showProgress && <div className="flex flex-wrap gap-2">{statusBadge}</div>}
           <span className="text-xs font-normal text-muted-foreground shrink-0">
             {metaLine}
           </span>
@@ -310,17 +268,8 @@ const ComplaintCard = ({
         {showProgress && (
           <div className="mb-4">
             <Separator className="mb-4" />
-            <ProgressStepper stage={lifecycleStage(p.status)} />
+            <ProgressStepper status={p.status} />
           </div>
-        )}
-
-        {showTicketTracking && ticket && lifecycleStage(p.status) === "in_progress" && (
-          <TicketInfo
-            variant="callout"
-            ticket={ticket}
-            heading={`Звернення взято в роботу · Тікет #${ticket.ticket_id}`}
-            className="mb-4"
-          />
         )}
 
         <div className={footerClassName}>

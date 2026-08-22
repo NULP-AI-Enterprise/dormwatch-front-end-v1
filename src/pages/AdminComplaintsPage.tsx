@@ -4,17 +4,12 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
-  fetchApprovedComplaints,
   updateComplaintStatus,
   deleteProblem,
   fetchCategories,
-  fetchTickets,
-  fetchWorkers,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
-import { TicketCard } from "@/components/TicketCard";
-import TicketSidePanel from "@/components/TicketSidePanel";
 import {
   FilterSearchInput,
   StatusFilterSelect,
@@ -26,14 +21,6 @@ import EmptyState from "@/components/EmptyState";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +35,7 @@ import {
   Cancel01Icon,
   InboxIcon,
 } from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket, Worker, CategoryOption } from "@/lib/types";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -62,25 +49,14 @@ const AdminComplaintsPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const [ticketStatus, setTicketStatus] = useState("all");
-  const [ticketCategories, setTicketCategories] = useState<string[]>([]);
-
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [approvedForTickets, setApprovedForTickets] = useState<Complaint[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
-  const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
-  const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
-  const [ticketReadOnly, setTicketReadOnly] = useState(false);
-  const [workers, setWorkers] = useState<Worker[]>([]);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const buildings = useBuildings();
@@ -123,10 +99,6 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const loadTickets = async () => {
-    fetchTickets().then(setTickets);
-  };
-
   useEffect(() => {
     loadComplaints();
     loadCategories();
@@ -134,16 +106,6 @@ const AdminComplaintsPage = () => {
     window.addEventListener("adminComplaintUpdated", loadComplaints);
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
-
-  const [tab, setTab] = useState<"requests" | "tickets">("requests");
-
-  useEffect(() => {
-    if (tab === "tickets") {
-      loadTickets();
-      fetchApprovedComplaints().then(setApprovedForTickets);
-      fetchWorkers().then(setWorkers);
-    }
-  }, [tab]);
 
   const handleChangeStatus = async (id: number, newStatus: string, reason?: string) => {
     try {
@@ -161,13 +123,6 @@ const AdminComplaintsPage = () => {
     } catch (err) {
       console.warn('Failed to remove complaint', err);
     }
-  };
-
-  const openTicketSheet = (complaint: Complaint, ticket?: Ticket, readOnly = false) => {
-    setSelectedTicketComplaint(complaint);
-    setTicketToEdit(ticket || null);
-    setTicketReadOnly(readOnly);
-    setTicketSheetOpen(true);
   };
 
   const filteredComplaints = useMemo(
@@ -193,25 +148,6 @@ const AdminComplaintsPage = () => {
     [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
   );
 
-  const filteredTickets = useMemo(
-    () =>
-      approvedForTickets.filter((p) => {
-        const categoryOk =
-          ticketCategories.length === 0 ||
-          (p.category != null && ticketCategories.includes(p.category));
-        const searchOk =
-          ticketSearchQuery === "" ||
-          (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
-          (p.description || "").toLowerCase().includes(ticketSearchQuery.toLowerCase());
-        const hasTicket = tickets.some((t) => t.complaint === p.id);
-        let statusOk = true;
-        if (ticketStatus === "created") statusOk = hasTicket;
-        else if (ticketStatus === "not_created") statusOk = !hasTicket;
-        return categoryOk && searchOk && statusOk;
-      }),
-    [approvedForTickets, tickets, ticketCategories, ticketStatus, ticketSearchQuery]
-  );
-
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
@@ -231,19 +167,7 @@ const AdminComplaintsPage = () => {
       </Dialog>
 
       <div className="flex-1 flex flex-col min-h-screen">
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="px-6 pt-6">
-            <TabsList variant="line">
-              <TabsTrigger value="requests" className="text-xs font-semibold">
-                Звернення
-              </TabsTrigger>
-              <TabsTrigger value="tickets" className="text-xs font-semibold">
-                Тікети
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="requests" className="flex-1 p-6">
+          <div className="flex-1 p-6">
             <div className="grid lg:grid-cols-4 gap-8">
               <div className="lg:col-span-1 space-y-4">
                 <Card className="border-border shadow-none bg-card">
@@ -356,91 +280,7 @@ const AdminComplaintsPage = () => {
                   ))}
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="tickets" className="flex-1 p-6">
-            <div className="grid lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-4">
-                <Card className="border-border shadow-none bg-card">
-                  <CardContent>
-                    <div className="mb-4">
-                      <FilterSearchInput
-                        value={ticketSearchQuery}
-                        onChange={setTicketSearchQuery}
-                        placeholder="Пошук тікетів..."
-                      />
-                    </div>
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Статус тікету
-                    </h4>
-                    <Select value={ticketStatus} onValueChange={setTicketStatus}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Статус тікету" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі</SelectItem>
-                        <SelectItem value="not_created">Без тікета</SelectItem>
-                        <SelectItem value="created">З тікетом</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Категорії
-                    </h4>
-                    <CategoryFilterCombobox
-                      value={ticketCategories}
-                      onChange={setTicketCategories}
-                      categories={categories}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-3 space-y-6">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Тікети для підтверджених звернень
-                </h3>
-                {filteredTickets.length === 0 ? (
-                  <EmptyState
-                    icon={InboxIcon}
-                    title="Жодне звернення не відповідає фільтрам."
-                  />
-                ) : (
-                  <div className="grid lg:grid-cols-2 gap-4">
-                    {filteredTickets.map((p) => {
-                      const ticket = tickets.find((t) => t.complaint === p.id);
-                      // A complaint that already has a ticket → view it via the
-                      // real TicketCard. One without → keep the compact
-                      // ComplaintCard "Створити тікет" create flow.
-                      return ticket ? (
-                        <TicketCard
-                          key={p.id}
-                          ticket={ticket}
-                          complaint={p}
-                          readOnly={false}
-                          onOpen={(ro) => openTicketSheet(p, ticket, ro)}
-                        />
-                      ) : (
-                        <ComplaintCard
-                          key={p.id}
-                          complaint={p}
-                          variant="compact"
-                          showPriority
-                          showTicketControls
-                          ticket={ticket}
-                          onTicketAction={openTicketSheet}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
       </div>
 
       {selectedComplaint && (
@@ -454,31 +294,6 @@ const AdminComplaintsPage = () => {
           onStatusChange={loadComplaints}
           currentUserId={currentUser?.user}
           isAdmin={true}
-          onCreateTicket={(c) => {
-            setSheetOpen(false);
-            setSelectedComplaint(null);
-            openTicketSheet(c);
-          }}
-        />
-      )}
-
-      {selectedTicketComplaint && (
-        <TicketSidePanel
-          complaint={selectedTicketComplaint}
-          ticket={ticketToEdit}
-          open={ticketSheetOpen}
-          onOpenChange={(open) => {
-            setTicketSheetOpen(open);
-            if (!open) {
-              setSelectedTicketComplaint(null);
-              setTicketToEdit(null);
-              setTicketReadOnly(false);
-            }
-          }}
-          workers={workers}
-          allTickets={tickets}
-          onTicketChange={loadTickets}
-          readOnly={ticketReadOnly}
         />
       )}
     </>

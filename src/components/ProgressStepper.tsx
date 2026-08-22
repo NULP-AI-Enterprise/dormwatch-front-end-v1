@@ -1,65 +1,63 @@
 import { cn } from "@/lib/utils";
+import { STATUS_LABELS, statusColor } from "@/lib/complaintUtils";
+
+// The resident stepper over the single status machine:
+// Очікує → Схвалено → В роботі → На перевірці → Вирішено.
+// Terminal outcomes off the pipeline (Відхилено / Не прийнято / Скасовано)
+// render as one full-width marker instead of lighting up the path.
+const PIPELINE = ["pending", "approved", "in_progress", "review", "resolved"] as const;
 
 interface ProgressStepperProps {
-  stage: "submitted" | "in_progress" | "resolved" | "rejected";
+  status: string;
 }
 
-const stages = [
-  { key: "submitted", label: "Створено", accent: "text-blue-600 dark:text-blue-400" },
-  { key: "in_progress", label: "В роботі", accent: "text-blue-600 dark:text-blue-400" },
-  { key: "resolved", label: "Вирішено", accent: "text-green-500" },
-] as const;
+const ProgressStepper = ({ status }: ProgressStepperProps) => {
+  const s = String(status || "").toLowerCase();
+  const tone = statusColor(s);
 
-const ProgressStepper = ({ stage }: ProgressStepperProps) => {
-  // A rejected complaint is not in the normal pipeline — show a single terminal
-  // "Відхилено" state instead of lighting up the submitted→resolved steps.
-  if (stage === "rejected") {
+  if (!PIPELINE.includes(s as (typeof PIPELINE)[number])) {
     return (
       <div className="w-full">
         <div className="mb-1.5">
-          <span className="text-xs font-semibold text-red-500">Відхилено</span>
+          <span className={cn("text-xs font-semibold", tone.text)}>
+            {STATUS_LABELS[s] ?? s}
+          </span>
         </div>
         <div className="flex h-1.5 gap-0.5">
-          <div className="flex-1 h-full bg-red-500" />
+          <div className={cn("flex-1 h-full", tone.fill)} />
         </div>
       </div>
     );
   }
 
-  const currentIdx = stages.findIndex((s) => s.key === stage);
+  const currentIdx = PIPELINE.indexOf(s as (typeof PIPELINE)[number]);
 
   return (
     <div className="w-full">
       <div className="flex justify-between mb-1.5">
-        {stages.map((s, i) => (
+        {PIPELINE.map((key, i) => (
           <span
-            key={s.key}
+            key={key}
             className={cn(
               "text-xs font-semibold transition-colors",
-              i === currentIdx
-                ? s.accent
-                : i < currentIdx
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-muted-foreground"
+              i <= currentIdx ? statusColor(key).text : "text-muted-foreground"
             )}
           >
-            {s.label}
+            {STATUS_LABELS[key]}
           </span>
         ))}
       </div>
       <div className="flex h-1.5 gap-0.5">
-        {stages.map((s, i) => {
-          const isComplete = i < currentIdx;
+        {PIPELINE.map((key, i) => {
+          const isReached = i <= currentIdx;
           const isCurrent = i === currentIdx;
           return (
             <div
-              key={s.key}
+              key={key}
               className={cn(
                 "flex-1 h-full transition-all duration-500",
-                isComplete && "bg-blue-500",
-                isCurrent && stage === "in_progress" && "bg-blue-500 animate-pulse",
-                isCurrent && stage !== "in_progress" && "bg-blue-500",
-                !isComplete && !isCurrent && "bg-muted"
+                isReached ? tone.fill : "bg-muted",
+                isCurrent && key === "in_progress" && "animate-pulse"
               )}
             />
           );

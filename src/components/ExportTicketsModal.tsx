@@ -112,12 +112,12 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
             <TabsTrigger value="completed">Виконані</TabsTrigger>
           </TabsList>
 
-          {/* Tab 1 — per-worker ticket export (existing behavior). */}
+          {/* Tab 1 — per-worker work-order export (existing behavior). */}
           <TabsContent value="tickets" className="mt-4">
             <div className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                Оберіть працівника, для якого згенерувати звіт по нарядах. Тікети
-                сортуються за дедлайном.
+                Оберіть працівника, для якого згенерувати звіт по нарядах.
+                Наряди сортуються за дедлайном.
               </p>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-foreground">Виберіть працівника</label>
@@ -157,12 +157,12 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
             </div>
           </TabsContent>
 
-          {/* Tab 2 — completed-tickets report over a resolution date range. */}
+          {/* Tab 2 — completed-work report over a resolution date range. */}
           <TabsContent value="completed" className="mt-4">
             <div className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                Звіт про виконані звернення (вирішені та з призначеним нарядом) за
-                обраний період вирішення.
+                Звіт про виконані звернення (вирішені з призначеним працівником)
+                за обраний період вирішення.
               </p>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-foreground">Діапазон дат</label>

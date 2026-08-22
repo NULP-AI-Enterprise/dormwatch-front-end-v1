@@ -51,7 +51,17 @@ export interface Complaint {
   priority: string | null;
   createdAt: string | null;
   user_id: number | null;
-  rejectionReason?: string | null;
+  // Assignment + lifecycle (merged into the complaint server-side).
+  worker: Worker | null;
+  deadline: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  resolvedAt: string | null;
+  workNote: string;
+  rejectionReason: string;
+  reworkReason: string;
+  followUpOf: number | null;
+  root: number | null;
 }
 
 export interface Comment {
@@ -68,13 +78,6 @@ export interface Worker {
   full_name: string;
   company?: string;
   phone?: string;
-}
-
-export interface Ticket {
-  ticket_id: number;
-  complaint: number;
-  worker?: Worker;
-  deadline?: string;
 }
 
 // An admin-posted announcement. `building` null = global (all buildings);

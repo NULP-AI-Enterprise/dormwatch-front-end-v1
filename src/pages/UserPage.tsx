@@ -10,7 +10,7 @@ import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { isAdminUser, isActiveStatus } from "@/lib/complaintUtils";
-import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
+import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
 import { fetchAnnouncements } from "@/services/problemsApi";
 import type { Announcement } from "@/lib/types";
@@ -28,8 +28,8 @@ import {
 
 const UserPage = () => {
   const { user: currentUser } = useUser();
-  const { problems, loading, reload, complaintById, ticketByComplaint } =
-    useMyComplaintsAndTickets();
+  const { problems, loading, reload, complaintById } =
+    useMyComplaints();
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
@@ -178,8 +178,6 @@ const UserPage = () => {
                 descriptionFallback="—"
                 showProgress
                 footerLeft="id"
-                ticket={ticketByComplaint.get(p.id) ?? null}
-                showTicketTracking
                 onCardClick={() => openSheet(p.id)}
               />
             ))
@@ -225,7 +223,6 @@ const UserPage = () => {
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={reload}

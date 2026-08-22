@@ -7,12 +7,11 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
-interface CompletedReportTicket {
-  ticket_id: number;
-  worker: string | null;
-  worker_company: string | null;
-  worker_phone: string | null;
-  deadline: string | null;
+interface CompletedReportWorker {
+  worker_id: number;
+  full_name: string;
+  company: string;
+  phone: string;
 }
 
 interface CompletedReportRow {
@@ -23,7 +22,8 @@ interface CompletedReportRow {
   room: string | null;
   category: string | null;
   priority: string | null;
-  tickets: CompletedReportTicket[];
+  worker: CompletedReportWorker | null;
+  deadline: string | null;
 }
 
 const formatDate = (value: string | null) =>
@@ -60,21 +60,12 @@ const AdminCompletedReportPrintPage = () => {
     }
   };
 
-  // Render a worker cell: join the worker names of a complaint's tickets, with
-  // company/phone in parentheses when present. "Не призначено" if all unassigned.
-  const workersLabel = (tickets: CompletedReportTicket[]) => {
-    const named = tickets
-      .filter((t) => t.worker)
-      .map((t) => {
-        const extra = [t.worker_company, t.worker_phone].filter(Boolean).join(", ");
-        return extra ? `${t.worker} (${extra})` : t.worker;
-      });
-    return named.length ? named.join("; ") : "Не призначено";
-  };
-
-  const deadlinesLabel = (tickets: CompletedReportTicket[]) => {
-    const dls = tickets.filter((t) => t.deadline).map((t) => formatDate(t.deadline));
-    return dls.length ? dls.join("; ") : "Не визначено";
+  // Worker cell: name with company/phone in parentheses when present.
+  const workerLabel = (row: CompletedReportRow) => {
+    const w = row.worker;
+    if (!w) return "Не призначено";
+    const extra = [w.company, w.phone].filter(Boolean).join(", ");
+    return extra ? `${w.full_name} (${extra})` : w.full_name;
   };
 
   if (loading) {
@@ -202,10 +193,10 @@ const AdminCompletedReportPrintPage = () => {
                     <div className="text-gray-600">{row.room || "—"}</div>
                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs">
-                    {workersLabel(row.tickets)}
+                    {workerLabel(row)}
                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs font-semibold text-red-600">
-                    {deadlinesLabel(row.tickets)}
+                    {row.deadline ? formatDate(row.deadline) : "Не визначено"}
                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
                     {formatDate(row.resolved_at)}

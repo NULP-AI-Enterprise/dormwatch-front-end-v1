@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Combobox,
   ComboboxContent,
@@ -27,28 +28,28 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
-import { updateComplaintStatus, deleteProblem, updateComplaintPriority, fetchCategories, fetchJson, resolveMyComplaint } from "@/services/problemsApi";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
-import { priorityBadgeClass, priorityLabel, PRIORITY_OPTIONS, lifecycleStage } from "@/lib/complaintUtils";
+  updateComplaintStatus,
+  deleteProblem,
+  updateComplaintPriority,
+  updateComplaintAssignment,
+  fetchCategories,
+  fetchWorkers,
+  fetchJson,
+} from "@/services/problemsApi";
+import {
+  priorityBadgeClass,
+  priorityLabel,
+  PRIORITY_OPTIONS,
+  TERMINAL_STATUSES,
+} from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
-import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Ticket01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import type { Complaint, CategoryOption, Ticket } from "@/lib/types";
+import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import type { Complaint, CategoryOption, Worker } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -57,10 +58,6 @@ interface ComplaintSidePanelProps {
   onStatusChange: () => void;
   currentUserId?: number | string;
   isAdmin: boolean;
-  onCreateTicket?: (complaint: Complaint) => void;
-  // Read-only work-order info surfaced to the complaint owner (assignee /
-  // deadline). Assigning stays admin-only in the admin ticket flow.
-  ticket?: Ticket | null;
 }
 
 const ComplaintSidePanel = ({
@@ -70,8 +67,6 @@ const ComplaintSidePanel = ({
   onStatusChange,
   currentUserId,
   isAdmin,
-  onCreateTicket,
-  ticket,
 }: ComplaintSidePanelProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const isPrioritySelectOpen = useRef(false);
@@ -83,11 +78,19 @@ const ComplaintSidePanel = ({
   const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setCategories([{ category_id: 0, name: "Помилка завантаження" }]));
   }, []);
+
+  // Assignment targets for the admin panel (worker + deadline controls).
+  useEffect(() => {
+    if (isAdmin && open) {
+      fetchWorkers().then(setWorkers).catch(() => setWorkers([]));
+    }
+  }, [isAdmin, open]);
 
   useEffect(() => {
     if (!editPhotoFile) {
@@ -128,19 +131,8 @@ const ComplaintSidePanel = ({
     }
   };
 
-  // The owner marks their own request resolved once the work is done. Backed by
-  // the owner-scoped endpoint; admins keep their own resolve via ComplaintAdminActions.
-  const handleOwnerResolve = async () => {
-    try {
-      await resolveMyComplaint(complaint.id);
-      window.dispatchEvent(new CustomEvent("complaintUpdated"));
-      onStatusChange();
-    } catch (err) {
-      setError("Не вдалося позначити вирішеним. Спробуйте ще раз.");
-      console.warn('Failed to resolve own complaint', err);
-    }
-  };
-
+  // The owner accepts or rejects finished work from the review state; those
+  // controls land with the resident stepper work (step 04).
   const handlePriorityChange = async (newPriority: string) => {
     setEditPriority(newPriority);
     try {
@@ -150,6 +142,32 @@ const ComplaintSidePanel = ({
     } catch (err) {
       setError("Не вдалося змінити пріоритет. Спробуйте ще раз.");
       console.warn('Failed to change complaint priority', err);
+    }
+  };
+
+  const handleWorkerChange = async (raw: string) => {
+    try {
+      await updateComplaintAssignment(complaint.id, {
+        workerId: raw === "none" ? null : Number(raw),
+      });
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
+      onStatusChange();
+    } catch (err) {
+      setError("Не вдалося призначити виконавця. Спробуйте ще раз.");
+      console.warn('Failed to assign worker', err);
+    }
+  };
+
+  const handleDeadlineChange = async (date?: Date) => {
+    try {
+      await updateComplaintAssignment(complaint.id, {
+        deadline: date ? date.toISOString() : null,
+      });
+      window.dispatchEvent(new CustomEvent("complaintUpdated"));
+      onStatusChange();
+    } catch (err) {
+      setError("Не вдалося зберегти дедлайн. Спробуйте ще раз.");
+      console.warn('Failed to save deadline', err);
     }
   };
 
@@ -292,7 +310,7 @@ const ComplaintSidePanel = ({
                   {categoryLabel}
                 </span>
                 <span className="w-1 h-1 bg-border" />
-                {isAdmin && !["resolved", "rejected"].includes(complaint.status) ? (
+                {isAdmin && !TERMINAL_STATUSES.includes(complaint.status) ? (
                   <Select
                     value={complaint.priority ?? undefined}
                     onValueChange={handlePriorityChange}
@@ -393,48 +411,6 @@ const ComplaintSidePanel = ({
             </Button>
           )}
 
-          {/* Owner-facing read-only work-order tracking. Shown while in progress
-              and after resolution (informational: who handled it, deadline), but
-              not for a rejected request — there is no work order to track. Each
-              block owns its leading Separator so rules never double up. */}
-          {!isAdmin && isOwner && ticket && lifecycleStage(complaint.status) !== "rejected" && (
-            <>
-              <Separator />
-              <div>
-                <p className="text-xs font-semibold text-foreground mb-2">Відстеження виконання</p>
-                <TicketInfo variant="detail" ticket={ticket} />
-              </div>
-            </>
-          )}
-
-          {/* Owner marks their own active (approved == backend published) request
-              resolved once the work is done. Admin keeps its own resolve action. */}
-          {!isAdmin && isOwner && complaint.status === "approved" && (
-            <>
-              <Separator />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button>
-                    <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-3 mr-1" strokeWidth={2} />
-                    Позначити вирішеним
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Позначити вирішеним?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Підтвердьте, що проблему усунено. Звернення перейде в статус «Вирішено».
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleOwnerResolve}>Вирішено</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          )}
-
           {isAdmin && (
             <>
               <Separator />
@@ -446,18 +422,38 @@ const ComplaintSidePanel = ({
                     onDelete={handleDelete}
                     hideDeleteWhenClosed
                   />
-                  {onCreateTicket && complaint.status === "approved" && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        onOpenChange(false);
-                        onCreateTicket(complaint);
-                      }}
+                </div>
+
+                {/* Assignment lives on the complaint itself now — the same
+                    PATCH endpoint backs the print/export surfaces. */}
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">Виконавець</label>
+                    <Select
+                      value={complaint.worker ? String(complaint.worker.worker_id) : "none"}
+                      onValueChange={handleWorkerChange}
                     >
-                      <HugeiconsIcon icon={Ticket01Icon} className="size-3 mr-1" strokeWidth={2} />
-                      Створити тікет
-                    </Button>
-                  )}
+                      <SelectTrigger className="w-full h-8 text-xs">
+                        <SelectValue placeholder="Не призначено" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Не призначено</SelectItem>
+                        {workers.map((w) => (
+                          <SelectItem key={w.worker_id} value={String(w.worker_id)}>
+                            {w.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground mb-1 block">Дедлайн</label>
+                    <DatePicker
+                      date={complaint.deadline ? new Date(complaint.deadline) : undefined}
+                      setDate={(d) => handleDeadlineChange(d ?? undefined)}
+                      placeholder="Не визначено"
+                    />
+                  </div>
                 </div>
               </div>
             </>

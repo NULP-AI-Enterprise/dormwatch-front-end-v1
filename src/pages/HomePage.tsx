@@ -102,7 +102,7 @@ const HomePage = () => {
               <div className="bg-card border border-border p-4">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs text-muted-foreground font-normal">Опалення</span>
-                  <span className={`px-2 py-0.5 ${statusBadgeClass("approved")} text-xs font-semibold`}>В роботі</span>
+                  <span className={`px-2 py-0.5 ${statusBadgeClass("in_progress")} text-xs font-semibold`}>В роботі</span>
                 </div>
                 <div className="w-1/2 h-3 bg-muted mb-2" />
                 <div className="w-full h-2 bg-muted mb-1" />

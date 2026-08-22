@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ChevronDownIcon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
-import { useMyTicketMap } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,8 +37,6 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const admin = isAdminUser(user);
-  const ticketByComplaint = useMyTicketMap();
-
   const handleLogout = async () => {
     await logoutUser();
     window.location.href = "/auth";
@@ -47,7 +44,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
 
   // Single tab spine (the nav is the only tab structure — no in-page tabs).
   // The primary "Створити звернення" CTA lives front-and-center in page bodies,
-  // not here. The resident tabs (/user, /my-complaints, /my-tickets) are
+  // not here. The resident tabs (/user, /my-complaints) are
   // blockAdmin routes, so they must NOT be shown to an admin who reaches this
   // layout via /dashboard — they'd bounce straight back to /admin. Admins get
   // only the two routes they can actually stay on.
@@ -60,7 +57,6 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
         { to: "/user", label: "Огляд" },
         { to: "/my-complaints", label: "Мої звернення" },
         { to: "/dashboard", label: "Всі звернення" },
-        { to: "/my-tickets", label: "Мої тікети" },
       ];
 
   return (
@@ -119,7 +115,6 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
       {selectedComplaint && (
         <ComplaintSidePanel
           complaint={selectedComplaint}
-          ticket={ticketByComplaint.get(selectedComplaint.id) ?? null}
           open={!!selectedComplaint}
           onOpenChange={(open) => {
             if (!open) setSelectedComplaint(null);

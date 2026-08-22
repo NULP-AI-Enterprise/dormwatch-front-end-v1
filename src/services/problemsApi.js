@@ -470,14 +470,14 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
 function normalizeComplaint(raw) {
   if (!raw) return null;
 
-  // A record with no real id is unusable — every action (delete/status/ticket)
+  // A record with no real id is unusable — every action (delete/status)
   // targets its id, so a fabricated id would silently 404. Skip it entirely.
   const realId = raw.id ?? raw.complaint_id;
   if (realId === undefined || realId === null) return null;
 
-  let status = raw.status || "pending";
-  if (status === "published") status = "approved";
-  if (status === "denied") status = "rejected";
+  // The server speaks the canonical slugs (pending/approved/in_progress/...)
+  // byte-identical with STATUS_LABELS in lib/complaintUtils.ts — no aliasing.
+  const status = raw.status || "pending";
 
   let safeRoom = "";
   let safeFloor = "";
@@ -506,7 +506,7 @@ function normalizeComplaint(raw) {
     id: realId,
     title: raw.title ?? "Без назви",
     description: raw.description ?? "",
-    // null (not a fabricated label) when the payload has no category — the UI
+    // null when the payload has no category/priority/timestamp — the UI
     // omits the chip rather than showing the literal word "Категорія".
     category: raw.category?.name ?? raw.category ?? null,
     building: safeBuilding,
@@ -518,6 +518,18 @@ function normalizeComplaint(raw) {
     status: status,
     // null when unset — the UI omits the badge instead of inventing "medium".
     priority: raw.priority ?? null,
+    // Assignment + lifecycle (merged into Complaint on the server): the
+    // assigned contractor object, schedule, stamps, and re-file chain links.
+    worker: raw.worker ?? null,
+    deadline: raw.deadline ?? null,
+    startedAt: raw.started_at ?? null,
+    finishedAt: raw.finished_at ?? null,
+    resolvedAt: raw.resolved_at ?? null,
+    workNote: raw.work_note || "",
+    rejectionReason: raw.rejection_reason || "",
+    reworkReason: raw.rework_reason || "",
+    followUpOf: raw.follow_up_of ?? null,
+    root: raw.root ?? null,
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
@@ -616,12 +628,8 @@ export async function fetchAllComplaints(filters = {}) {
   return fetchComplaints({ filters });
 }
 
-export async function fetchApprovedComplaints(filters = {}) {
-  return fetchComplaints({ status: "approved", filters });
-}
-
-// The public board feed: active ("approved" = published) plus completed
-// ("resolved") issues. Matches the server's non-admin visibility rule; excludes
+// The public board feed: active ("approved") plus completed ("resolved")
+// issues. Matches the server's non-admin visibility rule; excludes
 // pending/rejected. Admins get every status from the API but this same cut keeps
 // the public dashboard's meaning consistent across roles.
 export async function fetchPublicComplaints(filters = {}) {
@@ -633,33 +641,36 @@ export async function deleteProblem(id) {
   return true;
 }
 
+// Admin lifecycle moves go through the single complaint PATCH. The server
+// speaks the canonical slugs directly — no published/denied translation.
 export async function updateComplaintStatus(id, newStatus, rejectionReason = "") {
-  let backendStatus = newStatus;
-  if (newStatus === "approved") backendStatus = "published";
-  if (newStatus === "rejected") backendStatus = "denied";
-
-  const formData = new FormData();
-  formData.append("status", backendStatus);
-  if (rejectionReason) {
-    formData.append("rejection_reason", rejectionReason);
-  }
-
-  await fetchJson(`/admin/complaints/${id}/status/`, {
+  const body = { status: newStatus };
+  if (rejectionReason) body.rejection_reason = rejectionReason;
+  await fetchJson(`/admin/complaints/${id}/`, {
     method: "PATCH",
-    body: formData,
+    body,
   });
   return { id, status: newStatus, rejectionReason };
 }
 
 export async function updateComplaintPriority(id, newPriority) {
-  const formData = new FormData();
-  formData.append("priority", newPriority);
-
-  await fetchJson(`/admin/complaints/${id}/status/`, {
+  await fetchJson(`/admin/complaints/${id}/`, {
     method: "PATCH",
-    body: formData,
+    body: { priority: newPriority },
   });
   return { id, priority: newPriority };
+}
+
+// Admin assignment surface (worker + deadline on the complaint itself).
+// workerId null clears the assignment; deadline null clears the deadline.
+export async function updateComplaintAssignment(id, { workerId, deadline } = {}) {
+  const body = {};
+  if (workerId !== undefined) body.worker_id = workerId;
+  if (deadline !== undefined) body.deadline = deadline;
+  return await fetchJson(`/admin/complaints/${id}/`, {
+    method: "PATCH",
+    body,
+  });
 }
 
 export async function fetchComments(complaintId) {
@@ -679,10 +690,10 @@ export async function fetchComments(complaintId) {
   }
 }
 
-// ------------------ WORKERS & TICKETS ------------------
+// ------------------ WORKERS ------------------
 
-// External contractors assignable to tickets (managed in Admin Settings). Also
-// serves the ticket assignment dropdown.
+// External contractors assignable to complaints (managed in Admin Settings).
+// Also serves the complaint assignment dropdown in the admin panel.
 export async function fetchWorkers() {
   try {
       const data = await fetchJson("/admin/workers/");
@@ -746,22 +757,10 @@ export async function updateUser(userId, fields) {
   });
 }
 
-export async function fetchTickets(filters = {}) {
-  try {
-      const q = buildQueryParams(filters, ["worker", "priority", "date_from", "date_to"]);
-
-      const data = await fetchJson(`/tickets/${q}`);
-      if (Array.isArray(data)) return data;
-  } catch (e) {
-      console.warn("Failed to fetch tickets", e);
-  }
-  return [];
-}
-
-// Admin completed-tickets report: resolved complaints that have a ticket,
+// Admin completed-work report: resolved complaints with an assigned worker,
 // filtered by resolution date within [date_from, date_to] (inclusive by day).
 // Backed by GET /admin/reports/completed/. Returns the raw report rows
-// (complaint title, resolved_at, building/room, category, tickets[]).
+// (complaint title, resolved_at, building/room, category, worker, deadline).
 export async function fetchCompletedReport({ date_from, date_to } = {}) {
   try {
     const params = new URLSearchParams();
@@ -774,59 +773,6 @@ export async function fetchCompletedReport({ date_from, date_to } = {}) {
     console.warn("Failed to fetch completed report", e);
   }
   return [];
-}
-
-// Read-only: the tickets (work orders) opened for the current resident's own
-// complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
-// (that stays admin-gated via fetchTickets).
-export async function fetchMyTickets() {
-  try {
-      const data = await fetchJson("/me/tickets/");
-      if (Array.isArray(data)) return data;
-  } catch (e) {
-      console.warn("Failed to fetch my tickets", e);
-  }
-  return [];
-}
-
-/**
- * @param {any} complaintId
- * @param {any} workerId
- * @param {string | null} [deadline]
- */
-export async function createTicket(complaintId, workerId, deadline = null) {
-  const payload = {
-      complaint: complaintId,
-      worker: workerId,
-      deadline: deadline
-  };
-  return await fetchJson("/tickets/", {
-      method: "POST",
-      body: payload
-  });
-}
-
-/**
- * @param {any} ticketId
- * @param {any} workerId
- * @param {string | null} [deadline]
- */
-export async function updateTicket(ticketId, workerId, deadline = null) {
-  const payload = {};
-  if (workerId !== undefined) payload.worker = workerId;
-  if (deadline !== undefined) payload.deadline = deadline;
-
-  return await fetchJson(`/tickets/${ticketId}/`, {
-      method: "PATCH",
-      body: payload
-  });
-}
-
-// The complaint owner marks their own request resolved. Backed by
-// PATCH /me/complaints/<id>/resolve/ (owner-only, published -> resolved).
-export async function resolveMyComplaint(complaintId) {
-  await fetchJson(`/me/complaints/${complaintId}/resolve/`, { method: "PATCH" });
-  return { id: complaintId, status: "resolved" };
 }
 
 export async function postComment(complaintId, text) {

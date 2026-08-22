@@ -18,7 +18,7 @@ import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
-import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
+import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
 import {
   AlertDialog,
@@ -36,7 +36,7 @@ import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons"
 const MyComplaintsPage = () => {
   const { user: currentUser } = useUser();
   const comments = useCommentToggle();
-  const { problems, loading, reload, ticketByComplaint } = useMyComplaintsAndTickets();
+  const { problems, loading, reload } = useMyComplaints();
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -91,7 +91,6 @@ const MyComplaintsPage = () => {
   if (loading) return <PageSpinner />;
 
   const selectedProblem = selectedId != null ? problems.find((p) => p.id === selectedId) ?? null : null;
-  const selectedTicket = selectedId != null ? ticketByComplaint.get(selectedId) ?? null : null;
 
   const openSheet = (id: number) => {
     setSelectedId(id);
@@ -171,8 +170,6 @@ const MyComplaintsPage = () => {
                 descriptionFallback="—"
                 onCardClick={() => openSheet(p.id)}
                 showProgress
-                ticket={ticketByComplaint.get(p.id) ?? null}
-                showTicketTracking
                 showPhoto
                 photoHeight="h-44"
                 footerClassName="flex items-center justify-between pt-4"
@@ -199,7 +196,6 @@ const MyComplaintsPage = () => {
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={selectedTicket}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={reload}

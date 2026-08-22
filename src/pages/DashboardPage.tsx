@@ -42,16 +42,12 @@ import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useBuildings } from "@/hooks/useBuildings";
-import { useMyTicketMap } from "@/hooks/useMyComplaintsAndTickets";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
-  // Owner's own work orders, so a resident opening their own complaint here sees
-  // the same read-only tracking block as on /user and /my-complaints.
-  const myTicketByComplaint = useMyTicketMap();
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   // All filters (building/priority/category/search) are multi-select and filtered
   // client-side against the full approved set, matching AdminPage/AdminComplaintsPage/
@@ -308,7 +304,6 @@ const DashboardPage = () => {
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={myTicketByComplaint.get(selectedProblem.id) ?? null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={() => {

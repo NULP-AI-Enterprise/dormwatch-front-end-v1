@@ -1,18 +1,83 @@
-export const statusBadgeClass = (status: string) => {
-  const s = String(status || "").toLowerCase();
-  if (s === "pending") return "text-yellow-500 bg-yellow-500/10 border-yellow-700/50";
-  if (s === "rejected") return "text-red-500 bg-red-500/10 border-red-700/50";
-  if (s === "resolved") return "text-green-500 bg-green-500/10 border-green-700/50";
-  if (s === "approved") return "text-blue-500 bg-blue-500/10 border-blue-700/50";
-  return "text-muted-foreground bg-card border-border";
-};
+// The canonical lifecycle vocabulary — slugs byte-identical with the server's
+// COMPLAINT_STATUS choices (models.py), one row per state. Pipeline order
+// (the resident stepper) first, then the terminal states. Unknown codes fall
+// back to their raw value / the neutral style.
+export const STATUS_OPTIONS = [
+  "pending",
+  "approved",
+  "in_progress",
+  "review",
+  "resolved",
+  "rejected",
+  "not_accepted",
+  "withdrawn",
+] as const;
+
+export const TERMINAL_STATUSES = ["resolved", "rejected", "not_accepted", "withdrawn"];
 
 export const STATUS_LABELS: Record<string, string> = {
   pending: "Очікує",
-  approved: "Активно",
-  rejected: "Відхилено",
+  approved: "Схвалено",
+  in_progress: "В роботі",
+  review: "На перевірці",
   resolved: "Вирішено",
+  rejected: "Відхилено",
+  not_accepted: "Не прийнято",
+  withdrawn: "Скасовано",
 };
+
+// One color row per state, shared by every surface that paints a state:
+// badge chip, accent label text, progress-bar fill.
+const NEUTRAL_COLOR = {
+  badge: "text-muted-foreground bg-card border-border",
+  text: "text-muted-foreground",
+  fill: "bg-muted",
+};
+
+const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string }> = {
+  pending: {
+    badge: "text-yellow-500 bg-yellow-500/10 border-yellow-700/50",
+    text: "text-yellow-500",
+    fill: "bg-yellow-500",
+  },
+  approved: {
+    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
+    text: "text-blue-600 dark:text-blue-400",
+    fill: "bg-blue-500",
+  },
+  in_progress: {
+    badge: "text-violet-500 bg-violet-500/10 border-violet-700/50",
+    text: "text-violet-600 dark:text-violet-400",
+    fill: "bg-violet-500",
+  },
+  review: {
+    badge: "text-cyan-500 bg-cyan-500/10 border-cyan-700/50",
+    text: "text-cyan-600 dark:text-cyan-400",
+    fill: "bg-cyan-500",
+  },
+  resolved: {
+    badge: "text-green-500 bg-green-500/10 border-green-700/50",
+    text: "text-green-500",
+    fill: "bg-green-500",
+  },
+  rejected: {
+    badge: "text-red-500 bg-red-500/10 border-red-700/50",
+    text: "text-red-500",
+    fill: "bg-red-500",
+  },
+  not_accepted: {
+    badge: "text-orange-500 bg-orange-500/10 border-orange-700/50",
+    text: "text-orange-500",
+    fill: "bg-orange-500",
+  },
+  withdrawn: NEUTRAL_COLOR,
+};
+
+export const statusBadgeClass = (status: string | null | undefined) =>
+  STATUS_COLORS[String(status || "").toLowerCase()]?.badge ?? NEUTRAL_COLOR.badge;
+
+export const statusColor = (status: string | null | undefined) =>
+  STATUS_COLORS[String(status || "").toLowerCase()] ?? NEUTRAL_COLOR;
 
 export const PRIORITY_LABELS: Record<string, string> = {
   high: "Високий",
@@ -53,26 +118,11 @@ export const priorityLabel = (priority?: string | null) => {
   return PRIORITY_LABELS[p] || priority || "—";
 };
 
-// Lifecycle stage of a complaint, shared by the progress stepper, the ticket
-// tracking strips, and the "Мої тікети" state filter so they never disagree.
-// pending → submitted, approved → in_progress, resolved/rejected are terminal.
-export type LifecycleStage = "submitted" | "in_progress" | "resolved" | "rejected";
-
-export const lifecycleStage = (status: string | null | undefined): LifecycleStage => {
-  const s = String(status || "").toLowerCase();
-  if (s === "resolved") return "resolved";
-  if (s === "rejected") return "rejected";
-  if (s === "approved") return "in_progress";
-  return "submitted";
-};
-
-// "Active" = still on the working pipeline (not resolved, not rejected). Used
-// for the "Активні" stat and to decide whether a work-order tracking strip
-// should present the complaint as ongoing.
-export const isActiveStatus = (status: string | null | undefined) => {
-  const stage = lifecycleStage(status);
-  return stage === "submitted" || stage === "in_progress";
-};
+// "Active" = still on the pipeline (not in any terminal state). Used for the
+// "Активні" stat and to decide whether a work-order tracking strip should
+// present the complaint as ongoing.
+export const isActiveStatus = (status: string | null | undefined) =>
+  !TERMINAL_STATUSES.includes(String(status || "").toLowerCase());
 
 export const isAdminUser = (user: { role?: { role_name?: string } } | null | undefined) =>
   !!(
