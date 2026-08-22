@@ -37,6 +37,7 @@ import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
 import AnnouncementsWidget from "@/components/AnnouncementsWidget";
+import PhoneNumbersWidget from "@/components/PhoneNumbersWidget";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
@@ -243,6 +244,7 @@ const DashboardPage = () => {
             </Card>
 
             <AnnouncementsWidget />
+            <PhoneNumbersWidget />
           </div>
           <div className="lg:col-span-3 space-y-4">
             {filteredProblems.map((problem) => {

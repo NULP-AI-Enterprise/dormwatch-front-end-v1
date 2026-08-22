@@ -6,7 +6,6 @@ import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
 import AdminResidentsPage from "@/pages/AdminResidentsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
-import AnnouncementsPage from "@/pages/AnnouncementsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
 import MyComplaintsPage from "@/pages/MyComplaintsPage";
 import MyTicketsPage from "@/pages/MyTicketsPage";
@@ -59,16 +58,6 @@ function App() {
           <ProtectedRoute blockAdmin>
             <StudentLayout>
               <MyTicketsPage />
-            </StudentLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/announcements"
-        element={
-          <ProtectedRoute blockAdmin>
-            <StudentLayout>
-              <AnnouncementsPage />
             </StudentLayout>
           </ProtectedRoute>
         }

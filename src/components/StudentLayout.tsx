@@ -1,28 +1,38 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronDownIcon } from "@hugeicons/core-free-icons";
+import { ChevronDownIcon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useMyTicketMap } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
-import { SettingsModal } from "@/components/SettingsModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import type { Complaint } from "@/lib/types";
+import { logoutUser } from "@/services/problemsApi";
 
 const StudentLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useUser();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
 
   const admin = isAdminUser(user);
   const ticketByComplaint = useMyTicketMap();
+
+  const handleLogout = async () => {
+    await logoutUser();
+    window.location.href = "/auth";
+  };
 
   // Single tab spine (the nav is the only tab structure — no in-page tabs).
   // The primary "Створити звернення" CTA lives front-and-center in page bodies,
@@ -40,7 +50,6 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
         { to: "/my-complaints", label: "Мої звернення" },
         { to: "/dashboard", label: "Всі звернення" },
         { to: "/my-tickets", label: "Мої тікети" },
-        { to: "/announcements", label: "Оголошення" },
       ];
 
   return (
@@ -71,10 +80,20 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
             <ThemeToggle />
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
 
-            <Button variant="ghost" onClick={() => setIsSettingsOpen(true)} className="h-auto gap-2 py-1.5">
-              <UserAvatar user={user} size="sm" fallback="Г" />
-              <HugeiconsIcon icon={ChevronDownIcon} className="size-4 text-muted-foreground" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-auto gap-2 py-1.5 cursor-pointer">
+                  <UserAvatar user={user} size="sm" fallback="Г" />
+                  <HugeiconsIcon icon={ChevronDownIcon} className="size-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
+                  <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+                  <span>Вийти</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </nav>
@@ -82,8 +101,6 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {children}
       </main>
-
-      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       {selectedComplaint && (
         <ComplaintSidePanel
           complaint={selectedComplaint}
