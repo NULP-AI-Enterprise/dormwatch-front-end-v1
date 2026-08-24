@@ -50,7 +50,9 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   // only the two routes they can actually stay on.
   const navItems = admin
     ? [
-        { to: "/dashboard", label: "Всі звернення" },
+        // Disambiguated from the admin's moderation queue: this is the public
+        // board, not the work surface.
+        { to: "/dashboard", label: "Дошка звернень" },
         { to: "/admin", label: "Адмін-панель" },
       ]
     : [

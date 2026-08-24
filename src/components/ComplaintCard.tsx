@@ -11,7 +11,7 @@ import {
   Delete01Icon,
 } from "@hugeicons/core-free-icons";
 import { resolveImageUrl } from "@/services/imageUtils";
-import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
@@ -63,9 +63,9 @@ interface ComplaintCardProps {
   deleteHoverReveal?: boolean; // true = dashboard absolute reveal; false = user bar icon
   onDelete?: (id: number) => void;
 
-  // Admin actions (approve / reject / resolve + delete dialog)
+  // Admin actions (triage cluster + delete dialog)
   showAdminActions?: boolean;
-  onStatusChange?: (id: number, status: string, reason?: string) => void;
+  onAdminPatch?: (id: number, body: Record<string, unknown>) => void;
   onAdminDelete?: (id: number) => void;
 
   // Resident lifecycle (accept/reject finished work, withdraw, re-file)
@@ -103,7 +103,7 @@ const ComplaintCard = ({
   deleteHoverReveal = false,
   onDelete,
   showAdminActions = false,
-  onStatusChange,
+  onAdminPatch,
   onAdminDelete,
   showResidentActions = false,
   onResidentChange,
@@ -228,7 +228,12 @@ const ComplaintCard = ({
             the footer, not the header. Cards showing the progress stepper omit
             the badge: the stepper already names the current state. */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-          {!showProgress && <div className="flex flex-wrap gap-2">{statusBadge}</div>}
+          {!showProgress && (
+            <div className="flex flex-wrap gap-2">
+              {statusBadge}
+              <OverdueBadge complaint={p} />
+            </div>
+          )}
           <span className="text-xs font-normal text-muted-foreground shrink-0">
             {metaLine}
           </span>
@@ -251,13 +256,6 @@ const ComplaintCard = ({
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
           {p.description || descriptionFallback}
         </p>
-
-        {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
-            <span className="font-bold text-destructive block mb-1">Причина відхилення:</span>
-            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{p.rejectionReason}</p>
-          </div>
-        )}
 
         {showPhoto && p.photoUrl && (
           <div
@@ -328,7 +326,7 @@ const ComplaintCard = ({
             {showAdminActions && (
               <ComplaintAdminActions
                 complaint={p}
-                onStatusChange={(status, reason) => onStatusChange?.(p.id, status, reason)}
+                onPatch={(body) => onAdminPatch?.(p.id, body)}
                 onDelete={() => onAdminDelete?.(p.id)}
               />
             )}

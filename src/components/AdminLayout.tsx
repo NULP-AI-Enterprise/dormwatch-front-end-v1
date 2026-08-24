@@ -14,7 +14,7 @@ import UserAvatar from "@/components/UserAvatar";
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
   "/admin/residents": "Мешканці",
-  "/admin/complaints": "Всі звернення",
+  "/admin/complaints": "Керування зверненнями",
   "/admin/announcements": "Оголошення",
   "/admin/settings": "Налаштування",
 };
@@ -36,7 +36,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
-    { name: "Всі звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
+    { name: "Керування зверненнями", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];

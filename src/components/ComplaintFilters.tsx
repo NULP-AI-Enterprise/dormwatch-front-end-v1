@@ -137,6 +137,27 @@ export function PriorityFilterSelect({ value, onChange }: MultiFilterProps) {
   );
 }
 
+type WorkerFilterSelectProps = {
+  value: string[];
+  onChange: (value: string[]) => void;
+  workers: { worker_id: number; full_name: string }[];
+};
+
+// Admin complaints list filter over assigned contractors — parity with what
+// the resident's list had. Operates over full_name so the predicate stays
+// `selected.includes(p.worker.full_name)`.
+export function WorkerFilterSelect({ value, onChange, workers }: WorkerFilterSelectProps) {
+  const names = workers.map((w) => w.full_name);
+  return (
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={names}
+      placeholder="Виконавці..."
+    />
+  );
+}
+
 type BuildingFilterSelectProps = MultiFilterProps & {
   buildings: Building[];
 };

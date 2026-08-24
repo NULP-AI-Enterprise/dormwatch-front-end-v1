@@ -124,6 +124,22 @@ export const priorityLabel = (priority?: string | null) => {
 export const isActiveStatus = (status: string | null | undefined) =>
   !TERMINAL_STATUSES.includes(String(status || "").toLowerCase());
 
+// Overdue = the server's single flag ("В роботі" past its deadline): trust the
+// payload flag when the list was annotated, fall back to computing it locally
+// so surfaces that render a stale/unannotated object still agree with the
+// badge, filter, and notification. One definition: its only client-side home.
+export const complaintIsOverdue = (c: {
+  status?: string | null;
+  deadline?: string | null;
+  isOverdue?: boolean;
+}) =>
+  c.isOverdue ||
+  (c.status === "in_progress" &&
+    !!c.deadline &&
+    new Date(c.deadline) < new Date());
+
+export const OVERDUE_LABEL = "Прострочено";
+
 export const isAdminUser = (user: { role?: { role_name?: string } } | null | undefined) =>
   !!(
     user?.role &&

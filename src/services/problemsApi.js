@@ -530,6 +530,7 @@ function normalizeComplaint(raw) {
     reworkReason: raw.rework_reason || "",
     followUpOf: raw.follow_up_of ?? null,
     root: raw.root ?? null,
+    isOverdue: !!raw.is_overdue,
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
@@ -670,24 +671,25 @@ export async function refileComplaint(id) {
   return normalizeComplaint(raw);
 }
 
+// Generic admin PATCH over the single complaint endpoint: any subset of
+// { status, worker_id, deadline, priority, rejection_reason } in one call —
+// this is what backs the combined triage moves (схвалити + призначити,
+// reject with reason).
+export async function updateComplaintAdmin(id, patch) {
+  return await fetchJson(`/admin/complaints/${id}/`, {
+    method: "PATCH",
+    body: patch,
+  });
+}
+
 // Admin lifecycle moves go through the single complaint PATCH. The server
 // speaks the canonical slugs directly — no published/denied translation.
-export async function updateComplaintStatus(id, newStatus, rejectionReason = "") {
-  const body = { status: newStatus };
-  if (rejectionReason) body.rejection_reason = rejectionReason;
-  await fetchJson(`/admin/complaints/${id}/`, {
-    method: "PATCH",
-    body,
-  });
-  return { id, status: newStatus, rejectionReason };
+export async function updateComplaintStatus(id, newStatus) {
+  return updateComplaintAdmin(id, { status: newStatus });
 }
 
 export async function updateComplaintPriority(id, newPriority) {
-  await fetchJson(`/admin/complaints/${id}/`, {
-    method: "PATCH",
-    body: { priority: newPriority },
-  });
-  return { id, priority: newPriority };
+  return updateComplaintAdmin(id, { priority: newPriority });
 }
 
 // Admin assignment surface (worker + deadline on the complaint itself).
@@ -696,10 +698,7 @@ export async function updateComplaintAssignment(id, { workerId, deadline } = {})
   const body = {};
   if (workerId !== undefined) body.worker_id = workerId;
   if (deadline !== undefined) body.deadline = deadline;
-  return await fetchJson(`/admin/complaints/${id}/`, {
-    method: "PATCH",
-    body,
-  });
+  return updateComplaintAdmin(id, body);
 }
 
 export async function fetchComments(complaintId) {

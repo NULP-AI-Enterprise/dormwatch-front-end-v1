@@ -4,9 +4,10 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
-  updateComplaintStatus,
+  updateComplaintAdmin,
   deleteProblem,
   fetchCategories,
+  fetchWorkers,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
@@ -16,11 +17,16 @@ import {
   BuildingFilterSelect,
   PriorityFilterSelect,
   CategoryFilterCombobox,
+  WorkerFilterSelect,
 } from "@/components/ComplaintFilters";
 import EmptyState from "@/components/EmptyState";
+import { complaintIsOverdue } from "@/lib/complaintUtils";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +52,13 @@ const AdminComplaintsPage = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<string[]>([]);
   const [selectedPriority, setSelectedPriority] = useState<string[]>([]);
+  const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]);
+  const [selectedDeadline, setSelectedDeadline] = useState<Date | undefined>(undefined);
+  // Triage shortcut target: the overview's Прострочені stat lands here with
+  // the derived overdue flag pre-filtered.
+  const [overdueOnly, setOverdueOnly] = useState<boolean>(
+    !!location.state?.overdueOnly
+  );
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -59,7 +72,12 @@ const AdminComplaintsPage = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [workers, setWorkers] = useState<{ worker_id: number; full_name: string }[]>([]);
   const buildings = useBuildings();
+
+  useEffect(() => {
+    fetchWorkers().then(setWorkers).catch(() => setWorkers([]));
+  }, []);
 
   const loadCategories = async () => {
     const data = await fetchCategories();
@@ -107,12 +125,12 @@ const AdminComplaintsPage = () => {
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
 
-  const handleChangeStatus = async (id: number, newStatus: string, reason?: string) => {
+  const handleAdminPatch = async (id: number, body: Record<string, unknown>) => {
     try {
-      await updateComplaintStatus(id, newStatus, reason);
+      await updateComplaintAdmin(id, body);
       loadComplaints();
     } catch (err) {
-      console.warn('Failed to change complaint status', err);
+      console.warn('Failed to update complaint', err);
     }
   };
 
@@ -138,14 +156,25 @@ const AdminComplaintsPage = () => {
         const priorityOk =
           selectedPriority.length === 0 ||
           (p.priority != null && selectedPriority.includes(p.priority));
+        // Worker filter matches the assigned contractor's name (unassigned
+        // complaints only show when the filter is empty).
+        const workerOk =
+          selectedWorkers.length === 0 ||
+          (p.worker != null && selectedWorkers.includes(p.worker.full_name));
+        const deadlineOk =
+          !selectedDeadline || isSameLocalDay(p.deadline, selectedDeadline);
+        const overdueOk = !overdueOnly || complaintIsOverdue(p);
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
         const dateOk = !selectedDate || isSameLocalDay(p.createdAt, selectedDate);
-        return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
+        return (
+          statusOk && categoryOk && buildingOk && priorityOk &&
+          workerOk && deadlineOk && overdueOk && searchOk && dateOk
+        );
       }),
-    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, selectedWorkers, selectedDeadline, overdueOnly, searchQuery, selectedDate]
   );
 
   return (
@@ -206,6 +235,36 @@ const AdminComplaintsPage = () => {
                     <Separator className="my-4" />
 
                     <h4 className="text-xs font-normal text-muted-foreground mb-3">
+                      Виконавець
+                    </h4>
+                    <WorkerFilterSelect value={selectedWorkers} onChange={setSelectedWorkers} workers={workers} />
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
+                      Дедлайн
+                    </h4>
+                    <div className="space-y-2">
+                      <DatePicker
+                        date={selectedDeadline}
+                        setDate={setSelectedDeadline}
+                        placeholder="Оберіть дату"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Checkbox
+                        id="overdue-only"
+                        checked={overdueOnly}
+                        onCheckedChange={(v) => setOverdueOnly(v === true)}
+                      />
+                      <Label htmlFor="overdue-only" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                        Лише прострочені
+                      </Label>
+                    </div>
+
+                    <Separator className="my-4" />
+
+                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
                       Категорії
                     </h4>
                     <CategoryFilterCombobox
@@ -247,6 +306,25 @@ const AdminComplaintsPage = () => {
                     icon={InboxIcon}
                     title="Звернень не знайдено"
                     subtitle="Жодне звернення не відповідає поточним фільтрам."
+                    action={
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                          setSelectedStatus([]);
+                          setSelectedCategories([]);
+                          setSelectedBuilding([]);
+                          setSelectedPriority([]);
+                          setSelectedWorkers([]);
+                          setSelectedDeadline(undefined);
+                          setOverdueOnly(false);
+                          setSelectedDate(undefined);
+                          setSearchQuery("");
+                        }}
+                      >
+                        Скинути фільтри
+                      </Button>
+                    }
                   />
                 )}
 
@@ -274,7 +352,7 @@ const AdminComplaintsPage = () => {
                       onPhotoPreview={setPreviewImage}
                       footerLeft="id"
                       showAdminActions
-                      onStatusChange={handleChangeStatus}
+                      onAdminPatch={handleAdminPatch}
                       onAdminDelete={handleRemove}
                     />
                   ))}

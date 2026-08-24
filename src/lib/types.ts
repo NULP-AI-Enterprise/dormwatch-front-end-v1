@@ -62,6 +62,9 @@ export interface Complaint {
   reworkReason: string;
   followUpOf: number | null;
   root: number | null;
+  // Derived server-side (never stored): "В роботі" past its deadline. Drives
+  // the red Прострочено badge and the admin overdue filter.
+  isOverdue: boolean;
 }
 
 export interface Comment {

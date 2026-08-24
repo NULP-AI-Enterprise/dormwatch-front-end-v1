@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { resolveImageUrl } from "@/services/imageUtils";
 import {
-  updateComplaintStatus,
+  updateComplaintAdmin,
   deleteProblem,
   updateComplaintPriority,
   updateComplaintAssignment,
@@ -43,7 +43,7 @@ import {
   PRIORITY_OPTIONS,
   TERMINAL_STATUSES,
 } from "@/lib/complaintUtils";
-import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
@@ -121,14 +121,17 @@ const ComplaintSidePanel = ({
   // rewrite a resident's report — enforced here and on the backend.
   const canEdit = isOwner && complaint.status === "pending";
 
-  const handleStatusChange = async (newStatus: string, reason?: string) => {
+  // Admin triage cluster: combined moves (approve+assign, reject with reason,
+  // finalize on behalf) travel as one PATCH body.
+  const handleAdminPatch = async (body: Record<string, unknown>) => {
+    setError(null);
     try {
-      await updateComplaintStatus(complaint.id, newStatus, reason);
+      await updateComplaintAdmin(complaint.id, body);
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
-      setError("Не вдалося змінити статус. Спробуйте ще раз.");
-      console.warn('Failed to change complaint status', err);
+      console.warn("Failed to update complaint", err);
+      throw err;
     }
   };
 
@@ -255,7 +258,10 @@ const ComplaintSidePanel = ({
         <div className="space-y-4 px-4 py-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <StatusBadge status={complaint.status} />
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={complaint.status} />
+                <OverdueBadge complaint={complaint} />
+              </div>
               <span className="text-xs font-normal text-muted-foreground">
                 {String(complaint.id) !== "new" && `#${complaint.id}`}
               </span>
@@ -451,7 +457,7 @@ const ComplaintSidePanel = ({
                 <div className="flex flex-wrap gap-2">
                   <ComplaintAdminActions
                     complaint={complaint}
-                    onStatusChange={handleStatusChange}
+                    onPatch={handleAdminPatch}
                     onDelete={handleDelete}
                     hideDeleteWhenClosed
                   />

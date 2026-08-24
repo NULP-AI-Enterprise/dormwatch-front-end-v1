@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -19,20 +19,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import {
   Delete01Icon,
   CheckmarkCircleIcon,
   CancelCircleIcon,
+  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import type { Complaint } from "@/lib/types";
+import { fetchWorkers } from "@/services/problemsApi";
+import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
+import type { Complaint, Worker } from "@/lib/types";
 
 interface ComplaintAdminActionsProps {
   complaint: Complaint;
-  onStatusChange: (status: string, reason?: string) => void;
+  // One PATCH body per action — combined triage moves travel as a single
+  // request ({ status, worker_id, deadline, rejection_reason, priority }).
+  // Rejects on a failed PATCH so this cluster can surface the field error.
+  onPatch: (body: Record<string, unknown>) => void | Promise<unknown>;
   onDelete: () => void;
   // When true, hides Delete once the complaint is resolved/rejected. Used by the
   // side panel; the admin list leaves delete available in every state (default).
@@ -42,8 +55,26 @@ interface ComplaintAdminActionsProps {
 const destructiveActionClass =
   "bg-destructive text-destructive-foreground hover:bg-destructive/90";
 
-// One confirmation dialog + trigger button. Shared shape for all four admin
-// actions (approve / reject / resolve / delete).
+// DRF field errors arrive as a JSON-stringified body inside Error.message.
+const errorText = (err: unknown, fallback: string) => {
+  try {
+    const body = JSON.parse((err as Error).message);
+    const field =
+      body.rejection_reason ??
+      body.status ??
+      body.worker_id ??
+      body.priority ??
+      body.deadline ??
+      body.detail;
+    if (typeof field === "string") return field;
+    if (Array.isArray(field)) return field.join(" ");
+  } catch {
+    /* plain message */
+  }
+  return fallback;
+};
+
+// One confirmation dialog + trigger button for the actions that need no input.
 const ConfirmAction = ({
   trigger,
   title,
@@ -76,54 +107,6 @@ const ConfirmAction = ({
   </AlertDialog>
 );
 
-const RejectAction = ({
-  trigger,
-  onConfirm,
-}: {
-  trigger: React.ReactNode;
-  onConfirm: (reason: string) => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState("");
-
-  const handleConfirm = () => {
-    onConfirm(reason.trim());
-    setOpen(false);
-    setReason("");
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Відхилити звернення?</DialogTitle>
-          <DialogDescription>
-            Вкажіть причину відхилення, щоб студент розумів, чому заявку було відхилено:
-          </DialogDescription>
-        </DialogHeader>
-        <div className="py-2">
-          <Textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Наприклад: Недостатньо інформації або ремонт заплановано в загальному порядку..."
-            rows={3}
-            className="text-xs resize-none"
-          />
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Скасувати
-          </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
-            Відхилити звернення
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 // Forwards ref and any injected props (e.g. AlertDialogTrigger's onClick via
 // Radix Slot) down to Button — without this, `asChild` triggers are inert.
 const ActionButton = forwardRef<
@@ -141,62 +124,258 @@ const ActionButton = forwardRef<
 ));
 ActionButton.displayName = "ActionButton";
 
-// The approve/reject/resolve/delete AlertDialog cluster used both on admin
-// complaint cards (AdminComplaintsPage) and in the ComplaintSidePanel. Extracted
-// so a change to any flow updates both places.
-//
-// Finalize (Вирішити) is legal only from На перевірці (review → resolved)
-// under the single status machine the server enforces via ADMIN_TRANSITIONS.
+// The triage cluster used both on admin complaint cards (AdminComplaintsPage)
+// and in the ComplaintSidePanel — one place per flow:
+//   Очікує → plain approve, approve+assign fast path (worker + deadline +
+//   priority in one PATCH), reject with a required reason.
+//   На перевірці → Вирішити (admin finalizes on the resident's behalf — the
+//   auto-accept timer stays out of scope).
 const ComplaintAdminActions = ({
   complaint,
-  onStatusChange,
+  onPatch,
   onDelete,
   hideDeleteWhenClosed = false,
-}: ComplaintAdminActionsProps) => (
-  <>
-    {complaint.status === "pending" && (
+}: ComplaintAdminActionsProps) => {
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [assignWorkerId, setAssignWorkerId] = useState<string | null>(null);
+  const [assignDeadline, setAssignDeadline] = useState<Date | undefined>(undefined);
+  const [assignPriority, setAssignPriority] = useState<string>(
+    complaint.priority || "medium"
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!assignOpen) return;
+    fetchWorkers().then(setWorkers).catch(() => setWorkers([]));
+  }, [assignOpen]);
+
+  const run = async (
+    action: () => void | Promise<unknown>,
+    fallbackError: string
+  ) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+      setBusy(false);
+      setRejectOpen(false);
+      setAssignOpen(false);
+      setReason("");
+    } catch (err) {
+      setBusy(false);
+      setError(errorText(err, fallbackError));
+      console.warn("Admin action failed", err);
+    }
+  };
+
+  if (complaint.status === "pending") {
+    return (
       <>
         <ConfirmAction
           trigger={<ActionButton icon={CheckmarkCircleIcon}>Схвалити</ActionButton>}
           title="Схвалити звернення?"
-          description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Схвалено".'}
+          description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Схвалено". Виконавця можна призначити пізніше.'}
           confirmLabel="Схвалити"
-          onConfirm={() => onStatusChange("approved")}
+          onConfirm={() => onPatch({ status: "approved" })}
         />
-        <RejectAction
+
+        <Button
+          variant="outline"
+          onClick={() => {
+            setError(null);
+            setAssignWorkerId(null);
+            setAssignDeadline(undefined);
+            setAssignPriority(complaint.priority || "medium");
+            setAssignOpen(true);
+          }}
+        >
+          <HugeiconsIcon icon={ArrowRight01Icon} className="size-3 mr-1" strokeWidth={2} />
+          Схвалити і призначити
+        </Button>
+
+        <Button
+          variant="destructive"
+          onClick={() => {
+            setError(null);
+            setReason("");
+            setRejectOpen(true);
+          }}
+        >
+          <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
+          Відхилити
+        </Button>
+
+        {error && !rejectOpen && !assignOpen && (
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+        )}
+
+        {/* Fast path: approve + assign + priority in ONE patch — the triage
+            call, not three round trips. */}
+        <Dialog open={assignOpen} onOpenChange={(open) => { if (!open && !busy) { setAssignOpen(false); setError(null); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Схвалити та призначити</DialogTitle>
+              <DialogDescription>
+                Звернення перейде в статус «Схвалено», виконавець і дедлайн запишуться одразу.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Виконавець</label>
+                <Select value={assignWorkerId ?? ""} onValueChange={setAssignWorkerId}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Оберіть виконавця" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workers.map((w) => (
+                      <SelectItem key={w.worker_id} value={String(w.worker_id)}>
+                        {w.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Дедлайн</label>
+                <DatePicker
+                  date={assignDeadline}
+                  setDate={(d) => setAssignDeadline(d ?? undefined)}
+                  placeholder="Не визначено"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground mb-1 block">Пріоритет</label>
+                <Select value={assignPriority} onValueChange={setAssignPriority}>
+                  <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {priorityLabel(p)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {error && (
+                <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" disabled={busy} onClick={() => { setAssignOpen(false); setError(null); }}>
+                Скасувати
+              </Button>
+              <Button
+                disabled={!assignWorkerId || busy}
+                onClick={() =>
+                  run(
+                    () =>
+                      onPatch({
+                        status: "approved",
+                        worker_id: Number(assignWorkerId),
+                        deadline: assignDeadline ? assignDeadline.toISOString() : null,
+                        priority: assignPriority,
+                      }),
+                    "Не вдалося схвалити звернення. Спробуйте ще раз."
+                  )
+                }
+              >
+                Схвалити і призначити
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rejection is terminal and must say why — the reason reaches the
+            resident's panel and their rejection notification. */}
+        <Dialog open={rejectOpen} onOpenChange={(open) => { if (!open && !busy) { setRejectOpen(false); setError(null); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Причина відхилення</DialogTitle>
+              <DialogDescription>
+                Опишіть, чому звернення відхилено — причину буде показано мешканцеві.
+                Статус зміниться на «Відхилено» остаточно.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Наприклад: це питання не належить до компетенції гуртожитку"
+              aria-invalid={!reason.trim() ? true : undefined}
+            />
+            {error && (
+              <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+            )}
+            <DialogFooter>
+              <Button variant="outline" disabled={busy} onClick={() => { setRejectOpen(false); setError(null); }}>
+                Скасувати
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!reason.trim() || busy}
+                onClick={() =>
+                  run(
+                    () =>
+                      onPatch({
+                        status: "rejected",
+                        rejection_reason: reason.trim(),
+                      }),
+                    "Не вдалося відхилити звернення. Спробуйте ще раз."
+                  )
+                }
+              >
+                Відхилити
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  if (complaint.status === "review") {
+    return (
+      <>
+        <ConfirmAction
+          trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
+          title="Позначити як вирішене?"
+          description={'Ви підтверджуєте результат за мешканця — звернення перейде в статус "Вирішено".'}
+          confirmLabel="Вирішити"
+          onConfirm={() => onPatch({ status: "resolved" })}
+        />
+        {error && (
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {!(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) && (
+        <ConfirmAction
           trigger={
-            <ActionButton variant="destructive" icon={CancelCircleIcon}>
-              Відхилити
+            <ActionButton variant="destructive" icon={Delete01Icon}>
+              Видалити
             </ActionButton>
           }
-          onConfirm={(reason) => onStatusChange("rejected", reason)}
+          title="Видалити звернення?"
+          description="Ви впевнені, що хочете видалити це звернення? Цю дію неможливо скасувати."
+          confirmLabel="Видалити"
+          confirmClassName={destructiveActionClass}
+          onConfirm={onDelete}
         />
-      </>
-    )}
-    {complaint.status === "review" && (
-      <ConfirmAction
-        trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
-        title="Позначити як вирішене?"
-        description={'Ви впевнені, що проблема була успішно вирішена? Звернення перейде в статус "Вирішено".'}
-        confirmLabel="Вирішити"
-        onConfirm={() => onStatusChange("resolved")}
-      />
-    )}
-    {!(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) && (
-    <ConfirmAction
-      trigger={
-        <ActionButton variant="destructive" icon={Delete01Icon}>
-          Видалити
-        </ActionButton>
-      }
-      title="Видалити звернення?"
-      description="Ви впевнені, що хочете видалити це звернення? Цю дію неможливо скасувати."
-      confirmLabel="Видалити"
-      confirmClassName={destructiveActionClass}
-      onConfirm={onDelete}
-    />
-    )}
-  </>
-);
+      )}
+      {error && (
+        <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+      )}
+    </>
+  );
+};
 
 export default ComplaintAdminActions;

@@ -5,7 +5,7 @@ import {
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, OverdueBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,9 +17,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
-import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
+import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 import type { Complaint } from "@/lib/types";
 
@@ -46,6 +46,7 @@ const AdminPage = () => {
   const pendingCount = complaints.filter((c) => c.status === "pending").length;
   const inProgressCount = complaints.filter((c) => c.status === "in_progress").length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
+  const overdueCount = complaints.filter((c) => complaintIsOverdue(c)).length;
 
   const recentComplaints = [...complaints]
     .sort((a, b) => {
@@ -71,17 +72,30 @@ const AdminPage = () => {
         <div className="flex-1 overflow-auto p-6">
           <div className="mx-auto max-w-6xl space-y-8">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
                   <StatCardSkeleton key={i} />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Triage shortcuts: the counts that need action link straight
+                    into the filtered management queue — one click per item. */}
                 <StatCard
                 icon={<HugeiconsIcon icon={ClockIcon} className="size-4" strokeWidth={1.5} />}
                 label="Очікує"
                 value={pendingCount}
+                to="/admin/complaints"
+                actionLabel="Розглянути очікувані"
+                state={{ selectedStatus: "pending" }}
+              />
+              <StatCard
+                icon={<HugeiconsIcon icon={TimeIcon} className="size-4" strokeWidth={1.5} />}
+                label="Прострочені"
+                value={overdueCount}
+                to="/admin/complaints"
+                actionLabel="Розібрати прострочені"
+                state={{ overdueOnly: true }}
               />
               <StatCard
                 icon={<HugeiconsIcon icon={HammerIcon} className="size-4" strokeWidth={1.5} />}
@@ -100,7 +114,7 @@ const AdminPage = () => {
               <div className="px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-foreground">Останні звернення</h2>
                 <Link to="/admin/complaints" className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400">
-                  Всі звернення
+                  Керування зверненнями
                 </Link>
               </div>
               <Separator />
@@ -161,7 +175,10 @@ const AdminPage = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <StatusBadge status={c.status} />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={c.status} />
+                            <OverdueBadge complaint={c} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
