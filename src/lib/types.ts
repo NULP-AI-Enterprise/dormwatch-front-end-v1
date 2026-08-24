@@ -81,6 +81,8 @@ export interface Worker {
   full_name: string;
   company?: string;
   phone?: string;
+  // True once a provisioned account is linked 1:1 from this worker.
+  has_account?: boolean;
 }
 
 // An admin-posted announcement. `building` null = global (all buildings);

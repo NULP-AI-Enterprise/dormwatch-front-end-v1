@@ -15,12 +15,22 @@ import StudentLayout from "@/components/StudentLayout";
 import AdminLayout from "@/components/AdminLayout";
 import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
 import AdminCompletedReportPrintPage from "@/pages/AdminCompletedReportPrintPage";
+import WorkerHomePage from "@/pages/WorkerHomePage";
+import AdminWorkerInvitePrintPage from "@/pages/AdminWorkerInvitePrintPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route
+        path="/worker"
+        element={
+          <ProtectedRoute requireWorker>
+            <WorkerHomePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/user"
         element={
@@ -124,6 +134,14 @@ function App() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminCompletedReportPrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/workers/invite/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminWorkerInvitePrintPage />
           </ProtectedRoute>
         }
       />

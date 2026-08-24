@@ -214,17 +214,13 @@ function RegisterForm() {
                   <FormItem>
                     <FormLabel>Електронна пошта</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder={inviteToken ? "name@example.com" : "student@lpnu.ua"}
-                        {...field}
-                      />
+                      <Input type="email" placeholder={inviteToken ? "ваш.email@example.com" : "student@lpnu.ua"} {...field} />
                     </FormControl>
-                    {!inviteToken && (
-                      <FormDescription>
-                        Дозволені домени: @lpnu.ua
-                      </FormDescription>
-                    )}
+                    <FormDescription>
+                      {inviteToken
+                        ? "Реєстрація за запрошенням — підійде будь-яка електронна пошта"
+                        : "Дозволені домени: @lpnu.ua"}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

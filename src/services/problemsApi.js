@@ -751,6 +751,15 @@ export async function deleteWorker(workerId) {
   return true;
 }
 
+// Provision a worker account: mints a single-use invite token bound to this
+// worker. The admin delivers the redemption link by email or printed QR; the
+// worker supplies their own email/password at /auth?invite=...
+export async function createWorkerInvite(workerId) {
+  return await fetchJson(`/admin/workers/${workerId}/invite/`, {
+    method: "POST",
+  });
+}
+
 // ------------------ RESIDENTS (admin user management) ------------------
 
 // All user profiles with nested building/place/role, for the admin residents

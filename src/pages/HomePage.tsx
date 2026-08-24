@@ -9,7 +9,7 @@ import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
-import { isAdminUser, statusBadgeClass } from "@/lib/complaintUtils";
+import { isAdminUser, isWorkerUser, statusBadgeClass } from "@/lib/complaintUtils";
 import { FeatureCard } from "@/components/FeatureCard";
 
 const HomePage = () => {
@@ -23,7 +23,8 @@ const HomePage = () => {
         const user = await fetchUserProfile();
         if (!mounted) return;
         if (user) {
-          navigate(isAdminUser(user) ? "/admin" : "/user", { replace: true });
+          const target = isAdminUser(user) ? "/admin" : isWorkerUser(user) ? "/worker" : "/user";
+          navigate(target, { replace: true });
           return;
         }
       } catch {

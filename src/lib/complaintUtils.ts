@@ -140,7 +140,9 @@ export const complaintIsOverdue = (c: {
 
 export const OVERDUE_LABEL = "Прострочено";
 
-export const isAdminUser = (user: { role?: { role_name?: string } } | null | undefined) =>
+export const isAdminUser = (user: {
+  role?: { role_name?: string | null } | null;
+} | null | undefined) =>
   !!(
     user?.role &&
     ["admin", "адміністратор"].includes(
@@ -156,6 +158,16 @@ export const getUserInitials = (
   const initials = `${(user.first_name || "")[0] || ""}${(user.last_name || "")[0] || ""}`.toUpperCase();
   return initials || fallback;
 };
+
+// Third role bucket: a provisioned worker account (UserProfile, role `worker`,
+// linked 1:1 from Worker). Workers land in the worker layout — never the full
+// resident app.
+export const isWorkerUser = (user: {
+  role?: { role_name?: string | null } | null;
+} | null | undefined) =>
+  !!user?.role?.role_name &&
+  user.role.role_name.toLowerCase() === "worker" &&
+  !isAdminUser(user);
 
 // Re-file chains: every member denormalizes the chain head id (`root`; roots
 // themselves carry null). Lists group by it so a saga reads as one story —
