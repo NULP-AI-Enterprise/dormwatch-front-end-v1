@@ -641,6 +641,35 @@ export async function deleteProblem(id) {
   return true;
 }
 
+// ── Resident lifecycle verbs (owner-only, server-enforced transitions) ──
+// accept: review → resolved; reject: review → terminal not_accepted
+// (rework_reason required by the server); withdraw: pending → withdrawn.
+export async function acceptComplaint(id) {
+  await fetchJson(`/me/complaints/${id}/accept/`, { method: "POST" });
+  return true;
+}
+
+export async function rejectComplaint(id, reworkReason) {
+  await fetchJson(`/me/complaints/${id}/reject/`, {
+    method: "POST",
+    body: { rework_reason: reworkReason },
+  });
+  return true;
+}
+
+export async function withdrawComplaint(id) {
+  await fetchJson(`/me/complaints/${id}/withdraw/`, { method: "POST" });
+  return true;
+}
+
+// One-tap re-file: the server creates a fresh Очікує complaint prefilled from
+// the closed one (title/description/category/place/photo), linked via
+// follow_up_of. 409 means this source already has one open follow-up.
+export async function refileComplaint(id) {
+  const raw = await fetchJson(`/complaints/${id}/refile/`, { method: "POST" });
+  return normalizeComplaint(raw);
+}
+
 // Admin lifecycle moves go through the single complaint PATCH. The server
 // speaks the canonical slugs directly — no published/denied translation.
 export async function updateComplaintStatus(id, newStatus, rejectionReason = "") {

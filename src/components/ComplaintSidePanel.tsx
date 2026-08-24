@@ -45,6 +45,7 @@ import {
 } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -269,6 +270,11 @@ const ComplaintSidePanel = ({
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
             )}
             <p className="text-xs font-normal text-muted-foreground">{complaint.building || "?"}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName || "?"}</p>
+            {complaint.followUpOf != null && (
+              <p className="text-xs font-normal text-muted-foreground mt-1">
+                Повторне звернення до №{complaint.followUpOf}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -409,6 +415,33 @@ const ComplaintSidePanel = ({
             <Button variant="ghost" onClick={() => { setError(null); setIsEditing(true); }}>
               Редагувати
             </Button>
+          )}
+
+          {/* Reason read surfaces: the marks a rejection leaves behind must be
+              readable where the state is visible (full-loop rule). */}
+          {complaint.status === "rejected" && complaint.rejectionReason && (
+            <div className="border border-border bg-muted/30 p-3">
+              <p className="text-xs font-semibold text-foreground mb-1">Причина відхилення</p>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
+                {complaint.rejectionReason}
+              </p>
+            </div>
+          )}
+          {complaint.status === "not_accepted" && complaint.reworkReason && (
+            <div className="border border-border bg-muted/30 p-3">
+              <p className="text-xs font-semibold text-destructive mb-1">Причина неприйняття</p>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
+                {complaint.reworkReason}
+              </p>
+            </div>
+          )}
+
+          {/* Owner lifecycle: accept/reject finished work, withdraw while
+              Очікує, re-file from any closed state. */}
+          {isOwner && !isEditing && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <ComplaintResidentActions complaint={complaint} onChanged={onStatusChange} />
+            </div>
           )}
 
           {isAdmin && (

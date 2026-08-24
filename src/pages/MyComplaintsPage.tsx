@@ -15,7 +15,7 @@ import {
 } from "@/components/ComplaintFilters";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
-import { isAdminUser } from "@/lib/complaintUtils";
+import { isAdminUser, groupByChain } from "@/lib/complaintUtils";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
@@ -71,20 +71,22 @@ const MyComplaintsPage = () => {
 
   const filtered = useMemo(
     () =>
-      problems.filter((p) => {
-        const searchOk =
-          search === "" ||
-          (p.title || "").toLowerCase().includes(search.toLowerCase()) ||
-          (p.description || "").toLowerCase().includes(search.toLowerCase());
-        const statusOk = status.length === 0 || status.includes(p.status);
-        const priorityOk =
-          priority.length === 0 || (p.priority != null && priority.includes(p.priority));
-        const categoryOk =
-          selectedCategories.length === 0 ||
-          (p.category != null && selectedCategories.includes(p.category));
-        const dateOk = !date || isSameLocalDay(p.createdAt, date);
-        return searchOk && statusOk && priorityOk && categoryOk && dateOk;
-      }),
+      groupByChain(
+        problems.filter((p) => {
+          const searchOk =
+            search === "" ||
+            (p.title || "").toLowerCase().includes(search.toLowerCase()) ||
+            (p.description || "").toLowerCase().includes(search.toLowerCase());
+          const statusOk = status.length === 0 || status.includes(p.status);
+          const priorityOk =
+            priority.length === 0 || (p.priority != null && priority.includes(p.priority));
+          const categoryOk =
+            selectedCategories.length === 0 ||
+            (p.category != null && selectedCategories.includes(p.category));
+          const dateOk = !date || isSameLocalDay(p.createdAt, date);
+          return searchOk && statusOk && priorityOk && categoryOk && dateOk;
+        })
+      ),
     [problems, search, status, priority, selectedCategories, date]
   );
 
@@ -172,6 +174,10 @@ const MyComplaintsPage = () => {
                 showProgress
                 showPhoto
                 photoHeight="h-44"
+                // Follow-ups sit indented under their chain head.
+                cardClassName={
+                  p.followUpOf != null ? "ml-3 sm:ml-6 border-l-2 border-l-primary/40" : undefined
+                }
                 footerClassName="flex items-center justify-between pt-4"
                 commentsMode="inline"
                 commentsSide="left"
@@ -185,6 +191,8 @@ const MyComplaintsPage = () => {
                     complaintAuthorId={p.user_id}
                   />
                 }
+                showResidentActions
+                onResidentChange={reload}
                 showDelete
                 onDelete={onDelete}
               />

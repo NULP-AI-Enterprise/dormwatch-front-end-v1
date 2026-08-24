@@ -140,3 +140,39 @@ export const getUserInitials = (
   const initials = `${(user.first_name || "")[0] || ""}${(user.last_name || "")[0] || ""}`.toUpperCase();
   return initials || fallback;
 };
+
+// Re-file chains: every member denormalizes the chain head id (`root`; roots
+// themselves carry null). Lists group by it so a saga reads as one story —
+// the original first, its re-files beneath in filing order.
+export const chainGroupId = (c: { id: number; root: number | null }) =>
+  c.root ?? c.id;
+
+const chainTimestamp = (c: { createdAt: string | null }) =>
+  c.createdAt ? new Date(c.createdAt).getTime() : -Infinity;
+
+export function groupByChain<
+  T extends { id: number; root: number | null; createdAt: string | null },
+>(list: T[]): T[] {
+  const groups = new Map<number, T[]>();
+  for (const c of list) {
+    const key = chainGroupId(c);
+    const group = groups.get(key);
+    if (group) group.push(c);
+    else groups.set(key, [c]);
+  }
+  return [...groups.values()]
+    .map((group) =>
+      // Chain head (id === group key) leads; the rest follow in filing order.
+      group.sort((a, b) => {
+        if (a.id === chainGroupId(a)) return -1;
+        if (b.id === chainGroupId(b)) return 1;
+        return chainTimestamp(a) - chainTimestamp(b);
+      })
+    )
+    .sort((ga, gb) => {
+      // Groups surface by their most recent activity, newest saga first.
+      const newest = (g: T[]) => Math.max(...g.map(chainTimestamp));
+      return newest(gb) - newest(ga);
+    })
+    .flat();
+}

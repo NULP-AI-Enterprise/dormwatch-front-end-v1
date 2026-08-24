@@ -13,6 +13,7 @@ import {
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
 import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
@@ -66,6 +67,10 @@ interface ComplaintCardProps {
   showAdminActions?: boolean;
   onStatusChange?: (id: number, status: string, reason?: string) => void;
   onAdminDelete?: (id: number) => void;
+
+  // Resident lifecycle (accept/reject finished work, withdraw, re-file)
+  showResidentActions?: boolean;
+  onResidentChange?: () => void;
 }
 
 const Dot = ({ className }: { className?: string }) => (
@@ -100,6 +105,8 @@ const ComplaintCard = ({
   showAdminActions = false,
   onStatusChange,
   onAdminDelete,
+  showResidentActions = false,
+  onResidentChange,
 }: ComplaintCardProps) => {
   const p = complaint;
 
@@ -137,15 +144,29 @@ const ComplaintCard = ({
   // ── Default variant ─────────────────────────────────────────────
   const hoverRevealDelete = showDelete && deleteHoverReveal;
 
+  // Re-file chain flag: a follow-up cites its source so a saga reads as one
+  // story in every list that renders it. Public payloads carry no
+  // follow_up_of, so the mark never leaks to the board.
+  const redoMark = p.followUpOf != null && (
+    <>
+      <span className="text-xs font-semibold text-foreground shrink-0">
+        Повторне до №{p.followUpOf}
+      </span>
+      <Dot />
+    </>
+  );
+
   const metaLine =
     metaVariant === "date" ? (
       <>
+        {redoMark}
         {p.category || ""}
         <Dot className="mx-1.5" />
         {formatDate(p.createdAt)}
       </>
     ) : (
       <>
+        {redoMark}
         {p.category}
         <Dot />
         {p.building || "?"}
@@ -287,6 +308,13 @@ const ComplaintCard = ({
 
           <div className="flex flex-wrap gap-2 items-center">
             {commentsSide === "right" && commentButton}
+            {showResidentActions && (
+              <ComplaintResidentActions
+                complaint={p}
+                onChanged={() => onResidentChange?.()}
+                size="xs"
+              />
+            )}
             {showDelete && !deleteHoverReveal && (
               <Button
                 variant="ghost"
