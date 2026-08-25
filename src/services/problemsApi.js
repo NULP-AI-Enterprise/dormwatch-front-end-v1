@@ -671,6 +671,47 @@ export async function refileComplaint(id) {
   return normalizeComplaint(raw);
 }
 
+// ── WORKER PANEL ──
+// The provisioned worker's own jobs. Active list = live work sorted by next
+// deadline (server-side); history = past jobs with their stamps.
+export async function fetchWorkerJobs() {
+  try {
+    const data = await fetchJson("/worker/complaints/");
+    if (Array.isArray(data)) {
+      return data.map(normalizeComplaint).filter(Boolean);
+    }
+  } catch (e) {
+    console.warn("Failed to fetch worker jobs", e);
+  }
+  return [];
+}
+
+export async function fetchWorkerHistory() {
+  try {
+    const data = await fetchJson("/worker/complaints/?history=true");
+    if (Array.isArray(data)) {
+      return data.map(normalizeComplaint).filter(Boolean);
+    }
+  } catch (e) {
+    console.warn("Failed to fetch worker history", e);
+  }
+  return [];
+}
+
+// One-tap lifecycle stamps for the assigned worker: start (Взято в роботу),
+// finish (Виконано), start_undo / finish_undo, with an optional short note.
+// The server enforces the transition matrix; the 30s undo window before a
+// resident is notified lives server-side too.
+export async function workerComplaintAction(id, action, note) {
+  const body = { action };
+  if (note && note.trim()) body.note = note.trim();
+  const raw = await fetchJson(`/worker/complaints/${id}/`, {
+    method: "PATCH",
+    body,
+  });
+  return normalizeComplaint(raw);
+}
+
 // Generic admin PATCH over the single complaint endpoint: any subset of
 // { status, worker_id, deadline, priority, rejection_reason } in one call —
 // this is what backs the combined triage moves (схвалити + призначити,
