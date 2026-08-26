@@ -23,6 +23,7 @@ import {
   ArrowRight02Icon,
   Wrench01Icon,
   Megaphone01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons";
 
 const UserPage = () => {
@@ -33,11 +34,18 @@ const UserPage = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
+    const msg = sessionStorage.getItem("studentReportSuccess");
+    if (msg) {
+      setSuccessMessage(msg);
+      sessionStorage.removeItem("studentReportSuccess");
+    }
+
     fetchAnnouncements()
       .then((all) => setAnnouncements(all.filter((a) => !a.is_expired)))
       .catch(() => {});
@@ -77,6 +85,29 @@ const UserPage = () => {
           </p>
         )}
       </div>
+
+      {successMessage && (
+        <div className="mb-8 p-4 bg-emerald-500/10 border border-emerald-500/30 text-foreground rounded-xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-emerald-500/20 text-emerald-500 rounded-lg shrink-0">
+              <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-emerald-500">Успішно створено</p>
+              <p className="text-xs text-muted-foreground">{successMessage}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setSuccessMessage(null)}
+            className="text-muted-foreground hover:text-foreground shrink-0 rounded-lg"
+            title="Закрити"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
+      )}
 
       {/* front-and-center CTA — big button with right arrow */}
       <Button

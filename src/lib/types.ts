@@ -51,6 +51,7 @@ export interface Complaint {
   priority: string | null;
   createdAt: string | null;
   user_id: number | null;
+  rejectionReason?: string | null;
 }
 
 export interface Comment {

@@ -145,9 +145,9 @@ const AdminComplaintsPage = () => {
     }
   }, [tab]);
 
-  const handleChangeStatus = async (id: number, newStatus: string) => {
+  const handleChangeStatus = async (id: number, newStatus: string, reason?: string) => {
     try {
-      await updateComplaintStatus(id, newStatus);
+      await updateComplaintStatus(id, newStatus, reason);
       loadComplaints();
     } catch (err) {
       console.warn('Failed to change complaint status', err);

@@ -522,6 +522,7 @@ function normalizeComplaint(raw) {
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
     user_id: raw.user?.id || raw.user?.user || raw.user || null,
+    rejectionReason: raw.rejection_reason ?? raw.rejectionReason ?? null,
   };
 }
 
@@ -554,7 +555,12 @@ export async function createProblem(problem) {
   if (problem.priority) {
     formData.append("priority", problem.priority);
   }
-  if (problem.photoFile instanceof File) {
+  if (Array.isArray(problem.photoFiles) && problem.photoFiles.length > 0) {
+    formData.append("photo_url", problem.photoFiles[0]);
+    problem.photoFiles.forEach((file) => {
+      formData.append("photos", file);
+    });
+  } else if (problem.photoFile instanceof File) {
     formData.append("photo_url", problem.photoFile);
   }
   const raw = await fetchJson("/me/complaints/", {
@@ -627,19 +633,22 @@ export async function deleteProblem(id) {
   return true;
 }
 
-export async function updateComplaintStatus(id, newStatus) {
+export async function updateComplaintStatus(id, newStatus, rejectionReason = "") {
   let backendStatus = newStatus;
   if (newStatus === "approved") backendStatus = "published";
   if (newStatus === "rejected") backendStatus = "denied";
 
   const formData = new FormData();
   formData.append("status", backendStatus);
+  if (rejectionReason) {
+    formData.append("rejection_reason", rejectionReason);
+  }
 
   await fetchJson(`/admin/complaints/${id}/status/`, {
     method: "PATCH",
     body: formData,
   });
-  return { id, status: newStatus };
+  return { id, status: newStatus, rejectionReason };
 }
 
 export async function updateComplaintPriority(id, newPriority) {

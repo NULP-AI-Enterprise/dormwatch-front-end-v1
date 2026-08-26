@@ -40,10 +40,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Edit02Icon, UserMultipleIcon, Add01Icon } from "@hugeicons/core-free-icons";
-import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
-import { InviteLinkDialog } from "@/components/InviteLinkDialog";
+import { Edit02Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
 import type { Building, Place, Role } from "@/lib/types";
 
 // A user profile as returned by GET /admin/users/ (UserSerializer): building /
@@ -70,16 +78,6 @@ const AdminResidentsPage = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ResidentUser | null>(null);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-
-  const headerActions = useMemo(() => (
-    <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
-      <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
-      Запросити мешканця
-    </Button>
-  ), []);
-
-  useAdminHeaderActions(headerActions);
 
   // Filters. Building + place are a cascade (building single-select scopes the
   // place multi-select); role is independent. Empty selection = "all".
@@ -274,13 +272,6 @@ const AdminResidentsPage = () => {
         </div>
       </div>
 
-      <InviteLinkDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        buildings={buildings}
-        roles={roles}
-      />
-
       <EditResidentDialog
         editing={editing}
         onClose={() => setEditing(null)}
@@ -323,6 +314,7 @@ function EditResidentDialog({
   const [roleId, setRoleId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Seed local state each time a different user opens the dialog.
   useEffect(() => {
@@ -348,7 +340,13 @@ function EditResidentDialog({
     setPlace(null);
   };
 
+  const handleSaveTrigger = () => {
+    if (!editing) return;
+    setIsConfirmOpen(true);
+  };
+
   const handleSave = async () => {
+    setIsConfirmOpen(false);
     if (!editing) return;
     setSaving(true);
     setError("");
@@ -389,87 +387,106 @@ function EditResidentDialog({
   };
 
   return (
-    <Dialog open={!!editing} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {editing ? `Редагувати ${fullName(editing)}` : "Редагувати мешканця"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? `Редагувати ${fullName(editing)}` : "Редагувати мешканця"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4 text-left">
-          <div className="space-y-1">
-            <Label className="text-xs">Гуртожиток</Label>
-            <Select
-              value={buildingId != null ? String(buildingId) : undefined}
-              onValueChange={handleBuildingChange}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Оберіть гуртожиток" />
-              </SelectTrigger>
-              <SelectContent>
-                {buildings.map((b) => (
-                  <SelectItem key={b.building_id} value={String(b.building_id)}>
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 text-left">
+            <div className="space-y-1">
+              <Label className="text-xs">Гуртожиток</Label>
+              <Select
+                value={buildingId != null ? String(buildingId) : undefined}
+                onValueChange={handleBuildingChange}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Оберіть гуртожиток" />
+                </SelectTrigger>
+                <SelectContent>
+                  {buildings.map((b) => (
+                    <SelectItem key={b.building_id} value={String(b.building_id)}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Кімната</Label>
+              <PlaceCombobox
+                buildingId={buildingId ?? undefined}
+                value={place}
+                onChange={setPlace}
+                allowCreate
+                placeholder="Пошук або створення кімнати..."
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Роль</Label>
+              <Select
+                value={roleId != null ? String(roleId) : undefined}
+                onValueChange={(v) => setRoleId(Number(v))}
+                disabled={isSelf}
+              >
+                {/* design-system.md §5 Inputs mandates a disabled fill (`dark:disabled:bg-input/80`),
+                    which Input/Combobox honor but SelectTrigger omits. Add it here so the
+                    disabled role field matches the disabled room Combobox beside it. */}
+                <SelectTrigger className="w-full h-8 text-xs disabled:bg-input/50 dark:disabled:bg-input/80">
+                  <SelectValue placeholder="Оберіть роль" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r.role_id} value={String(r.role_id)}>
+                      {roleLabel(r.role_name)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isSelf && (
+                <p className="text-xs text-muted-foreground">
+                  Ви не можете змінити власну роль.
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs">Кімната</Label>
-            <PlaceCombobox
-              buildingId={buildingId ?? undefined}
-              value={place}
-              onChange={setPlace}
-              allowCreate
-              placeholder="Пошук або створення кімнати..."
-            />
-          </div>
+          {error && (
+            <p className="text-xs font-semibold text-destructive">{error}</p>
+          )}
 
-          <div className="space-y-1">
-            <Label className="text-xs">Роль</Label>
-            <Select
-              value={roleId != null ? String(roleId) : undefined}
-              onValueChange={(v) => setRoleId(Number(v))}
-              disabled={isSelf}
-            >
-              {/* design-system.md §5 Inputs mandates a disabled fill (`dark:disabled:bg-input/80`),
-                  which Input/Combobox honor but SelectTrigger omits. Add it here so the
-                  disabled role field matches the disabled room Combobox beside it. */}
-              <SelectTrigger className="w-full h-8 text-xs disabled:bg-input/50 dark:disabled:bg-input/80">
-                <SelectValue placeholder="Оберіть роль" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((r) => (
-                  <SelectItem key={r.role_id} value={String(r.role_id)}>
-                    {roleLabel(r.role_name)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {isSelf && (
-              <p className="text-xs text-muted-foreground">
-                Ви не можете змінити власну роль.
-              </p>
-            )}
-          </div>
-        </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              Скасувати
+            </Button>
+            <Button onClick={handleSaveTrigger} disabled={saving}>
+              Зберегти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {error && (
-          <p className="text-xs font-semibold text-destructive">{error}</p>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Скасувати
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            Зберегти
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Зберегти зміни мешканця?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете змінити дані для {editing ? fullName(editing) : "цього користувача"}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave}>
+              Підтвердити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

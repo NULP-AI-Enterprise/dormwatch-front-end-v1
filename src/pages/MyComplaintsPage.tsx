@@ -20,6 +20,16 @@ import { isSameLocalDay } from "@/lib/dateUtils";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
 import { useUser } from "@/context/UserContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { CategoryOption } from "@/lib/types";
 import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
@@ -31,6 +41,7 @@ const MyComplaintsPage = () => {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string[]>([]);
@@ -42,7 +53,14 @@ const MyComplaintsPage = () => {
     fetchCategories().then(setCategories).catch(() => {});
   }, []);
 
-  const onDelete = async (id: number) => {
+  const onDelete = (id: number) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    const id = deleteTarget;
+    setDeleteTarget(null);
     try {
       await deleteProblem(id);
       reload();
@@ -189,6 +207,29 @@ const MyComplaintsPage = () => {
           isAdmin={isAdminUser(currentUser)}
         />
       )}
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
+            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Видалити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

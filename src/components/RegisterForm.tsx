@@ -164,7 +164,14 @@ function RegisterForm() {
   };
 
   return (
-    <AuthLayout heading="Реєстрація" subtitle="Кілька секунд — і можна подавати звернення про ремонт.">
+    <AuthLayout
+      heading={inviteToken ? "Реєстрація за запрошенням" : "Реєстрація"}
+      subtitle={
+        inviteToken
+          ? "Створіть свій обліковий запис для доступу до системи за запрошенням."
+          : "Кілька секунд — і можна подавати звернення про ремонт."
+      }
+    >
       <Card className="py-0 border-border">
         <CardContent className="p-6">
           {error && <ErrorBanner message={error} />}
@@ -207,11 +214,17 @@ function RegisterForm() {
                   <FormItem>
                     <FormLabel>Електронна пошта</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="student@lpnu.ua" {...field} />
+                      <Input
+                        type="email"
+                        placeholder={inviteToken ? "name@example.com" : "student@lpnu.ua"}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormDescription>
-                      Дозволені домени: @lpnu.ua
-                    </FormDescription>
+                    {!inviteToken && (
+                      <FormDescription>
+                        Дозволені домени: @lpnu.ua
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -1,5 +1,6 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +12,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
 import {
@@ -22,7 +32,7 @@ import type { Complaint } from "@/lib/types";
 
 interface ComplaintAdminActionsProps {
   complaint: Complaint;
-  onStatusChange: (status: string) => void;
+  onStatusChange: (status: string, reason?: string) => void;
   onDelete: () => void;
   // When true, hides Delete once the complaint is resolved/rejected. Used by the
   // side panel; the admin list leaves delete available in every state (default).
@@ -66,6 +76,54 @@ const ConfirmAction = ({
   </AlertDialog>
 );
 
+const RejectAction = ({
+  trigger,
+  onConfirm,
+}: {
+  trigger: React.ReactNode;
+  onConfirm: (reason: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const handleConfirm = () => {
+    onConfirm(reason.trim());
+    setOpen(false);
+    setReason("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Відхилити звернення?</DialogTitle>
+          <DialogDescription>
+            Вкажіть причину відхилення, щоб студент розумів, чому заявку було відхилено:
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-2">
+          <Textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Наприклад: Недостатньо інформації або ремонт заплановано в загальному порядку..."
+            rows={3}
+            className="text-xs resize-none"
+          />
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Скасувати
+          </Button>
+          <Button variant="destructive" onClick={handleConfirm}>
+            Відхилити звернення
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Forwards ref and any injected props (e.g. AlertDialogTrigger's onClick via
 // Radix Slot) down to Button — without this, `asChild` triggers are inert.
 const ActionButton = forwardRef<
@@ -102,17 +160,13 @@ const ComplaintAdminActions = ({
           confirmLabel="Схвалити"
           onConfirm={() => onStatusChange("approved")}
         />
-        <ConfirmAction
+        <RejectAction
           trigger={
             <ActionButton variant="destructive" icon={CancelCircleIcon}>
               Відхилити
             </ActionButton>
           }
-          title="Відхилити звернення?"
-          description={'Ви впевнені, що хочете відхилити це звернення? Воно перейде в статус "Відхилено".'}
-          confirmLabel="Відхилити"
-          confirmClassName={destructiveActionClass}
-          onConfirm={() => onStatusChange("rejected")}
+          onConfirm={(reason) => onStatusChange("rejected", reason)}
         />
       </>
     )}

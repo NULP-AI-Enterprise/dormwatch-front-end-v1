@@ -70,7 +70,7 @@ function LoginForm() {
                   <FormItem>
                     <FormLabel>Електронна пошта</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="student@lpnu.ua" {...field} />
+                      <Input type="email" placeholder="student@lpnu.ua або email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

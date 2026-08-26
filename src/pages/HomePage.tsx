@@ -54,7 +54,7 @@ const HomePage = () => {
             <ThemeToggle />
             <Button asChild>
               <Link to="/auth">
-                Вхід для студентів
+                Вхід
               </Link>
             </Button>
           </div>

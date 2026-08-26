@@ -12,6 +12,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
@@ -25,6 +35,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   const currentPath = location.pathname;
   const { user } = useUser();
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const admin = isAdminUser(user);
   const ticketByComplaint = useMyTicketMap();
@@ -88,7 +99,11 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => setLogoutConfirmOpen(true)}
+                  variant="destructive"
+                  className="cursor-pointer"
+                >
                   <HugeiconsIcon icon={Logout01Icon} className="size-4" />
                   <span>Вийти</span>
                 </DropdownMenuItem>
@@ -114,6 +129,26 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           isAdmin={admin}
         />
       )}
+
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вийти з акаунту?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете вийти з облікового запису?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Вийти
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

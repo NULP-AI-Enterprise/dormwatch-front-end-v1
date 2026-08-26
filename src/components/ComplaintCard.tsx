@@ -68,7 +68,7 @@ interface ComplaintCardProps {
 
   // Admin actions (approve / reject / resolve + delete dialog)
   showAdminActions?: boolean;
-  onStatusChange?: (id: number, status: string) => void;
+  onStatusChange?: (id: number, status: string, reason?: string) => void;
   onAdminDelete?: (id: number) => void;
 
   // Ticket controls (compact variant)
@@ -273,6 +273,13 @@ const ComplaintCard = ({
           {p.description || descriptionFallback}
         </p>
 
+        {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
+            <span className="font-bold text-destructive block mb-1">Причина відхилення:</span>
+            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{p.rejectionReason}</p>
+          </div>
+        )}
+
         {showPhoto && p.photoUrl && (
           <div
             className={cn(
@@ -344,7 +351,7 @@ const ComplaintCard = ({
             {showAdminActions && (
               <ComplaintAdminActions
                 complaint={p}
-                onStatusChange={(status) => onStatusChange?.(p.id, status)}
+                onStatusChange={(status, reason) => onStatusChange?.(p.id, status, reason)}
                 onDelete={() => onAdminDelete?.(p.id)}
               />
             )}

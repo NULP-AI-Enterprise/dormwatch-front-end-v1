@@ -7,31 +7,33 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { PlaceCombobox } from "@/components/PlaceCombobox";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link01Icon, Copy01Icon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 import { generateInviteLink } from "@/services/problemsApi";
-import { roleLabel } from "@/lib/complaintUtils";
-import type { Building, Place, Role } from "@/lib/types";
+import type { Building, Role } from "@/lib/types";
 
 interface InviteLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  buildings: Building[];
+  buildings?: Building[];
   roles: Role[];
 }
 
 export function InviteLinkDialog({
   open,
   onOpenChange,
-  buildings,
   roles,
 }: InviteLinkDialogProps) {
-  const [roleId, setRoleId] = useState<number | null>(null);
-  const [buildingId, setBuildingId] = useState<number | null>(null);
-  const [place, setPlace] = useState<Place | null>(null);
-  
+  const [selectedRole, setSelectedRole] = useState<string>("admin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
@@ -42,9 +44,7 @@ export function InviteLinkDialog({
     if (!open && inviteUrl) {
       const timer = setTimeout(() => {
         setInviteUrl(null);
-        setRoleId(null);
-        setBuildingId(null);
-        setPlace(null);
+        setSelectedRole("admin");
         setError("");
         setCopied(false);
       }, 300);
@@ -53,23 +53,20 @@ export function InviteLinkDialog({
   }, [open, inviteUrl]);
 
   const handleGenerate = async () => {
-    const adminRole = roles.find(r => r.role_name === "admin");
-    if (!adminRole) {
-      setError("Роль адміністратора не знайдено в системі");
-      return;
-    }
+    const roleObj = roles.find((r) => r.role_name === selectedRole);
     setLoading(true);
     setError("");
     try {
       const payload = {
-        role_id: adminRole.role_id,
+        role_id: roleObj ? roleObj.role_id : null,
+        role_name: selectedRole,
         building_id: null,
         place_id: null,
       };
       const res = await generateInviteLink(payload);
       const url = `${window.location.origin}/auth?tab=register&invite=${res.invite_token}`;
       setInviteUrl(url);
-    } catch (e) {
+    } catch {
       setError("Не вдалося згенерувати посилання");
     } finally {
       setLoading(false);
@@ -93,15 +90,29 @@ export function InviteLinkDialog({
           </div>
           <DialogDescription>
             Створіть одноразове посилання-запрошення. Користувач, який перейде за ним,
-            автоматично зареєструється як адміністратор.
+            зареєструється з обраною роллю без обмежень на домен пошти.
           </DialogDescription>
         </DialogHeader>
 
         {!inviteUrl ? (
           <div className="space-y-4 text-left mt-2">
-            <p className="text-sm text-muted-foreground">
-              Натисніть кнопку нижче, щоб згенерувати унікальне посилання для реєстрації нового адміністратора.
-            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Роль для реєстрації</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-full h-9 text-xs">
+                  <SelectValue placeholder="Оберіть роль" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Адміністратор</SelectItem>
+                  <SelectItem value="worker">Працівник</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {selectedRole === "admin"
+                  ? "Новий користувач отримає повний доступ до адмін-панелі."
+                  : "Новий користувач отримає доступ ролі працівника."}
+              </p>
+            </div>
 
             {error && (
               <p className="text-xs font-semibold text-destructive">{error}</p>

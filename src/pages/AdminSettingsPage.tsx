@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  fetchCategories,
   fetchBuildings,
   fetchPlaces,
-  createCategory,
-  updateCategory,
-  deleteCategory,
   createBuilding,
   updateBuilding,
   deleteBuilding,
@@ -16,6 +12,7 @@ import {
   createWorker,
   updateWorker,
   deleteWorker,
+  fetchRoles,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,12 +48,14 @@ import {
   Delete02Icon,
   Tick02Icon,
   Cancel01Icon,
-  Layers01Icon,
   Building03Icon,
   DoorIcon,
   Wrench01Icon,
+  Add01Icon,
 } from "@hugeicons/core-free-icons";
-import type { Building, CategoryOption, Place, Worker } from "@/lib/types";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
+import { InviteLinkDialog } from "@/components/InviteLinkDialog";
+import type { Building, Place, Role, Worker } from "@/lib/types";
 
 // Admin reference-data management: Categories, Buildings, Rooms. Deletes are
 // non-destructive by construction on the backend — categories/rooms detach
@@ -65,14 +64,27 @@ import type { Building, CategoryOption, Place, Worker } from "@/lib/types";
 // the consequence.
 
 const AdminSettingsPage = () => {
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  useEffect(() => {
+    fetchRoles().then(setRoles).catch(() => {});
+  }, []);
+
+  const headerActions = useMemo(() => (
+    <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+      <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
+      Запросити користувача
+    </Button>
+  ), []);
+
+  useAdminHeaderActions(headerActions);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="flex-1 p-6">
-        <Tabs defaultValue="categories" className="flex flex-col">
+        <Tabs defaultValue="buildings" className="flex flex-col">
           <TabsList variant="line" className="mb-6">
-            <TabsTrigger value="categories" className="text-xs font-semibold">
-              Категорії
-            </TabsTrigger>
             <TabsTrigger value="buildings" className="text-xs font-semibold">
               Гуртожитки
             </TabsTrigger>
@@ -84,9 +96,6 @@ const AdminSettingsPage = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="categories">
-            <CategoriesTab />
-          </TabsContent>
           <TabsContent value="buildings">
             <BuildingsTab />
           </TabsContent>
@@ -98,246 +107,17 @@ const AdminSettingsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <InviteLinkDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        roles={roles}
+      />
     </div>
   );
 };
 
-// ── Reusable editable row ──────────────────────────────────────────────
-// Displays a label with inline rename (pencil → input + confirm/cancel) and a
-// delete button. Rename commits on Enter or the check button.
 
-type EditableRowProps = {
-  label: string;
-  onRename: (next: string) => Promise<void> | void;
-  onDelete: () => void;
-  renamePlaceholder?: string;
-};
-
-function EditableRow({ label, onRename, onDelete, renamePlaceholder }: EditableRowProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(label);
-  const [saving, setSaving] = useState(false);
-
-  const start = () => {
-    setDraft(label);
-    setEditing(true);
-  };
-
-  const commit = async () => {
-    const next = draft.trim();
-    if (!next || next === label) {
-      setEditing(false);
-      return;
-    }
-    setSaving(true);
-    try {
-      await onRename(next);
-      setEditing(false);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2 py-2">
-      {editing ? (
-        <>
-          <Input
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              if (e.key === "Escape") setEditing(false);
-            }}
-            placeholder={renamePlaceholder}
-            className="h-8 text-xs"
-          />
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={commit}
-            disabled={saving}
-            aria-label="Зберегти"
-          >
-            <HugeiconsIcon icon={Tick02Icon} className="size-4" strokeWidth={2} />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => setEditing(false)}
-            disabled={saving}
-            aria-label="Скасувати"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
-          </Button>
-        </>
-      ) : (
-        <>
-          <span className="flex-1 text-sm text-foreground truncate">{label}</span>
-          <Button size="icon-sm" variant="ghost" onClick={start} aria-label="Редагувати">
-            <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={onDelete}
-            aria-label="Видалити"
-            className="text-destructive hover:text-destructive"
-          >
-            <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
-          </Button>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Inline add form: single free-text field + button ───────────────────
-function InlineAdd({
-  placeholder,
-  buttonLabel = "Додати",
-  onAdd,
-}: {
-  placeholder: string;
-  buttonLabel?: string;
-  onAdd: (value: string) => Promise<void> | void;
-}) {
-  const [value, setValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const submit = async () => {
-    const name = value.trim();
-    if (!name) return;
-    setSaving(true);
-    setError("");
-    try {
-      await onAdd(name);
-      setValue("");
-    } catch (err) {
-      setError("Не вдалося додати");
-      console.warn("Failed to add", err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div>
-      <div className="flex gap-2">
-        <Input
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
-          className="h-8 text-xs"
-        />
-        <Button onClick={submit} disabled={saving || !value.trim()}>
-          {buttonLabel}
-        </Button>
-      </div>
-      {error && <p className="text-xs font-semibold text-destructive mt-2">{error}</p>}
-    </div>
-  );
-}
-
-// ── Categories tab ─────────────────────────────────────────────────────
-function CategoriesTab() {
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pending, setPending] = useState<CategoryOption | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const load = async () => {
-    setLoading(true);
-    const data = await fetchCategories();
-    setCategories(data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const confirmDelete = async () => {
-    if (!pending) return;
-    setDeleting(true);
-    try {
-      await deleteCategory(pending.category_id);
-      await load();
-      setPending(null);
-    } catch (err) {
-      console.warn("Failed to delete category", err);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  return (
-    <Card className="border-border shadow-none bg-card">
-      <CardContent className="space-y-4">
-        <InlineAdd
-          placeholder="Назва категорії..."
-          onAdd={async (name) => {
-            await createCategory(name);
-            await load();
-          }}
-        />
-        <Separator className="my-2" dashed />
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner size="md" />
-          </div>
-        ) : categories.length === 0 ? (
-          <EmptyState icon={Layers01Icon} title="Категорій ще немає" />
-        ) : (
-          <div className="divide-y divide-border">
-            {categories.map((cat) => (
-              <EditableRow
-                key={cat.category_id}
-                label={cat.name}
-                renamePlaceholder="Назва категорії..."
-                onRename={async (next) => {
-                  await updateCategory(cat.category_id, next);
-                  await load();
-                }}
-                onDelete={() => setPending(cat)}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
-
-      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Видалити категорію «{pending?.name}»?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Звернення з цією категорією не будуть видалені — вони залишаться без
-              категорії.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Скасувати</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={deleting}
-              onClick={(e) => {
-                e.preventDefault();
-                confirmDelete();
-              }}
-            >
-              Видалити
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Card>
-  );
-}
 
 // ── Buildings tab ──────────────────────────────────────────────────────
 function BuildingsTab() {

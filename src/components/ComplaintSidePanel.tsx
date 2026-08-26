@@ -117,9 +117,9 @@ const ComplaintSidePanel = ({
   // rewrite a resident's report — enforced here and on the backend.
   const canEdit = isOwner && complaint.status === "pending";
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string, reason?: string) => {
     try {
-      await updateComplaintStatus(complaint.id, newStatus);
+      await updateComplaintStatus(complaint.id, newStatus, reason);
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
     } catch (err) {
@@ -336,6 +336,13 @@ const ComplaintSidePanel = ({
             />
           ) : (
             <p className="text-xs text-muted-foreground leading-relaxed break-all whitespace-pre-wrap">{complaint.description || "—"}</p>
+          )}
+
+          {complaint.rejectionReason && (complaint.status === "rejected" || complaint.status === "denied") && (
+            <div className="p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
+              <span className="font-bold text-destructive block mb-1">Причина відхилення:</span>
+              <p className="text-foreground leading-relaxed whitespace-pre-wrap">{complaint.rejectionReason}</p>
+            </div>
           )}
 
           {isEditing ? (

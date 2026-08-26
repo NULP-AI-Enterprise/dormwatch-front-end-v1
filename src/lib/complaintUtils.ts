@@ -40,16 +40,17 @@ export const statusLabel = (status: string) => {
   return STATUS_LABELS[s] || status;
 };
 
-export const priorityBadgeClass = (priority: string) => {
+export const priorityBadgeClass = (priority?: string | null) => {
   const p = String(priority || "").toLowerCase();
-  if (p === "high" || p === "critical") return "text-red-500 bg-red-500/10 border-red-700/50";
+  if (p === "critical") return "text-red-500 bg-red-500/10 border-red-700/50";
+  if (p === "high") return "text-orange-500 bg-orange-500/10 border-orange-700/50";
   if (p === "low") return "text-green-500 bg-green-500/10 border-green-700/50";
   return "text-yellow-500 bg-yellow-500/10 border-yellow-700/50";
 };
 
-export const priorityLabel = (priority: string) => {
+export const priorityLabel = (priority?: string | null) => {
   const p = String(priority || "").toLowerCase();
-  return PRIORITY_LABELS[p] || priority;
+  return PRIORITY_LABELS[p] || priority || "—";
 };
 
 // Lifecycle stage of a complaint, shared by the progress stepper, the ticket
@@ -73,7 +74,7 @@ export const isActiveStatus = (status: string | null | undefined) => {
   return stage === "submitted" || stage === "in_progress";
 };
 
-export const isAdminUser = (user: any) =>
+export const isAdminUser = (user: { role?: { role_name?: string } } | null | undefined) =>
   !!(
     user?.role &&
     ["admin", "адміністратор"].includes(
@@ -81,7 +82,10 @@ export const isAdminUser = (user: any) =>
     )
   );
 
-export const getUserInitials = (user: any, fallback = "U") => {
+export const getUserInitials = (
+  user: { first_name?: string; last_name?: string } | null | undefined,
+  fallback = "U"
+) => {
   if (!user) return fallback;
   const initials = `${(user.first_name || "")[0] || ""}${(user.last_name || "")[0] || ""}`.toUpperCase();
   return initials || fallback;

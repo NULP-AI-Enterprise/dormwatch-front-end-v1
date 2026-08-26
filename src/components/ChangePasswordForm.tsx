@@ -13,6 +13,16 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 const changePasswordSchema = z.object({
@@ -30,20 +40,30 @@ export default function ChangePasswordForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingData, setPendingData] = useState<ChangePasswordData | null>(null);
 
   const form = useForm<ChangePasswordData>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { oldPassword: "", newPassword: "", confirmNewPassword: "" },
   });
 
-  const onSubmit = async (data: ChangePasswordData) => {
+  const onSubmit = (data: ChangePasswordData) => {
     setError("");
     setSuccess(false);
+    setPendingData(data);
+    setIsConfirmOpen(true);
+  };
+
+  const executeChangePassword = async () => {
+    if (!pendingData) return;
+    setIsConfirmOpen(false);
     setLoading(true);
     try {
-      await changePassword(data.oldPassword, data.newPassword, data.confirmNewPassword);
+      await changePassword(pendingData.oldPassword, pendingData.newPassword, pendingData.confirmNewPassword);
       setSuccess(true);
       form.reset();
+      setPendingData(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Не вдалося змінити пароль");
     } finally {
@@ -111,6 +131,23 @@ export default function ChangePasswordForm() {
           {loading ? "Збереження..." : "Змінити пароль"}
         </Button>
       </form>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Змінити пароль?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ви впевнені, що хочете встановити новий пароль для свого облікового запису?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={executeChangePassword}>
+              Підтвердити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Form>
   );
 }

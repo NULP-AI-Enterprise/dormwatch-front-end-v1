@@ -14,6 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PinIcon } from "@hugeicons/core-free-icons";
 import { createAnnouncement, updateAnnouncement } from "@/services/problemsApi";
@@ -52,6 +62,7 @@ const AnnouncementSidePanel = ({
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   // A portalled Select closing shouldn't also close the Sheet (mirrors the
   // guard in ComplaintSidePanel).
   const isSelectOpen = useRef(false);
@@ -61,6 +72,7 @@ const AnnouncementSidePanel = ({
   useEffect(() => {
     setError(null);
     setSaving(false);
+    setIsConfirmOpen(false);
     if (announcement) {
       setTitle(announcement.title);
       setBody(announcement.body);
@@ -76,7 +88,19 @@ const AnnouncementSidePanel = ({
     }
   }, [announcement, open]);
 
+  const handleSaveTrigger = () => {
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    if (!trimmedTitle || !trimmedBody) {
+      setError("Заголовок і текст обовʼязкові.");
+      return;
+    }
+    setError(null);
+    setIsConfirmOpen(true);
+  };
+
   const handleSave = async () => {
+    setIsConfirmOpen(false);
     const trimmedTitle = title.trim();
     const trimmedBody = body.trim();
     if (!trimmedTitle || !trimmedBody) {
@@ -252,13 +276,34 @@ const AnnouncementSidePanel = ({
             )}
 
             <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saving || !title.trim() || !body.trim()}>
+              <Button onClick={handleSaveTrigger} disabled={saving || !title.trim() || !body.trim()}>
                 {announcement ? "Зберегти" : "Опублікувати"}
               </Button>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
                 Скасувати
               </Button>
             </div>
+
+            <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {announcement ? "Зберегти зміни в оголошенні?" : "Опублікувати оголошення?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {announcement
+                      ? "Зміни будуть збережені та відображатимуться у користувачів."
+                      : "Оголошення стане доступним для перегляду всім призначеним мешканцям."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSave}>
+                    {announcement ? "Зберегти" : "Опублікувати"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </SheetContent>
