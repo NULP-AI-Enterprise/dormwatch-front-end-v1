@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import { createProblem, fetchUserProfile, fetchMyComplaintPlaces } from "@/services/problemsApi";
 import { compressImage } from "@/services/imageUtils";
+=======
+import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlaces } from "@/services/problemsApi";
+import { toast } from "sonner";
+>>>>>>> f3fea6e (feat: step 10 — create-flow success feedback + direct post-auth routing)
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft01Icon,
@@ -222,11 +227,15 @@ const CreateReportPage = () => {
     setIsConfirmOpen(false);
     setSubmitting(true);
     try {
+<<<<<<< HEAD
       const descriptionToSubmit = isBlockShared
         ? `${formData.description.trim()}\n\n[Блок]`
         : formData.description.trim();
 
       await createProblem({
+=======
+      const created = await createProblem({
+>>>>>>> f3fea6e (feat: step 10 — create-flow success feedback + direct post-auth routing)
         category: selectedCategory,
         title: formData.title.trim(),
         description: descriptionToSubmit,
@@ -234,11 +243,16 @@ const CreateReportPage = () => {
         place_id: selectedPlace?.place_id,
         photoFiles: photos.map((p) => p.file),
       });
+<<<<<<< HEAD
       sessionStorage.setItem(
         "studentReportSuccess",
         "Ваше звернення успішно створено. Адміністрація вже отримала його для обробки."
       );
       navigate("/user");
+=======
+      toast.success(`Звернення №${created.id} створено`);
+      navigate(`/my-complaints`, { state: { openComplaintId: created.id } });
+>>>>>>> f3fea6e (feat: step 10 — create-flow success feedback + direct post-auth routing)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Не вдалося надіслати звернення: ${msg}. Спробуйте ще раз.`);

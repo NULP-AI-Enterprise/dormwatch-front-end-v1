@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import HomePage from "@/pages/HomePage";
 import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
@@ -155,6 +156,7 @@ function App() {
         }
       />
       <Route path="*" element={<div className="p-8 font-bold text-muted-foreground">404 — сторінку не знайдено</div>} />
+      <Toaster />
     </Routes>
   );
 }

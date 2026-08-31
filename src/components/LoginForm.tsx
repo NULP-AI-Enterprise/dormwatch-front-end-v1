@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { loginUser } from "@/services/problemsApi";
+import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,9 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await loginUser(data.email, data.password);
+      const res = await loginUser(data.email, data.password);
       window.dispatchEvent(new Event("profileUpdated"));
-      navigate("/");
+      navigate(roleHomeRoute(res.role), { replace: true });
     } catch (err: any) {
       if (err.requiresVerification) {
         navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);

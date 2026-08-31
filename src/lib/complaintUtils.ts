@@ -169,9 +169,12 @@ export const isWorkerUser = (user: {
   user.role.role_name.toLowerCase() === "worker" &&
   !isAdminUser(user);
 
-// Re-file chains: every member denormalizes the chain head id (`root`; roots
-// themselves carry null). Lists group by it so a saga reads as one story —
-// the original first, its re-files beneath in filing order.
+export const roleHomeRoute = (roleName: string | null | undefined): string => {
+  const r = String(roleName || "").toLowerCase();
+  if (r === "admin" || r === "адміністратор") return "/admin";
+  if (r === "worker") return "/worker";
+  return "/user";
+};
 export const chainGroupId = (c: { id: number; root: number | null }) =>
   c.root ?? c.id;
 

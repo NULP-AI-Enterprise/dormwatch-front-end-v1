@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { deleteProblem, fetchCategories } from "@/services/problemsApi";
 import ComplaintCard from "@/components/ComplaintCard";
 import CommentSection from "@/components/CommentSection";
@@ -20,20 +21,12 @@ import { isSameLocalDay } from "@/lib/dateUtils";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import type { CategoryOption } from "@/lib/types";
 import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
 const MyComplaintsPage = () => {
+  const location = useLocation();
+  const openComplaintId = (location.state as { openComplaintId?: number } | null)?.openComplaintId;
   const { user: currentUser } = useUser();
   const comments = useCommentToggle();
   const { problems, loading, reload } = useMyComplaints();
@@ -41,7 +34,6 @@ const MyComplaintsPage = () => {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string[]>([]);
@@ -53,14 +45,17 @@ const MyComplaintsPage = () => {
     fetchCategories().then(setCategories).catch(() => {});
   }, []);
 
-  const onDelete = (id: number) => {
-    setDeleteTarget(id);
-  };
 
-  const confirmDelete = async () => {
-    if (deleteTarget === null) return;
-    const id = deleteTarget;
-    setDeleteTarget(null);
+  // Deep link: open the side panel for a specific complaint (e.g. right after
+  // filing one from /create-report) once its record has loaded.
+  useEffect(() => {
+    if (openComplaintId != null && problems.some((p) => p.id === openComplaintId)) {
+      setSelectedId(openComplaintId);
+      setSheetOpen(true);
+    }
+  }, [openComplaintId, problems]);
+
+  const onDelete = async (id: number) => {
     try {
       await deleteProblem(id);
       reload();
@@ -211,29 +206,6 @@ const MyComplaintsPage = () => {
           isAdmin={isAdminUser(currentUser)}
         />
       )}
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
-            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Скасувати</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Видалити
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
