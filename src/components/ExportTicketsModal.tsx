@@ -77,6 +77,11 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
     onOpenChange(false);
   };
 
+  const handleWorkerReportExport = () => {
+    window.open("/admin/reports/workers/print", "_blank");
+    onOpenChange(false);
+  };
+
   // Worker combobox operates over worker-id strings, with "all" as the first item.
   // The label map lets the input search worker names and render id → name.
   const workerItems = ["all", ...workers.map((w) => String(w.worker_id))];
@@ -110,6 +115,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
           <TabsList className="w-full">
             <TabsTrigger value="tickets">Наряди</TabsTrigger>
             <TabsTrigger value="completed">Виконані</TabsTrigger>
+            <TabsTrigger value="workers">Працівники</TabsTrigger>
           </TabsList>
 
           {/* Tab 1 — per-worker work-order export (existing behavior). */}
@@ -200,6 +206,27 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
                   onClick={handleCompletedExport}
                   disabled={!range?.from || !range?.to}
                 >
+                  <HugeiconsIcon icon={Download01Icon} className="size-4" />
+                  Згенерувати звіт
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab 3 — per-worker resource-tracking report (step 09). */}
+          <TabsContent value="workers" className="mt-4">
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-muted-foreground">
+                Звіт по працівниках: кількість завдань, тривалість за кожне
+                завдання (без сумування), середній час вирішення, вчасно /
+                прострочено, відсоток відхилення.
+              </p>
+              <div className="flex justify-end gap-3 mt-2">
+                <Button variant="outline" className="gap-2" onClick={() => onOpenChange(false)}>
+                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+                  Скасувати
+                </Button>
+                <Button className="gap-2" onClick={handleWorkerReportExport}>
                   <HugeiconsIcon icon={Download01Icon} className="size-4" />
                   Згенерувати звіт
                 </Button>

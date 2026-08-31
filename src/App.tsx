@@ -15,6 +15,7 @@ import StudentLayout from "@/components/StudentLayout";
 import AdminLayout from "@/components/AdminLayout";
 import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
 import AdminCompletedReportPrintPage from "@/pages/AdminCompletedReportPrintPage";
+import AdminWorkerReportPrintPage from "@/pages/AdminWorkerReportPrintPage";
 import WorkerHomePage from "@/pages/WorkerHomePage";
 import AdminWorkerInvitePrintPage from "@/pages/AdminWorkerInvitePrintPage";
 
@@ -134,6 +135,14 @@ function App() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminCompletedReportPrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports/workers/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminWorkerReportPrintPage />
           </ProtectedRoute>
         }
       />

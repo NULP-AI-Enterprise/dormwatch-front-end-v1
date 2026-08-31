@@ -863,6 +863,20 @@ export async function fetchCompletedReport({ date_from, date_to } = {}) {
   return [];
 }
 
+// Admin per-worker resource-tracking report: jobs count, per-job duration
+// (started_at → finished_at, shown per job — never summed), average resolution
+// time on resolved_at, on-time vs overdue, and rejection rate. Backed by
+// GET /admin/reports/workers/. Returns { workers: [...], caveats: [...] }.
+export async function fetchWorkerReport() {
+  try {
+    const data = await fetchJson("/admin/reports/workers/");
+    if (data && Array.isArray(data.workers)) return data;
+  } catch (e) {
+    console.warn("Failed to fetch worker report", e);
+  }
+  return { workers: [], caveats: [] };
+}
+
 export async function postComment(complaintId, text) {
   const data = await fetchJson(`/complaints/${complaintId}/comments/`, {
     method: "POST",
