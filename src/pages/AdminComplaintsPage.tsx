@@ -5,7 +5,7 @@ import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
   updateComplaintAdmin,
-  deleteProblem,
+  deleteAdminComplaint,
   fetchCategories,
   fetchWorkers,
 } from "@/services/problemsApi";
@@ -136,7 +136,7 @@ const AdminComplaintsPage = () => {
 
   const handleRemove = async (id: number) => {
     try {
-      await deleteProblem(id);
+      await deleteAdminComplaint(id);
       setComplaints((prev) => prev.filter((p) => String(p.id) !== String(id)));
     } catch (err) {
       console.warn('Failed to remove complaint', err);

@@ -58,9 +58,9 @@ interface ComplaintCardProps {
   onCommentToggle?: () => void;
   commentsContent?: ReactNode;
 
-  // Delete (non-admin)
+  // Delete (non-admin). Rendered as an always-visible footer icon so the
+  // control is reachable on touch devices — hover-only reveal is gone.
   showDelete?: boolean;
-  deleteHoverReveal?: boolean; // true = dashboard absolute reveal; false = user bar icon
   onDelete?: (id: number) => void;
 
   // Admin actions (triage cluster + delete dialog)
@@ -100,7 +100,6 @@ const ComplaintCard = ({
   onCommentToggle,
   commentsContent,
   showDelete = false,
-  deleteHoverReveal = false,
   onDelete,
   showAdminActions = false,
   onAdminPatch,
@@ -142,7 +141,6 @@ const ComplaintCard = ({
   }
 
   // ── Default variant ─────────────────────────────────────────────
-  const hoverRevealDelete = showDelete && deleteHoverReveal;
 
   // Re-file chain flag: a follow-up cites its source so a saga reads as one
   // story in every list that renders it. Public payloads carry no
@@ -198,7 +196,6 @@ const ComplaintCard = ({
       className={cn(
         "py-0 border-border shadow-none bg-card",
         onCardClick && "group hover:bg-muted/50 transition-colors cursor-pointer",
-        hoverRevealDelete && "group relative",
         cardClassName
       )}
       onClick={
@@ -209,19 +206,7 @@ const ComplaintCard = ({
             }
           : undefined
       }
-    >
-      {hoverRevealDelete && (
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => onDelete?.(p.id)}
-          className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Видалити"
-        >
-          <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-        </Button>
-      )}
-
+      >
       <div className={bodyPadding}>
         {/* Unified header: status badge left, meta line right, bold title below.
             Same across admin / feed / reports — role-specific controls live in
@@ -313,7 +298,7 @@ const ComplaintCard = ({
                 size="xs"
               />
             )}
-            {showDelete && !deleteHoverReveal && (
+            {showDelete && (
               <Button
                 variant="ghost"
                 size="icon-xs"

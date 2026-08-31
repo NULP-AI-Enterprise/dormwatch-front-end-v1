@@ -7,6 +7,16 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
   FilterSearchInput,
@@ -34,6 +44,7 @@ const MyComplaintsPage = () => {
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string[]>([]);
@@ -56,11 +67,18 @@ const MyComplaintsPage = () => {
   }, [openComplaintId, problems]);
 
   const onDelete = async (id: number) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
     try {
-      await deleteProblem(id);
+      await deleteProblem(deleteTarget);
       reload();
     } catch (err) {
       console.warn("Failed to delete problem", err);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -206,6 +224,19 @@ const MyComplaintsPage = () => {
           isAdmin={isAdminUser(currentUser)}
         />
       )}
+
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
+            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Видалити</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

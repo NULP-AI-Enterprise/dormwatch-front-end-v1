@@ -22,6 +22,7 @@ import AdminWorkerInvitePrintPage from "@/pages/AdminWorkerInvitePrintPage";
 
 function App() {
   return (
+    <>
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/auth" element={<AuthPage />} />
@@ -156,8 +157,9 @@ function App() {
         }
       />
       <Route path="*" element={<div className="p-8 font-bold text-muted-foreground">404 — сторінку не знайдено</div>} />
-      <Toaster />
     </Routes>
+    <Toaster />
+    </>
   );
 }
 

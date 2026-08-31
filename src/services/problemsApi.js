@@ -642,6 +642,15 @@ export async function deleteProblem(id) {
   return true;
 }
 
+// Admin delete: hard-delete before a worker is assigned, archive afterwards
+// (archived flag + archived_by/archived_at) so rejection marks and follow-up
+// chains survive. Routes through the admin endpoint whose state-aware logic
+// keeps the hard-delete and archive paths distinct.
+export async function deleteAdminComplaint(id) {
+  await fetchJson(`/admin/complaints/${id}/`, { method: "DELETE" });
+  return true;
+}
+
 // ── Resident lifecycle verbs (owner-only, server-enforced transitions) ──
 // accept: review → resolved; reject: review → terminal not_accepted
 // (rework_reason required by the server); withdraw: pending → withdrawn.

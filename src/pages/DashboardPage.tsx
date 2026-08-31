@@ -270,7 +270,6 @@ const DashboardPage = () => {
                     />
                   }
                   showDelete={manage}
-                  deleteHoverReveal
                   onDelete={handleDelete}
                 />
               );

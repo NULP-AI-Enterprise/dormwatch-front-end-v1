@@ -31,7 +31,7 @@ import {
 import { resolveImageUrl } from "@/services/imageUtils";
 import {
   updateComplaintAdmin,
-  deleteProblem,
+  deleteAdminComplaint,
   updateComplaintPriority,
   updateComplaintAssignment,
   fetchCategories,
@@ -178,7 +178,7 @@ const ComplaintSidePanel = ({
 
   const handleDelete = async () => {
     try {
-      await deleteProblem(complaint.id);
+      await deleteAdminComplaint(complaint.id);
       window.dispatchEvent(new CustomEvent("complaintUpdated"));
       onStatusChange();
       onOpenChange(false);
