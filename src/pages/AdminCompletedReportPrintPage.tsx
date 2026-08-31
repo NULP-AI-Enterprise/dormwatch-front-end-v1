@@ -20,6 +20,7 @@ interface CompletedReportRow {
   resolved_at: string | null;
   building: string | null;
   room: string | null;
+  is_shared: boolean;
   category: string | null;
   priority: string | null;
   worker: CompletedReportWorker | null;
@@ -188,10 +189,10 @@ const AdminCompletedReportPrintPage = () => {
                   <td className="border border-gray-300 p-2 text-center text-xs">
                     {row.category || "Не вказано"}
                   </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs">
-                    <div className="font-semibold">{row.building || "Не вказано"}</div>
-                    <div className="text-gray-600">{row.room || "—"}</div>
-                  </td>
+                   <td className="border border-gray-300 p-2 text-center text-xs">
+                     <div className="font-semibold">{row.building || "Не вказано"}</div>
+                     <div className="text-gray-600">{row.room || "—"}{row.is_shared && " (спільна)"}</div>
+                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs">
                     {workerLabel(row)}
                   </td>

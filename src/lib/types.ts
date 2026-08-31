@@ -44,6 +44,10 @@ export interface Complaint {
   building: string;
   room: string;
   placeName: string;
+  // True when the complaint's location is a shared/common area (kitchen,
+  // laundry, hallway) rather than a residence room. Drives the "(спільна)"
+  // marker downstream so common areas never read as someone's room.
+  isShared: boolean;
   floor: string;
   photoUrl: string | null;
   thumbnail: string | null;

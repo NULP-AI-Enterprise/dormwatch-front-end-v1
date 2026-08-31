@@ -228,7 +228,7 @@ const AdminTicketsPrintPage = () => {
                     <tr className="bg-gray-50">
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "36%" }}>Проблема / Опис</th>
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "16%" }}>Категорія</th>
-                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "20%" }}>Гуртожиток / Кімната</th>
+                      <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "20%" }}>Гуртожиток / Місце</th>
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Пріоритет</th>
                       <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Дедлайн</th>
                     </tr>
@@ -245,7 +245,7 @@ const AdminTicketsPrintPage = () => {
                         </td>
                         <td className="border border-gray-300 p-2 text-center text-xs">
                           <div className="font-semibold">{c.building || "Не вказано"}</div>
-                          <div className="text-gray-600">{c.placeName || "—"}</div>
+                          <div className="text-gray-600">{c.placeName || "—"}{c.isShared && " (спільна)"}</div>
                         </td>
                         <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
                           {c.priority ? priorityLabel(c.priority) : "Не визначено"}
@@ -293,10 +293,10 @@ const AdminTicketsPrintPage = () => {
                     <td className="border border-gray-300 p-2 font-bold bg-gray-50">Гуртожиток</td>
                     <td className="border border-gray-300 p-2 font-semibold">{c.building || "Не вказано"}</td>
                   </tr>
-                  <tr>
-                    <td className="border border-gray-300 p-2 font-bold bg-gray-50">Кімната</td>
-                    <td className="border border-gray-300 p-2 font-semibold">{c.placeName || "Не вказано"}</td>
-                  </tr>
+                   <tr>
+                      <td className="border border-gray-300 p-2 font-bold bg-gray-50">{c.isShared ? "Спільне місце" : "Кімната"}</td>
+                      <td className="border border-gray-300 p-2 font-semibold">{c.placeName || "Не вказано"}</td>
+                   </tr>
                   <tr>
                     <td className="border border-gray-300 p-2 font-bold bg-gray-50">Пріоритет</td>
                     <td className="border border-gray-300 p-2">{c.priority ? priorityLabel(c.priority) : "Не визначено"}</td>

@@ -15,6 +15,7 @@ interface WorkerReportJob {
   category: string | null;
   building: string | null;
   room: string | null;
+  is_shared: boolean;
   started_at: string | null;
   finished_at: string | null;
   duration_minutes: number | null;
@@ -263,10 +264,10 @@ const AdminWorkerReportPrintPage = () => {
                           <td className="border border-gray-300 p-2 text-center text-xs">
                             {j.category || "Не вказано"}
                           </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs">
-                            <div className="font-semibold">{j.building || "Не вказано"}</div>
-                            <div className="text-gray-600">{j.room || "—"}</div>
-                          </td>
+                           <td className="border border-gray-300 p-2 text-center text-xs">
+                             <div className="font-semibold">{j.building || "Не вказано"}</div>
+                             <div className="text-gray-600">{j.room || "—"}{j.is_shared && " (спільна)"}</div>
+                           </td>
                           <td className="border border-gray-300 p-2 text-center text-xs">
                             {formatDateTime(j.started_at)}
                           </td>

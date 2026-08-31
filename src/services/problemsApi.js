@@ -482,9 +482,11 @@ function normalizeComplaint(raw) {
   let safeRoom = "";
   let safeFloor = "";
   let safeBuilding = "";
+  let shared = false;
 
   if (raw.place && typeof raw.place === "object") {
     safeRoom = String(raw.place.place_name || "");
+    shared = !!raw.place.is_shared;
     if (raw.place.building) {
       safeBuilding = String(raw.place.building.name || raw.place.building.building_id || "");
     }
@@ -512,6 +514,7 @@ function normalizeComplaint(raw) {
     building: safeBuilding,
     room: safeRoom,
     placeName: safeRoom,
+    isShared: shared,
     floor: safeFloor,
     photoUrl: raw.photo_url ?? raw.photoUrl ?? null,
     thumbnail: raw.thumbnail ?? null,

@@ -212,6 +212,7 @@ const WorkerHomePage = () => {
                     )}
                     <span>
                       {job.building || "?"} · {job.placeName || "?"}
+                      {job.isShared && <span className="ml-0.5">(спільна)</span>}
                     </span>
                   </div>
 
@@ -303,6 +304,7 @@ const WorkerHomePage = () => {
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">
                         №{job.id} · {job.building || "?"} · {job.placeName || "?"}
+                        {job.isShared && <span className="ml-0.5">(спільна)</span>}
                         {job.followUpOf != null && ` · Повторне до №${job.followUpOf}`}
                       </p>
                       <div className="text-xs text-muted-foreground space-y-0.5">
