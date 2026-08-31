@@ -8,12 +8,13 @@ import {
   createPlace,
   updatePlace,
   deletePlace,
-  fetchWorkers,
+fetchWorkers,
   createWorker,
   updateWorker,
   deleteWorker,
   fetchRoles,
   createWorkerInvite,
+  unlinkWorker,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -779,8 +780,14 @@ function WorkersTab() {
   const [pending, setPending] = useState<Worker | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Account provisioning: one dialog per worker — mint the token, then hand
-  // over the redemption link by email or printed QR.
+   // Account unlinking: sever the Worker→account bond. The live link check on
+   // the worker endpoints then 403s at the next request instead of letting the
+   // old refresh cookie ride for up to 7 days (call #21).
+   const [unlinking, setUnlinking] = useState<Worker | null>(null);
+   const [unlinkingBusy, setUnlinkingBusy] = useState(false);
+
+   // Account provisioning: one dialog per worker — mint the token, then hand
+   // over the redemption link by email or printed QR.
   const [provisioning, setProvisioning] = useState<Worker | null>(null);
   const [inviteToken, setInviteToken] = useState("");
   const [inviting, setInviting] = useState(false);
@@ -885,7 +892,21 @@ function WorkersTab() {
     }
   };
 
-  const inviteUrl = inviteToken
+   const confirmUnlink = async () => {
+     if (!unlinking) return;
+     setUnlinkingBusy(true);
+     try {
+       await unlinkWorker(unlinking.worker_id);
+       await load();
+       setUnlinking(null);
+     } catch (err) {
+       console.warn("Failed to unlink worker", err);
+     } finally {
+       setUnlinkingBusy(false);
+     }
+   };
+
+   const inviteUrl = inviteToken
     ? `${window.location.origin}/auth?tab=register&invite=${inviteToken}`
     : "";
 
@@ -959,9 +980,20 @@ function WorkersTab() {
                   )}
                 </div>
                 {w.has_account ? (
-                  <Badge variant="secondary" className="shrink-0">
-                    Доступ відкрито
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="secondary" className="shrink-0">
+                      має доступ до панелі
+                    </Badge>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => setUnlinking(w)}
+                      aria-label="Відкликати доступ"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     size="sm"
@@ -1125,6 +1157,33 @@ function WorkersTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Unlink dialog: sever the account bond — worker endpoints 403 next request */}
+      <AlertDialog open={!!unlinking} onOpenChange={(o) => !o && setUnlinking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Відкликати доступ — {unlinking?.full_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Працівник втратить доступ до панелі — при наступному запиті йому
+              буде відмовлено. Обліковий запис залишиться, доступ можна
+              відновити новим запрошенням.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unlinkingBusy}>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={unlinkingBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmUnlink();
+              }}
+            >
+              Відкликати
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

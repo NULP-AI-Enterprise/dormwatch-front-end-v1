@@ -801,6 +801,16 @@ export async function createWorkerInvite(workerId) {
   });
 }
 
+// Sever a worker's account link (Worker.account → None). The worker endpoints
+// then 403 at the next request because the live link check
+// (`getattr(actor, 'worker', None)`) no longer resolves — access is stripped
+// instead of riding an old refresh cookie. Reversible: re-provision anytime.
+export async function unlinkWorker(workerId) {
+  return await fetchJson(`/admin/workers/${workerId}/unlink/`, {
+    method: "POST",
+  });
+}
+
 // ------------------ RESIDENTS (admin user management) ------------------
 
 // All user profiles with nested building/place/role, for the admin residents

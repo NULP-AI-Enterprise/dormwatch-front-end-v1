@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -172,6 +173,24 @@ const ComplaintAdminActions = ({
     }
   };
 
+  // Delete is available in every state (hidden on closed states only when
+  // hideDeleteWhenClosed). Extracted so the proxy branches can compose it.
+  const renderDelete = () =>
+    !(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) ? (
+      <ConfirmAction
+        trigger={
+          <ActionButton variant="destructive" icon={Delete01Icon}>
+            Видалити
+          </ActionButton>
+        }
+        title="Видалити звернення?"
+        description="Ви впевнені, що хочете видалити це звернення? Цю дію неможливо скасувати."
+        confirmLabel="Видалити"
+        confirmClassName={destructiveActionClass}
+        onConfirm={onDelete}
+      />
+    ) : null;
+
   if (complaint.status === "pending") {
     return (
       <>
@@ -233,7 +252,14 @@ const ComplaintAdminActions = ({
                   <SelectContent>
                     {workers.map((w) => (
                       <SelectItem key={w.worker_id} value={String(w.worker_id)}>
-                        {w.full_name}
+                        <span className="flex items-center gap-1.5">
+                          {w.full_name}
+                          {w.has_account && (
+                            <Badge variant="secondary" className="px-1 py-0 text-[10px] leading-none h-4">
+                              доступ
+                            </Badge>
+                          )}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -355,22 +381,47 @@ const ComplaintAdminActions = ({
     );
   }
 
+  // Proxy lifecycle for account-less workers: the admin stamps the same
+  // started_at/finished_at fields the worker panel writes, through the same
+  // transition helper — so a printout job and a panel job produce identical
+  // records. Only meaningful once someone is assigned to do the work.
+  if (complaint.status === "approved" && complaint.worker) {
+    return (
+      <>
+        <ActionButton
+          icon={ArrowRight01Icon}
+          onClick={() => onPatch({ status: "in_progress" })}
+        >
+          Взято в роботу
+        </ActionButton>
+        {renderDelete()}
+        {error && (
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+        )}
+      </>
+    );
+  }
+
+  if (complaint.status === "in_progress" && complaint.worker) {
+    return (
+      <>
+        <ActionButton
+          icon={CheckmarkCircleIcon}
+          onClick={() => onPatch({ status: "review" })}
+        >
+          Виконано
+        </ActionButton>
+        {renderDelete()}
+        {error && (
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
-      {!(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) && (
-        <ConfirmAction
-          trigger={
-            <ActionButton variant="destructive" icon={Delete01Icon}>
-              Видалити
-            </ActionButton>
-          }
-          title="Видалити звернення?"
-          description="Ви впевнені, що хочете видалити це звернення? Цю дію неможливо скасувати."
-          confirmLabel="Видалити"
-          confirmClassName={destructiveActionClass}
-          onConfirm={onDelete}
-        />
-      )}
+      {renderDelete()}
       {error && (
         <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
       )}

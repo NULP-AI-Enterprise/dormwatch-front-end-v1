@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
 import CommentSection from "@/components/CommentSection";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -479,7 +480,14 @@ const ComplaintSidePanel = ({
                         <SelectItem value="none">Не призначено</SelectItem>
                         {workers.map((w) => (
                           <SelectItem key={w.worker_id} value={String(w.worker_id)}>
-                            {w.full_name}
+                            <span className="flex items-center gap-1.5">
+                              {w.full_name}
+                              {w.has_account && (
+                                <Badge variant="secondary" className="px-1 py-0 text-[10px] leading-none h-4">
+                                  доступ
+                                </Badge>
+                              )}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
