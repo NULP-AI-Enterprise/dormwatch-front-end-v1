@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronDownIcon, Logout01Icon } from "@hugeicons/core-free-icons";
+import { ChevronDownIcon, Logout01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -24,6 +25,7 @@ import {
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { SettingsModal } from "@/components/SettingsModal";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import type { Complaint } from "@/lib/types";
@@ -34,6 +36,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   const currentPath = location.pathname;
   const { user } = useUser();
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   const admin = isAdminUser(user);
@@ -97,6 +100,11 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
+                  <HugeiconsIcon icon={UserIcon} className="size-4" />
+                  <span>Профіль</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setLogoutConfirmOpen(true)}
                   variant="destructive"
@@ -126,8 +134,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           isAdmin={admin}
         />
       )}
-
-      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+<AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Вийти з акаунту?</AlertDialogTitle>
@@ -146,6 +153,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <SettingsModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </div>
   );
 };

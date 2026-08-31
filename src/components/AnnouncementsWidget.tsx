@@ -61,7 +61,7 @@ const AnnouncementsWidget = () => {
                   <button
                     type="button"
                     onClick={() => openAnnouncement(a.announcement_id)}
-                    className="flex items-start gap-2 text-left w-full group cursor-pointer"
+                    className="flex items-start gap-2 text-left w-full group cursor-pointer p-2 -m-2 border border-transparent hover:bg-muted/50 hover:border-border transition-colors"
                   >
                     {a.is_pinned && (
                       <HugeiconsIcon

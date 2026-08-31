@@ -24,10 +24,8 @@ import { Button } from "@/components/ui/button";
 import { logoutUser } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ShieldIcon,
-  Briefcase01Icon,
-  Logout01Icon,
   Settings02Icon,
+  Logout01Icon,
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
@@ -45,13 +43,6 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
   const isAdmin = isAdminUser(user);
 
-  // Per-dorm emergency contacts come from the user's building config; a building
-  // without a number simply omits that row (no fabricated placeholder). Prefer
-  // the room's building, falling back to the profile building for users who have
-  // a building set but no room yet.
-  const building = user?.place?.building ?? user?.building;
-  const commandantPhone = building?.commandant_phone;
-
   const handleLogout = async () => {
     await logoutUser();
     window.location.href = "/auth";
@@ -65,7 +56,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Профіль</DialogTitle>
-          <DialogDescription>Ваш профіль та екстрені контакти</DialogDescription>
+          <DialogDescription>Ваш профіль та налаштування</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col max-h-[80vh]">
@@ -90,36 +81,6 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-5">
-              <h4 className="text-xs font-bold text-muted-foreground mb-6">
-                Екстрені контакти
-              </h4>
-              <div className="space-y-4">
-                {commandantPhone && (
-                  <div className="flex items-center gap-4 bg-muted border border-border p-4">
-                    <div className="p-2 bg-card border border-border shrink-0">
-                      <HugeiconsIcon icon={Briefcase01Icon} className="size-4 text-primary" strokeWidth={2} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground">
-                        Комендант
-                      </p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">
-                        {commandantPhone}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-3 border border-dashed border-border text-center">
-                  <HugeiconsIcon icon={ShieldIcon} className="size-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
-                  <p className="text-xs text-muted-foreground font-normal">
-                    Екстрені ситуації — телефонуйте 101 або 112
-                  </p>
-                </div>
-              </div>
-
-              <Separator dashed className="my-5" />
-
               <div className="mb-5">
                 <Button
                   variant="outline"

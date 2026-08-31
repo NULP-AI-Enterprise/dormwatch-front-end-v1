@@ -32,7 +32,9 @@ import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
 import type { CategoryOption } from "@/lib/types";
-import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { CheckmarkCircle02Icon, Search01Icon, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Button } from "@/components/ui/button";
 
 const MyComplaintsPage = () => {
   const location = useLocation();
@@ -157,6 +159,7 @@ const MyComplaintsPage = () => {
 
               <h4 className="text-xs font-normal text-muted-foreground mb-3">Дата подання</h4>
               <DatePicker date={date} setDate={setDate} placeholder="Оберіть дату" />
+              <p className="text-xs text-muted-foreground mt-2">Фільтр за точним днем подання звернення.</p>
             </CardContent>
           </Card>
         </div>
@@ -175,7 +178,22 @@ const MyComplaintsPage = () => {
               }
             />
           ) : filtered.length === 0 ? (
-            <EmptyState icon={Search01Icon} title="Нічого не знайшли за цими фільтрами." />
+            <EmptyState icon={Search01Icon} title="Нічого не знайшли за цими фільтрами." action={
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => {
+                  setStatus([]);
+                  setPriority([]);
+                  setSelectedCategories([]);
+                  setDate(undefined);
+                  setSearch("");
+                }}
+              >
+                <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+                Скинути фільтри
+              </Button>
+            } />
           ) : (
             filtered.map((p) => (
               <ComplaintCard
