@@ -128,8 +128,7 @@ const ComplaintCard = ({
             )}
             <span className="text-xs text-muted-foreground">
               {p.building || "?"}
-              <Dot />
-              {p.placeName || "?"}
+              {p.placeName && <><Dot />{p.placeName}</>}
               {p.isShared && <span className="ml-0.5">(спільна)</span>}
             </span>
           </div>
@@ -169,8 +168,7 @@ const ComplaintCard = ({
         {p.category}
         <Dot />
         {p.building || "?"}
-        <Dot />
-        {p.placeName || "?"}
+        {p.placeName && <><Dot />{p.placeName}</>}
         {p.isShared && <span className="ml-0.5">(спільна)</span>}
       </>
     );

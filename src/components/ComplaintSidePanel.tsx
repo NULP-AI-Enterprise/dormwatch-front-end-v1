@@ -276,7 +276,7 @@ const ComplaintSidePanel = ({
             ) : (
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
             )}
-             <p className="text-xs font-normal text-muted-foreground">{complaint.building || "?"}<span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName || "?"}{complaint.isShared && <span className="ml-0.5">(спільна)</span>}</p>
+             <p className="text-xs font-normal text-muted-foreground">{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}{complaint.isShared && <span className="ml-0.5">(спільна)</span>}</p>
             {complaint.followUpOf != null && (
               <p className="text-xs font-normal text-muted-foreground mt-1">
                 Повторне звернення до №{complaint.followUpOf}

@@ -501,7 +501,10 @@ function normalizeComplaint(raw) {
   } else {
     safeRoom = raw.room || "";
     safeFloor = raw.floor || "";
-    safeBuilding = raw.building || "";
+    // Public payloads emit `building_name` (no room/place); authenticated
+    // payloads emit a nested `place`. Fall back to the flat label so the
+    // public feed shows the building without leaking the room.
+    safeBuilding = raw.building || raw.building_name || "";
   }
 
   return {
