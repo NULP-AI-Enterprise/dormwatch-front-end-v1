@@ -20,6 +20,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
+import { LINK, LINK_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 import type { Complaint } from "@/lib/types";
 
@@ -113,7 +114,7 @@ const AdminPage = () => {
             <div className="bg-card border border-border overflow-hidden">
               <div className="px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-foreground">Останні звернення</h2>
-                <Link to="/admin/complaints" className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400">
+                <Link to="/admin/complaints" className={`text-sm font-semibold ${LINK} ${LINK_HOVER}`}>
                   Керування зверненнями
                 </Link>
               </div>

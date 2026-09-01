@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ACCENT } from "@/lib/theme";
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -41,7 +42,7 @@ const StatCard = ({ icon, label, value, loading, to, actionLabel, state }: StatC
         </div>
         <div className="text-3xl font-bold text-foreground mb-2">{value}</div>
         {to && actionLabel && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-500">
+          <span className={`flex items-center gap-1 text-xs font-semibold ${ACCENT}`}>
             {actionLabel}
             <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
           </span>

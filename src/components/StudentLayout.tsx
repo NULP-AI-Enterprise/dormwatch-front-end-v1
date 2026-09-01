@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ChevronDownIcon, Logout01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
+import { SELECTED } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +79,7 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
                   to={item.to}
                   className={`px-4 py-5 text-sm font-semibold transition-colors border-b-2 ${
                     currentPath === item.to
-                      ? "border-blue-500 text-foreground bg-muted/50"
+                      ? SELECTED
                       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >

@@ -21,6 +21,7 @@ import {
 } from "@/components/ComplaintFilters";
 import EmptyState from "@/components/EmptyState";
 import { complaintIsOverdue } from "@/lib/complaintUtils";
+import { ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, ERROR, ERROR_TEXT } from "@/lib/theme";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -189,7 +190,7 @@ const AdminComplaintsPage = () => {
               alt="Full size"
             />
           )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-stone-300">
+                  <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
             <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
@@ -296,7 +297,7 @@ const AdminComplaintsPage = () => {
                   </div>
                 )}
                 {!loading && err && (
-                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-semibold">
+                  <div className={`border ${ERROR} ${ERROR_TEXT} p-4 text-xs font-semibold`}>
                     {err}
                   </div>
                 )}
@@ -336,7 +337,7 @@ const AdminComplaintsPage = () => {
                       complaint={p}
                       cardClassName={`group transition-colors cursor-pointer ${
                         p.status === "pending" && !viewedComplaints.has(p.id as number)
-                          ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
+                          ? `border-l-2 ${ACCENT_BORDER} border-y-border border-r-border ${ACCENT_BG_LIGHT} ${ACCENT_BG_HOVER_LIGHT}`
                           : "hover:bg-muted/50"
                       }`}
                       onCardClick={() => {

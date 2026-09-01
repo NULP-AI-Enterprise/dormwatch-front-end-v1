@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/dateUtils";
 import { sortAnnouncements } from "@/lib/announcementUtils";
 import { fetchAnnouncements } from "@/services/problemsApi";
 import type { Announcement } from "@/lib/types";
+import { ACCENT, ACCENT_BORDER_LIGHT, ACCENT_SUBTLE } from "@/lib/theme";
 
 interface AnnouncementsModalProps {
   open: boolean;
@@ -143,7 +144,7 @@ const AnnouncementsModal = ({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {detailedAnnouncement.is_pinned && (
-                        <Badge variant="outline" className="gap-1 border-blue-700/50 bg-blue-500/10 text-blue-500 font-semibold">
+                         <Badge variant="outline" className={`gap-1 ${ACCENT_BORDER_LIGHT} ${ACCENT_SUBTLE} ${ACCENT} font-semibold`}>
                           <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
                           Закріплено
                         </Badge>
@@ -207,7 +208,7 @@ const AnnouncementsModal = ({
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex flex-wrap items-center gap-2">
                         {item.is_pinned && (
-                          <Badge variant="outline" className="gap-1 border-blue-700/50 bg-blue-500/10 text-blue-500 font-semibold">
+                          <Badge variant="outline" className={`gap-1 ${ACCENT_BORDER_LIGHT} ${ACCENT_SUBTLE} ${ACCENT} font-semibold`}>
                             <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
                             Закріплено
                           </Badge>

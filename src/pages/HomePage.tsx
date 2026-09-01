@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
 import { isAdminUser, isWorkerUser, statusBadgeClass } from "@/lib/complaintUtils";
+import { ACCENT, ACCENT_BORDER_DARK } from "@/lib/theme";
 import { FeatureCard } from "@/components/FeatureCard";
 
 const HomePage = () => {
@@ -67,7 +68,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative z-10">
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
-              Зламаний кран? Холодна кімната? <span className="text-blue-600 dark:text-blue-400">Ми допоможемо.</span>
+              Зламаний кран? Холодна кімната? <span className={ACCENT}>Ми допоможемо.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
               Створюйте звернення про ремонт у вашому гуртожитку менш ніж за 15 секунд. Відстежуйте оновлення статусу в режимі реального часу. Без завантаження додатків та очікування на лінії.
@@ -88,7 +89,7 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-background border border-border p-6 flex flex-col gap-4">
               <div className="flex justify-between items-center pb-4">
                 <div className="w-32 h-4 bg-card" />
-                <div className="w-8 h-8 bg-primary/90 border border-blue-800" />
+                <div className={`w-8 h-8 bg-primary/90 border ${ACCENT_BORDER_DARK}`} />
               </div>
               <Separator />
               <div className="bg-card border border-border p-4">

@@ -29,7 +29,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
-import { isAdminUser } from "@/lib/complaintUtils";
+import { isAdminUser, roleBadgeClass } from "@/lib/complaintUtils";
+import { ERROR_TEXT, ERROR_BG_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 
 interface SettingsModalProps {
@@ -68,7 +69,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                   {user ? `${user.first_name} ${user.last_name}` : "Завантаження..."}
                 </p>
                 {user && (
-                  <Badge variant="outline" className={`${isAdmin ? "text-yellow-500 bg-yellow-500/10 border-yellow-700/50" : "text-blue-500 bg-blue-500/10 border-blue-700/50"}`}>
+                  <Badge variant="outline" className={roleBadgeClass(isAdmin ? "admin" : "student")}>
                     {isAdmin ? "Адмін" : "Студент"}
                   </Badge>
                 )}
@@ -103,12 +104,12 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
               <Separator dashed className="my-5" />
 
-              <AlertDialog>
+<AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-red-400 hover:text-red-300 hover:bg-red-900/10"
+                    className={`w-full ${ERROR_TEXT} ${ERROR_BG_HOVER}`}
                   >
                     <HugeiconsIcon icon={Logout01Icon} className="size-3 mr-1.5" strokeWidth={2} />
                     Вийти

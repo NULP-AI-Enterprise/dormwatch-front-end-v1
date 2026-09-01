@@ -17,6 +17,7 @@ import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
 import { formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
+import { ERROR_TEXT, ERROR_BORDER, ERROR_BG_HOVER } from "@/lib/theme";
 import type { Complaint } from "@/lib/types";
 
 interface ComplaintCardProps {
@@ -303,7 +304,7 @@ const ComplaintCard = ({
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => onDelete?.(p.id)}
-                className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+                className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
               >
                 <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
               </Button>

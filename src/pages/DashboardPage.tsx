@@ -173,7 +173,7 @@ const DashboardPage = () => {
               alt="Full size"
             />
           )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-stone-300">
+          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
             <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>

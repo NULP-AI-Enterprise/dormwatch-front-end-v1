@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import React, { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
+import { SELECTED } from "@/lib/theme";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
 import { AdminGlobalActions } from "@/components/AdminGlobalActions";
@@ -82,7 +83,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-all border-l-4 ${
                   isActive
-                    ? "border-blue-500 bg-primary/5 text-foreground"
+                    ? SELECTED
                     : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }`}
               >

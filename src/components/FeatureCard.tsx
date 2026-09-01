@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { IconSvgElement } from "@hugeicons/react";
+import { ACCENT, ACCENT_BG } from "@/lib/theme";
 
 interface FeatureCardProps {
   icon: IconSvgElement;
@@ -8,10 +9,10 @@ interface FeatureCardProps {
   description: string;
 }
 
-export function FeatureCard({ icon, iconColor = "text-blue-600 dark:text-blue-400", title, description }: FeatureCardProps) {
+export function FeatureCard({ icon, iconColor = ACCENT, title, description }: FeatureCardProps) {
   return (
     <div className="bg-card border border-border p-8 relative group hover:border-border/80 transition-colors">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${ACCENT_BG} opacity-0 group-hover:opacity-100 transition-opacity`} />
       <div className="w-12 h-12 bg-background border border-border mb-6 flex items-center justify-center">
         <HugeiconsIcon icon={icon} className={`size-6 ${iconColor}`} strokeWidth={1.5} />
       </div>

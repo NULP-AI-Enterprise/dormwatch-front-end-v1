@@ -15,6 +15,7 @@ import {
   fetchComplaintDetail,
 } from "@/services/problemsApi";
 import type { Complaint } from "@/lib/types";
+import { ACCENT_BG, ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, LINK, LINK_HOVER } from "@/lib/theme";
 
 interface NotificationBellProps {
   onSelectComplaint?: (complaint: Complaint) => void;
@@ -125,7 +126,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
         >
           <HugeiconsIcon icon={BellIcon} className="size-5" strokeWidth={1.5} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white border border-card">
+            <span className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full ${ACCENT_BG} text-[10px] font-bold text-white border border-card`}>
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -137,7 +138,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400 cursor-pointer"
+              className={`text-xs font-semibold ${LINK} ${LINK_HOVER} cursor-pointer`}
             >
               Позначити все як прочитане
             </button>
@@ -157,7 +158,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
                 className={`flex flex-col items-start gap-1 p-4 cursor-pointer outline-none border-l-2 transition-colors ${
                   item.is_read
                     ? "border-l-transparent hover:bg-muted/30"
-                    : "border-l-blue-500 bg-blue-500/5 hover:bg-blue-500/10"
+                    : `${ACCENT_BORDER} ${ACCENT_BG_LIGHT} ${ACCENT_BG_HOVER_LIGHT}`
                 }`}
               >
                 <div className="flex justify-between items-start w-full gap-2">

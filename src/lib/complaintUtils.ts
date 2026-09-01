@@ -105,15 +105,69 @@ export const statusLabel = (status: string) => {
   return STATUS_LABELS[s] || status;
 };
 
-export const priorityBadgeClass = (priority?: string | null) => {
-  const p = String(priority || "").toLowerCase();
-  if (p === "critical") return "text-red-500 bg-red-500/10 border-red-700/50";
-  if (p === "high") return "text-orange-500 bg-orange-500/10 border-orange-700/50";
-  if (p === "low") return "text-green-500 bg-green-500/10 border-green-700/50";
-  return "text-yellow-500 bg-yellow-500/10 border-yellow-700/50";
+
+// Priority palette — decoupled from the status palette. Status uses
+// yellow/blue/violet/cyan/green/red/orange; priority uses slate/indigo/amber/rose
+// so the same color never carries two unrelated meanings on one screen
+// (e.g. low used to be green = resolved, high/critical used to be red = rejected,
+// and "Критичний" was visually identical to "Високий").
+const PRIORITY_COLORS: Record<string, { badge: string; text: string }> = {
+  low: {
+    badge: "text-slate-500 bg-slate-500/10 border-slate-700/50",
+    text: "text-slate-500 dark:text-slate-400",
+  },
+  medium: {
+    badge: "text-indigo-500 bg-indigo-500/10 border-indigo-700/50",
+    text: "text-indigo-600 dark:text-indigo-400",
+  },
+  high: {
+    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  critical: {
+    badge: "text-rose-500 bg-rose-500/10 border-rose-700/50",
+    text: "text-rose-600 dark:text-rose-400",
+  },
 };
 
-export const priorityLabel = (priority?: string | null) => {
+const NEUTRAL_PRIORITY = {
+  badge: "text-muted-foreground bg-card border-border",
+  text: "text-muted-foreground",
+};
+
+export const priorityBadgeClass = (priority: string | null | undefined) =>
+  PRIORITY_COLORS[String(priority || "").toLowerCase()]?.badge ?? NEUTRAL_PRIORITY.badge;
+
+export const priorityColor = (priority: string | null | undefined) =>
+  PRIORITY_COLORS[String(priority || "").toLowerCase()] ?? NEUTRAL_PRIORITY;
+
+// Role badge colors — distinct from the status palette (admin used to be yellow
+// = pending, student used to be blue = approved). Now amber/indigo so they read
+// as role markers, not lifecycle states.
+const ROLE_COLORS: Record<string, { badge: string; text: string }> = {
+  admin: {
+    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  student: {
+    badge: "text-indigo-500 bg-indigo-500/10 border-indigo-700/50",
+    text: "text-indigo-600 dark:text-indigo-400",
+  },
+  worker: {
+    badge: "text-teal-500 bg-teal-500/10 border-teal-700/50",
+    text: "text-teal-600 dark:text-teal-400",
+  },
+};
+
+const NEUTRAL_ROLE = {
+  badge: "text-muted-foreground bg-card border-border",
+  text: "text-muted-foreground",
+};
+
+export const roleBadgeClass = (roleName: string | null | undefined) =>
+  ROLE_COLORS[String(roleName || "").toLowerCase()]?.badge ?? NEUTRAL_ROLE.badge;
+
+export const priorityLabel = (priority: string | null | undefined): string => {
   const p = String(priority || "").toLowerCase();
   return PRIORITY_LABELS[p] || priority || "—";
 };
