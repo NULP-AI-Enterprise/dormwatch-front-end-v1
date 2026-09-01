@@ -25,7 +25,7 @@ interface ComplaintCardProps {
   variant?: "default" | "compact";
 
   // Layout
-  bodyPadding?: string; // "p-5" | "p-6"
+  bodyPadding?: "p-5" | "p-6";
   cardClassName?: string;
   footerClassName?: string;
 
@@ -39,7 +39,7 @@ interface ComplaintCardProps {
   // Photo
   showPhoto?: boolean;
   photoZoom?: boolean;
-  photoHeight?: string; // "h-40" | "h-44" | "h-48"
+  photoHeight?: "h-40" | "h-44" | "h-48";
   onPhotoPreview?: (url: string) => void;
 
   // Priority row
@@ -74,7 +74,7 @@ interface ComplaintCardProps {
   onResidentChange?: () => void;
 }
 
-const Dot = ({ className }: { className?: string }) => (
+export const Dot = ({ className }: { className?: string }) => (
   <span className={cn("w-1 h-1 bg-border inline-block mx-1", className)} />
 );
 

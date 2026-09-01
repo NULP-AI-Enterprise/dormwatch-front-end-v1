@@ -25,7 +25,7 @@ const Footer = () => {
             support@dormwatch.edu.ua
           </a>
           <span className="text-muted-foreground text-sm">
-            &copy; 2025 DormWatch. Всі права захищено.
+            &copy; {new Date().getFullYear()} DormWatch. Всі права захищено.
           </span>
         </div>
       </div>

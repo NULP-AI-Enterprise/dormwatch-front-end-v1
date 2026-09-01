@@ -64,7 +64,7 @@ const HomePage = () => {
         <Separator />
       </nav>
 
-      <section className="relative pt-24 pb-32 overflow-hidden">
+      <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative z-10">
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
@@ -88,7 +88,7 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-card border border-border transform -rotate-2 scale-100 opacity-80" />
             <div className="absolute inset-0 bg-background border border-border p-6 flex flex-col gap-4">
               <div className="flex justify-between items-center pb-4">
-                <div className="w-32 h-4 bg-card" />
+                <div className="w-32 h-4 bg-muted" />
                 <div className={`w-8 h-8 bg-primary/90 border ${ACCENT_BORDER_DARK}`} />
               </div>
               <Separator />

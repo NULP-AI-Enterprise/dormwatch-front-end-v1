@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/dateUtils";
 import { sortAnnouncements } from "@/lib/announcementUtils";
 import type { Announcement } from "@/lib/types";
 import AnnouncementsModal from "@/components/AnnouncementsModal";
+import { Dot } from "@/components/ComplaintCard";
 
 // Compact read-only announcements board for the dashboard sidebar. Active only,
 // pinned-first, capped to a handful. Realizes the design-system.md "Intentional
@@ -75,7 +76,9 @@ const AnnouncementsWidget = () => {
                         {a.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {(a.building_name || "Всі гуртожитки") + " · " + formatDate(a.created_at)}
+                        {a.building_name || "Всі гуртожитки"}
+                        <Dot />
+                        {formatDate(a.created_at)}
                       </p>
                     </div>
                   </button>

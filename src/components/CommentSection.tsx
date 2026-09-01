@@ -99,11 +99,11 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-foreground">{c.author}</span>
                   {c.authorIsAdmin ? (
-                    <Badge variant="default" className={`text-[10px] px-1.5 py-0 h-4 ${ACCENT_BG} text-white ${ACCENT_BG_HOVER_DARK}`}>Адміністратор</Badge>
+                    <Badge variant="default" className={`text-xs px-1.5 py-0 h-4 ${ACCENT_BG} text-white ${ACCENT_BG_HOVER_DARK}`}>Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${SUCCESS_TEXT} border-green-600`}>Автор звернення</Badge>
+                    <Badge variant="outline" className={`text-xs px-1.5 py-0 h-4 ${SUCCESS_TEXT} border-green-600`}>Автор звернення</Badge>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground border-border">Студент</Badge>
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Студент</Badge>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">

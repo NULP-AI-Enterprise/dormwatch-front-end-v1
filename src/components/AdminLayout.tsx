@@ -56,7 +56,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background bg-dot-grid relative">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background relative">
       <aside className="w-full md:w-64 bg-card border-r border-border flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
         <div className="h-20 px-6 flex items-center border-b border-border">
           <Logo to="/admin" className="gap-3" />

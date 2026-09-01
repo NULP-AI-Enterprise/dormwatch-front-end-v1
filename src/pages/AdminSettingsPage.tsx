@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/dialog";
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { Dot } from "@/components/ComplaintCard";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Edit02Icon,
@@ -975,7 +976,9 @@ function WorkersTab() {
                   <p className="text-sm text-foreground truncate">{w.full_name}</p>
                   {(w.company || w.phone) && (
                     <p className="text-xs text-muted-foreground truncate">
-                      {[w.company, w.phone].filter(Boolean).join(" · ")}
+                      {w.company}
+                      {w.company && w.phone && <Dot />}
+                      {w.phone}
                     </p>
                   )}
                 </div>

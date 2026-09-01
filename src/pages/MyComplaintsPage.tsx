@@ -170,7 +170,7 @@ const MyComplaintsPage = () => {
             <EmptyState
               icon={CheckmarkCircle02Icon}
               title="Тут поки порожньо"
-              subtitle="Щось зламалося? Створіть перше звернення — комендант одразу його побачить."
+              subtitle="Створіть перше звернення. Комендант побачить його одразу."
               action={
                 <ArrowLinkButton to="/create-report" size="sm">
                   Створити звернення
