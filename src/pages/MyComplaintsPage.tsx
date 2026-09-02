@@ -5,8 +5,6 @@ import ComplaintCard from "@/components/ComplaintCard";
 import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +22,7 @@ import {
   PriorityFilterSelect,
   CategoryFilterCombobox,
 } from "@/components/ComplaintFilters";
+import { FilterToolbar } from "@/components/FilterToolbar";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser, groupByChain } from "@/lib/complaintUtils";
@@ -32,9 +31,7 @@ import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
 import type { CategoryOption } from "@/lib/types";
-import { CheckmarkCircle02Icon, Search01Icon, Refresh01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Button } from "@/components/ui/button";
+import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
 
 const MyComplaintsPage = () => {
   const location = useLocation();
@@ -84,6 +81,14 @@ const MyComplaintsPage = () => {
     }
   };
 
+  const resetFilters = () => {
+    setStatus([]);
+    setPriority([]);
+    setSelectedCategories([]);
+    setDate(undefined);
+    setSearch("");
+  };
+
   const filtered = useMemo(
     () =>
       groupByChain(
@@ -129,107 +134,99 @@ const MyComplaintsPage = () => {
         <ArrowLinkButton to="/create-report">Створити звернення</ArrowLinkButton>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-8">
-        {/* filter sidebar (mirrors AdminComplaintsPage) */}
-        <div className="lg:col-span-1 space-y-4">
-          <Card className="border-border shadow-none bg-card">
-            <CardContent>
-              <div className="mb-4">
-                <FilterSearchInput value={search} onChange={setSearch} />
-              </div>
-
-              <h4 className="text-xs font-normal text-muted-foreground mb-3">Статус</h4>
-              <StatusFilterSelect value={status} onChange={setStatus} />
-
-              <Separator className="my-4" />
-
-              <h4 className="text-xs font-normal text-muted-foreground mb-3">Пріоритет</h4>
-              <PriorityFilterSelect value={priority} onChange={setPriority} />
-
-              <Separator className="my-4" />
-
-              <h4 className="text-xs font-normal text-muted-foreground mb-3">Категорії</h4>
-              <CategoryFilterCombobox
-                value={selectedCategories}
-                onChange={setSelectedCategories}
-                categories={categories}
-              />
-
-              <Separator className="my-4" />
-
-              <h4 className="text-xs font-normal text-muted-foreground mb-3">Дата подання</h4>
-              <DatePicker date={date} setDate={setDate} placeholder="Оберіть дату" />
-              <p className="text-xs text-muted-foreground mt-2">Фільтр за точним днем подання звернення.</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* request list */}
-        <div className="lg:col-span-3 space-y-4">
-          {problems.length === 0 ? (
-            <EmptyState
-              icon={CheckmarkCircle02Icon}
-              title="Тут поки порожньо"
-              subtitle="Створіть перше звернення. Комендант побачить його одразу."
-              action={
-                <ArrowLinkButton to="/create-report" size="sm">
-                  Створити звернення
-                </ArrowLinkButton>
-              }
+      {/* Compact filter toolbar — a single short row instead of a 25% sidebar.
+          A resident's own handful of records doesn't need four vertical
+          sections; chips and a search input sit inline above the data, and
+          the reset button is right-aligned. */}
+      <div className="mb-6">
+        <FilterToolbar onReset={resetFilters}>
+          <div className="w-full sm:w-64">
+            <FilterSearchInput value={search} onChange={setSearch} />
+          </div>
+          <div className="w-full sm:w-48">
+            <StatusFilterSelect value={status} onChange={setStatus} />
+          </div>
+          <div className="w-full sm:w-48">
+            <PriorityFilterSelect value={priority} onChange={setPriority} />
+          </div>
+          <div className="w-full sm:w-56">
+            <CategoryFilterCombobox
+              value={selectedCategories}
+              onChange={setSelectedCategories}
+              categories={categories}
             />
-          ) : filtered.length === 0 ? (
-            <EmptyState icon={Search01Icon} title="Нічого не знайшли за цими фільтрами." action={
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => {
-                  setStatus([]);
-                  setPriority([]);
-                  setSelectedCategories([]);
-                  setDate(undefined);
-                  setSearch("");
-                }}
+          </div>
+          <div className="w-full sm:w-44">
+            <DatePicker
+              date={date}
+              setDate={setDate}
+              placeholder="Дата подання"
+            />
+          </div>
+        </FilterToolbar>
+      </div>
+
+      {/* request list */}
+      <div className="space-y-4">
+        {problems.length === 0 ? (
+          <EmptyState
+            icon={CheckmarkCircle02Icon}
+            title="Тут поки порожньо"
+            subtitle="Створіть перше звернення. Комендант побачить його одразу."
+            action={
+              <ArrowLinkButton to="/create-report" size="sm">
+                Створити звернення
+              </ArrowLinkButton>
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={Search01Icon}
+            title="Нічого не знайшли за цими фільтрами."
+            action={
+              <button
+                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                onClick={resetFilters}
               >
-                <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
                 Скинути фільтри
-              </Button>
-            } />
-          ) : (
-            filtered.map((p) => (
-              <ComplaintCard
-                key={p.id}
-                complaint={p}
-                metaVariant="date"
-                descriptionFallback="—"
-                onCardClick={() => openSheet(p.id)}
-                showProgress
-                showPhoto
-                photoHeight="h-44"
-                // Follow-ups sit indented under their chain head.
-                cardClassName={
-                  p.followUpOf != null ? "ml-3 sm:ml-6 border-l-2 border-l-primary/40" : undefined
-                }
-                footerClassName="flex items-center justify-between pt-4"
-                commentsMode="inline"
-                commentsSide="left"
-                commentsOpen={comments.isOpen(p.id)}
-                onCommentToggle={() => comments.toggle(p.id)}
-                commentsContent={
-                  <CommentSection
-                    complaintId={p.id}
-                    currentUserId={currentUser?.user}
-                    isAdmin={isAdminUser(currentUser)}
-                    complaintAuthorId={p.user_id}
-                  />
-                }
-                showResidentActions
-                onResidentChange={reload}
-                showDelete
-                onDelete={onDelete}
-              />
-            ))
-          )}
-        </div>
+              </button>
+            }
+          />
+        ) : (
+          filtered.map((p) => (
+            <ComplaintCard
+              key={p.id}
+              complaint={p}
+              metaVariant="date"
+              descriptionFallback="—"
+              onCardClick={() => openSheet(p.id)}
+              showProgress
+              showPhoto
+              photoHeight="h-44"
+              // Follow-ups sit indented under their chain head.
+              cardClassName={
+                p.followUpOf != null ? "ml-3 sm:ml-6 border-l-2 border-l-primary/40" : undefined
+              }
+              footerClassName="flex items-center justify-between pt-4"
+              commentsMode="inline"
+              commentsSide="left"
+              commentsOpen={comments.isOpen(p.id)}
+              onCommentToggle={() => comments.toggle(p.id)}
+              commentsContent={
+                <CommentSection
+                  complaintId={p.id}
+                  currentUserId={currentUser?.user}
+                  isAdmin={isAdminUser(currentUser)}
+                  complaintAuthorId={p.user_id}
+                />
+              }
+              showResidentActions
+              onResidentChange={reload}
+              showDelete
+              onDelete={onDelete}
+            />
+          ))
+        )}
       </div>
 
       {selectedProblem && (

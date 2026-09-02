@@ -5,11 +5,9 @@ import {
   fetchCategories,
 } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, SearchIcon as SearchIcon2, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, SearchIcon as SearchIcon2 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   FilterSearchInput,
   BuildingFilterSelect,
@@ -17,6 +15,7 @@ import {
   CategoryFilterCombobox,
   StatusFilterSelect,
 } from "@/components/ComplaintFilters";
+import { FilterToolbar } from "@/components/FilterToolbar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,6 +160,14 @@ const DashboardPage = () => {
     return <PageSpinner />;
   }
 
+  const resetDashboardFilters = () => {
+    setActiveCategories([]);
+    setActiveCorps([]);
+    setActivePriority([]);
+    setActiveStatus([]);
+    setSearchQuery("");
+  };
+
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
@@ -196,107 +203,85 @@ const DashboardPage = () => {
           </ArrowLinkButton>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-1 space-y-4">
-            <Card className="border-border shadow-none bg-card">
-              <CardContent>
-                <div className="mb-4">
-                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-                </div>
-
-                {admin && (
-                  <>
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">Гуртожиток</h4>
-                    <BuildingFilterSelect
-                      value={activeCorps}
-                      onChange={setActiveCorps}
-                      buildings={buildings}
-                    />
-
-                    <Separator className="my-4" />
-                  </>
-                )}
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Пріоритет</h4>
-                <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
-
-                <Separator className="my-4" />
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Статус</h4>
-                <StatusFilterSelect
-                  value={activeStatus}
-                  onChange={setActiveStatus}
-                  codes={["approved", "resolved"]}
+        {/* Compact filter toolbar — same paradigm as the other list pages:
+            one row with search, status, priority, building (admin), category;
+            reset on the right. */}
+        <div className="mb-6">
+          <FilterToolbar onReset={resetDashboardFilters}>
+            <div className="w-full sm:w-64">
+              <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            <div className="w-full sm:w-48">
+              <StatusFilterSelect
+                value={activeStatus}
+                onChange={setActiveStatus}
+                codes={["approved", "resolved"]}
+              />
+            </div>
+            <div className="w-full sm:w-48">
+              <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
+            </div>
+            {admin && (
+              <div className="w-full sm:w-48">
+                <BuildingFilterSelect
+                  value={activeCorps}
+                  onChange={setActiveCorps}
+                  buildings={buildings}
                 />
+              </div>
+            )}
+            <div className="w-full sm:w-56">
+              <CategoryFilterCombobox
+                value={activeCategories}
+                onChange={setActiveCategories}
+                categories={categories}
+              />
+            </div>
+          </FilterToolbar>
+        </div>
 
-                <Separator className="my-4" />
+        <div className="space-y-4">
+          {filteredProblems.map((problem) => {
+            const manage = canManage(problem);
+            return (
+              <ComplaintCard
+                key={problem.id}
+                complaint={problem}
+                footerClassName="flex items-center justify-between pt-4"
+                onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
+                showPhoto
+                photoZoom
+                photoHeight="h-44"
+                onPhotoPreview={setPreviewImage}
+                footerLeft="added-date"
+                commentsMode={manage ? "inline" : "hidden"}
+                commentsOpen={comments.isOpen(problem.id)}
+                commentsSeparator
+                onCommentToggle={() => comments.toggle(problem.id)}
+                commentsContent={
+                  <CommentSection
+                    complaintId={problem.id}
+                    currentUserId={currentUser?.user}
+                    isAdmin={admin}
+                    complaintAuthorId={problem.user_id}
+                  />
+                }
+                showDelete={manage}
+                onDelete={handleDelete}
+              />
+            );
+          })}
 
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Категорії</h4>
-                <CategoryFilterCombobox
-                  value={activeCategories}
-                  onChange={setActiveCategories}
-                  categories={categories}
-                />
-              </CardContent>
-            </Card>
+          {filteredProblems.length === 0 && (
+            <EmptyState
+              icon={SearchIcon2}
+              title="Немає звернень за вибраними фільтрах."
+            />
+          )}
 
+          <div className="grid lg:grid-cols-2 gap-4 mt-4">
             <AnnouncementsWidget />
             <PhoneNumbersWidget />
-          </div>
-          <div className="lg:col-span-3 space-y-4">
-            {filteredProblems.map((problem) => {
-              const manage = canManage(problem);
-              return (
-                <ComplaintCard
-                  key={problem.id}
-                  complaint={problem}
-                  footerClassName="flex items-center justify-between pt-4"
-                  onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
-                  showPhoto
-                  photoZoom
-                  photoHeight="h-44"
-                  onPhotoPreview={setPreviewImage}
-                  footerLeft="added-date"
-                  commentsMode={manage ? "inline" : "hidden"}
-                  commentsOpen={comments.isOpen(problem.id)}
-                  commentsSeparator
-                  onCommentToggle={() => comments.toggle(problem.id)}
-                  commentsContent={
-                    <CommentSection
-                      complaintId={problem.id}
-                      currentUserId={currentUser?.user}
-                      isAdmin={admin}
-                      complaintAuthorId={problem.user_id}
-                    />
-                  }
-                  showDelete={manage}
-                  onDelete={handleDelete}
-                />
-              );
-            })}
-
-            {filteredProblems.length === 0 && (
-              <EmptyState
-                icon={SearchIcon2}
-                title="Немає звернень за вибраними фільтрами."
-                action={
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => {
-                      setActiveCategories([]);
-                      setActiveCorps([]);
-                      setActivePriority([]);
-                      setActiveStatus([]);
-                      setSearchQuery("");
-                    }}
-                  >
-                    <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
-                    Скинути фільтри
-                  </Button>
-                }
-              />
-            )}
           </div>
         </div>
       </div>

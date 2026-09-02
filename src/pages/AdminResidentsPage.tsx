@@ -8,13 +8,12 @@ import {
   PlaceFilterSelect,
   RoleFilterSelect,
 } from "@/components/ResidentFilters";
+import { FilterToolbar } from "@/components/FilterToolbar";
 import { roleLabel } from "@/lib/complaintUtils";
 import { PlaceCombobox } from "@/components/PlaceCombobox";
 import UserAvatar from "@/components/UserAvatar";
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -148,127 +147,120 @@ const AdminResidentsPage = () => {
     });
   }, [users, searchQuery, selectedBuilding, selectedPlaces, selectedRoles]);
 
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedBuilding(null);
+    setSelectedPlaces([]);
+    setSelectedRoles([]);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <div className="p-6">
-        <div className="grid lg:grid-cols-4 gap-8">
-          {/* Filter sidebar — same shell as AdminComplaintsPage */}
-          <div className="lg:col-span-1 space-y-4">
-            <Card className="border-border shadow-none bg-card">
-              <CardContent>
-                <div className="mb-4">
-                  <FilterSearchInput
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    placeholder="Пошук мешканців..."
-                  />
-                </div>
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                  Гуртожиток
-                </h4>
-                <BuildingSingleFilter
-                  value={selectedBuilding}
-                  onChange={handleBuildingChange}
-                  buildings={buildings}
-                />
-
-                <Separator className="my-4" />
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                  Кімната
-                </h4>
-                <PlaceFilterSelect
-                  value={selectedPlaces}
-                  onChange={setSelectedPlaces}
-                  places={placeOptions}
-                  disabled={!selectedBuilding}
-                />
-
-                <Separator className="my-4" />
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                  Роль
-                </h4>
-                <RoleFilterSelect
-                  value={selectedRoles}
-                  onChange={setSelectedRoles}
-                  roles={roles}
-                />
-              </CardContent>
-            </Card>
+      <div className="p-6 space-y-6">
+        {/* Compact filter toolbar — same paradigm as the other list pages.
+            Building is a plain Select (fixed handful of dorms), rooms are a
+            searchable list with checkmarks (dozens of options), roles are
+            multi-select chips (small fixed set). */}
+        <FilterToolbar onReset={resetFilters}>
+          <div className="w-full sm:w-64">
+            <FilterSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Пошук мешканців..."
+            />
           </div>
+          <div className="w-full sm:w-48">
+            <BuildingSingleFilter
+              value={selectedBuilding}
+              onChange={handleBuildingChange}
+              buildings={buildings}
+            />
+          </div>
+          <div className="w-full sm:w-56">
+            <PlaceFilterSelect
+              value={selectedPlaces}
+              onChange={setSelectedPlaces}
+              places={placeOptions}
+              disabled={!selectedBuilding}
+            />
+          </div>
+          <div className="w-full sm:w-48">
+            <RoleFilterSelect
+              value={selectedRoles}
+              onChange={setSelectedRoles}
+              roles={roles}
+            />
+          </div>
+        </FilterToolbar>
 
-          {/* Residents table */}
-          <div className="lg:col-span-3 space-y-4">
-            {loading && (
-              <div className="flex items-center justify-center py-12">
-                <LoadingSpinner size="md" />
-              </div>
-            )}
+        <div className="space-y-4">
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner size="md" />
+            </div>
+          )}
 
-            {!loading && filteredUsers.length === 0 && (
-              <EmptyState
-                icon={UserMultipleIcon}
-                title="Мешканців не знайдено"
-                subtitle="Жоден мешканець не відповідає поточним фільтрам."
-              />
-            )}
+          {!loading && filteredUsers.length === 0 && (
+            <EmptyState
+              icon={UserMultipleIcon}
+              title="Мешканців не знайдено"
+              subtitle="Жоден мешканець не відповідає поточним фільтрам."
+            />
+          )}
 
-            {!loading && filteredUsers.length > 0 && (
-              <div className="bg-card border border-border overflow-hidden">
-                <Table className="text-left border-collapse">
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 border-b border-border text-sm text-muted-foreground">
-                      <TableHead className="px-6 py-3 font-semibold">Мешканець</TableHead>
-                      <TableHead className="px-6 py-3 font-semibold">Гуртожиток</TableHead>
-                      <TableHead className="px-6 py-3 font-semibold">Кімната</TableHead>
-                      <TableHead className="px-6 py-3 font-semibold">Роль</TableHead>
-                      <TableHead className="px-6 py-3 font-semibold text-right">Дії</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {filteredUsers.map((u) => (
-                      <TableRow key={u.user} className="bg-card hover:bg-muted/50 transition-colors">
-                        <TableCell className="px-6 py-4 truncate max-w-xs">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <UserAvatar user={u} size="sm" />
-                            <div className="min-w-0">
-                              <p className="font-semibold text-foreground truncate">{fullName(u)}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{u.email}</p>
-                            </div>
+          {!loading && filteredUsers.length > 0 && (
+            <div className="bg-card border border-border overflow-hidden">
+              <Table className="text-left border-collapse">
+                <TableHeader>
+                  <TableRow className="bg-muted/50 border-b border-border text-sm text-muted-foreground">
+                    <TableHead className="px-6 py-3 font-semibold">Мешканець</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Гуртожиток</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Кімната</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold">Роль</TableHead>
+                    <TableHead className="px-6 py-3 font-semibold text-right">Дії</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border">
+                  {filteredUsers.map((u) => (
+                    <TableRow key={u.user} className="bg-card hover:bg-muted/50 transition-colors">
+                      <TableCell className="px-6 py-4 truncate max-w-xs">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <UserAvatar user={u} size="sm" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground truncate">{fullName(u)}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">{u.email}</p>
                           </div>
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-muted-foreground">
-                          {u.building?.name ?? "—"}
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-muted-foreground">
-                          {u.place?.place_name ?? "—"}
-                        </TableCell>
-                        <TableCell className="px-6 py-4">
-                          {u.role ? (
-                            <Badge variant="secondary">{roleLabel(u.role.role_name)}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground">{"—"}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="px-6 py-4 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Редагувати ${fullName(u)}`}
-                            onClick={() => setEditing(u)}
-                          >
-                            <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">
+                        {u.building?.name ?? "—"}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-muted-foreground">
+                        {u.place?.place_name ?? "—"}
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        {u.role ? (
+                          <Badge variant="secondary">{roleLabel(u.role.role_name)}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">{"—"}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Редагувати ${fullName(u)}`}
+                          onClick={() => setEditing(u)}
+                        >
+                          <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </div>
 

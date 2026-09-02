@@ -335,13 +335,21 @@ const ComplaintSidePanel = ({
                       }
                     }}
                   >
-                    <SelectTrigger className={`h-6 text-xs px-2 py-0 font-semibold border ${priorityBadgeClass(complaint.priority ?? "")}`}>
+                    {/* Real control: an honest SelectTrigger with chevron and
+                        normal padding. The trigger is the same `PriorityBadge`
+                        color hint (design-system §3 weight rules keep the
+                        label `font-semibold`) so the field still reads as a
+                        priority, but its affordance matches the worker's
+                        worker select directly below. */}
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Пріоритет" />
                     </SelectTrigger>
                     <SelectContent>
                       {PRIORITY_OPTIONS.map((p) => (
                         <SelectItem key={p} value={p}>
-                          {priorityLabel(p)}
+                          <span className={`px-1.5 py-0.5 text-xs font-semibold border ${priorityBadgeClass(p)}`}>
+                            {priorityLabel(p)}
+                          </span>
                         </SelectItem>
                       ))}
                     </SelectContent>
