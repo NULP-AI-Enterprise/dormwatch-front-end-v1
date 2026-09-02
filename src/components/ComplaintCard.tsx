@@ -9,6 +9,7 @@ import {
   ChevronDownIcon,
   Message01Icon,
   Delete01Icon,
+  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
@@ -196,7 +197,10 @@ const ComplaintCard = ({
     <Card
       className={cn(
         "py-0 border-border shadow-none bg-card",
-        onCardClick && "group hover:bg-muted/50 transition-colors cursor-pointer",
+        // Clickable cards carry their own visible "Деталі" cue in the header
+        // (rendered above). Background does not shift on hover — touch devices
+        // never see hover, and the persistent label is the honest affordance.
+        onCardClick && "cursor-pointer focus-visible:ring-2 focus-visible:ring-primary",
         cardClassName
       )}
       onClick={
@@ -212,7 +216,10 @@ const ComplaintCard = ({
         {/* Unified header: status badge left, meta line right, bold title below.
             Same across admin / feed / reports — role-specific controls live in
             the footer, not the header. Cards showing the progress stepper omit
-            the badge: the stepper already names the current state. */}
+            the badge: the stepper already names the current state. When the
+            whole card is a tap target, an inline "Деталі" cue gives the row a
+            persistent affordance — hover-only background shifts don't read as
+            clickable on touch. */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
           {!showProgress && (
             <div className="flex flex-wrap gap-2">
@@ -220,9 +227,17 @@ const ComplaintCard = ({
               <OverdueBadge complaint={p} />
             </div>
           )}
-          <span className="text-xs font-normal text-muted-foreground shrink-0">
-            {metaLine}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-normal text-muted-foreground shrink-0">
+              {metaLine}
+            </span>
+            {onCardClick && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
+                Деталі
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+              </span>
+            )}
+          </div>
         </div>
         <h3 className="text-sm font-semibold text-foreground mb-2">
           {p.title || "Без назви"}

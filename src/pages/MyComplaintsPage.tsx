@@ -209,7 +209,7 @@ const MyComplaintsPage = () => {
               }
               footerClassName="flex items-center justify-between pt-4"
               commentsMode="inline"
-              commentsSide="left"
+              commentsSide="right"
               commentsOpen={comments.isOpen(p.id)}
               onCommentToggle={() => comments.toggle(p.id)}
               commentsContent={

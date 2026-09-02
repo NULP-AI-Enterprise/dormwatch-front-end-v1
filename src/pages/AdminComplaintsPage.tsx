@@ -295,7 +295,7 @@ const AdminComplaintsPage = () => {
                   cardClassName={`group transition-colors cursor-pointer ${
                     p.status === "pending" && !viewedComplaints.has(p.id as number)
                       ? `border-l-2 ${ACCENT_BORDER} border-y-border border-r-border ${ACCENT_BG_LIGHT} ${ACCENT_BG_HOVER_LIGHT}`
-                      : "hover:bg-muted/50"
+                      : ""
                   }`}
                   onCardClick={() => {
                     markAsViewed(p.id as number);

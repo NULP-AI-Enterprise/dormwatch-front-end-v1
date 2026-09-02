@@ -86,11 +86,11 @@ export function InviteLinkDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
             <HugeiconsIcon icon={Link01Icon} className="size-5" />
-            <DialogTitle>Згенерувати посилання</DialogTitle>
+            <DialogTitle>Запросити адміністратора</DialogTitle>
           </div>
           <DialogDescription>
-            Створіть одноразове посилання-запрошення. Користувач, який перейде за ним,
-            зареєструється з обраною роллю без обмежень на домен пошти.
+            Одноразове посилання-запрошення. Користувач, який перейде за ним,
+            автоматично зареєструється як адміністратор.
           </DialogDescription>
         </DialogHeader>
 

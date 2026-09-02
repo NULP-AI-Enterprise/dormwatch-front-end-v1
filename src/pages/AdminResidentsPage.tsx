@@ -49,8 +49,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Edit02Icon, UserMultipleIcon } from "@hugeicons/core-free-icons";
+import { Edit02Icon, UserMultipleIcon, Add01Icon } from "@hugeicons/core-free-icons";
 import type { Building, Place, Role } from "@/lib/types";
 
 // A user profile as returned by GET /admin/users/ (UserSerializer): building /
@@ -77,6 +78,16 @@ const AdminResidentsPage = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ResidentUser | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+
+  const headerActions = useMemo(() => (
+    <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+      <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
+      Запросити адміністратора
+    </Button>
+  ), []);
+
+  useAdminHeaderActions(headerActions);
 
   // Filters. Building + place are a cascade (building single-select scopes the
   // place multi-select); role is independent. Empty selection = "all".

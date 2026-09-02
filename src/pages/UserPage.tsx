@@ -9,6 +9,7 @@ import { StatCard } from "@/components/StatCard";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
+import ArrowLinkButton from "@/components/ArrowLinkButton";
 import { isAdminUser, isActiveStatus } from "@/lib/complaintUtils";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
@@ -20,8 +21,6 @@ import {
   File01Icon,
   CheckmarkCircle02Icon,
   Clock01Icon,
-  ArrowRight02Icon,
-  Wrench01Icon,
   Megaphone01Icon,
   Cancel01Icon,
 } from "@hugeicons/core-free-icons";
@@ -59,6 +58,9 @@ const UserPage = () => {
 
   const resolvedCount = problems.filter((p) => p.status === "resolved").length;
   const activeCount = problems.filter((p) => isActiveStatus(p.status)).length;
+  // Rejected counts the terminal-but-not-resolved "Відхилено" complaints so the
+  // four cards always sum to problems.length (no inert data on the dashboard).
+  const rejectedCount = problems.filter((p) => p.status === "rejected").length;
 
   const recent = problems.slice(0, 4);
 
@@ -71,8 +73,8 @@ const UserPage = () => {
 
   return (
     <>
-      {/* greeting */}
-      <div className="mb-8">
+      {/* greeting — tighter margin so the content row starts within one screen */}
+      <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           Вітаємо, {firstName}!
         </h1>
@@ -133,9 +135,19 @@ const UserPage = () => {
         />
         </Link>
       </Button>
+      {/* front-and-center CTA — same affordance as the other pages
+          (ArrowLinkButton), kept compact so the recent requests and stats
+          start without scrolling on a 1080p screen. */}
+      <div className="mb-6">
+        <ArrowLinkButton to="/create-report" size="lg">
+          Створити звернення
+        </ArrowLinkButton>
+      </div>
 
-      {/* stat row — same grid/gap and icon stroke as AdminPage's StatCard row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+      {/* stat row — 4 cards always sum to problems.length (Всього):
+          Вирішено + Активні + Відхилено = Всього. Each count has its own
+          card, so the arithmetic on the screen is honest. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard
           icon={<HugeiconsIcon icon={File01Icon} className="size-4" strokeWidth={1.5} />}
           label="Всього звернень"
@@ -150,6 +162,11 @@ const UserPage = () => {
           icon={<HugeiconsIcon icon={Clock01Icon} className="size-4" strokeWidth={1.5} />}
           label="Активні"
           value={activeCount}
+        />
+        <StatCard
+          icon={<HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={1.5} />}
+          label="Відхилено"
+          value={rejectedCount}
         />
       </div>
 

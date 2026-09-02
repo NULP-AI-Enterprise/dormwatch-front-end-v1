@@ -147,22 +147,6 @@ const HomePage = () => {
       </section>
 
       <Separator />
-      <section className="bg-background py-20 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-3xl font-bold text-foreground mb-6">Потрібно щось полагодити?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Увійдіть за допомогою студентського квитка, щоб надіслати звернення безпосередньо до служби експлуатації кампусу.</p>
-          <div className="flex justify-center gap-4">
-            <Button asChild size="lg" className="gap-2">
-              <Link to="/auth">
-                Розпочати
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" strokeWidth={2} />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-      <Separator />
-
       <Footer />
     </div>
   );

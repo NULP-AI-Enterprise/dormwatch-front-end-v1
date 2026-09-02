@@ -17,7 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
 import { LINK, LINK_HOVER } from "@/lib/theme";
@@ -127,6 +127,7 @@ const AdminPage = () => {
                     <TableHead className="px-6 py-3 font-semibold">Дата подання</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Пріоритет</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Статус</TableHead>
+                    <TableHead className="px-4 py-3 font-semibold sr-only">Дія</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-base divide-y divide-border">
@@ -145,7 +146,7 @@ const AdminPage = () => {
                     ))
                   ) : recentComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="px-6 py-8 text-center">
+                      <TableCell colSpan={6} className="px-6 py-8 text-center">
                         <p className="text-sm text-muted-foreground">Звернень поки немає.</p>
                       </TableCell>
                     </TableRow>
@@ -180,6 +181,12 @@ const AdminPage = () => {
                             <StatusBadge status={c.status} />
                             <OverdueBadge complaint={c} />
                           </div>
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-right">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                            Деталі
+                            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))
