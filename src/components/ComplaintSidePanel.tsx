@@ -366,7 +366,7 @@ const ComplaintSidePanel = ({
               className="min-h-24 resize-none"
             />
           ) : (
-            <p className="text-xs text-muted-foreground leading-relaxed break-all whitespace-pre-wrap">{complaint.description || "—"}</p>
+            <p className="text-sm text-foreground leading-relaxed break-words whitespace-pre-wrap">{complaint.description || "—"}</p>
           )}
 
           {complaint.rejectionReason && (complaint.status === "rejected" || complaint.status === "denied") && (
