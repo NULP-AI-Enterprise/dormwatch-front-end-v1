@@ -8,9 +8,7 @@ import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PhotoUploadField from "@/components/PhotoUploadField";
-import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import {
   Combobox,
   ComboboxContent,
@@ -24,6 +22,7 @@ import type { CategoryOption, Place } from "@/lib/types";
 const CreateReportPage = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  // Category starts empty (no silent first-API pick) — the filer decides.
   const [selectedCategory, setSelectedCategory] = useState("");
   // Own room + shared areas in the building — the constrained selector shown
   // when the resident has a room. Empty when they fall back to the building
@@ -35,10 +34,10 @@ const CreateReportPage = () => {
   // 'constrained' = own room + shared; 'picker' = building picker; 'none' = none.
   const [selectorMode, setSelectorMode] = useState<"constrained" | "picker" | "none">("none");
   const [placeResolved, setPlaceResolved] = useState(false);
+  // No priority on the create form — triage owns urgency (step19, resolved call #16).
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    priority: "low",
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -79,7 +78,6 @@ const CreateReportPage = () => {
   useEffect(() => {
     fetchCategories().then((data) => {
       setCategories(data);
-      if (data.length > 0) setSelectedCategory((prev) => prev || data[0].name);
     }).catch(() => {});
   }, []);
 
@@ -129,7 +127,6 @@ const CreateReportPage = () => {
         category: selectedCategory,
         title: formData.title.trim(),
         description: formData.description.trim(),
-        priority: formData.priority,
         place_id: place.place_id,
         photoFile: photoFile,
       });
@@ -163,57 +160,11 @@ const CreateReportPage = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div>
-          <label className="text-xs font-semibold text-foreground block mb-4">Що трапилося?</label>
-          <Combobox<string, false>
-            items={categories.map((c) => c.name)}
-            value={selectedCategory}
-            onValueChange={(v) => setSelectedCategory(v ?? "")}
-          >
-            <ComboboxInput placeholder="Оберіть категорію" className="w-full" />
-            <ComboboxContent>
-              <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
-              <ComboboxList>
-                {(name: string) => (
-                  <ComboboxItem key={name} value={name}>
-                    {name}
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
-        </div>
-
+        {/* Lead with what the user is reporting — title + description — then the
+            classification (category) and where it happened. No silent pre-fills,
+            no priority on the filer's plate: triage owns urgency (resolved call #16). */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-5">
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-2">Пріоритет</label>
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                spacing={0}
-                value={formData.priority}
-                // Radix emits "" when the active item is clicked again; ignore
-                // it so a priority stays selected at all times.
-                onValueChange={(value) => {
-                  if (value) setFormData((prev) => ({ ...prev, priority: value }));
-                }}
-                className="w-full"
-              >
-                {PRIORITY_OPTIONS.map((id) => (
-                  <ToggleGroupItem
-                    key={id}
-                    value={id}
-                    // design-system.md §7: selected tiers carry the primary
-                    // fill (the "default button" look), not the muted on-state
-                    // shadcn ships by default.
-                    className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
-                  >
-                    {priorityLabel(id)}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">Заголовок</label>
               <Input
@@ -225,6 +176,38 @@ const CreateReportPage = () => {
                 maxLength={80}
                 required
               />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-2">Опис проблеми</label>
+              <Textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={6}
+                placeholder="Що саме зламалося, коли почалося, де саме…"
+                className="min-h-36 resize-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground block mb-4">Категорія</label>
+              <Combobox<string, false>
+                items={categories.map((c) => c.name)}
+                value={selectedCategory}
+                onValueChange={(v) => setSelectedCategory(v ?? "")}
+              >
+                <ComboboxInput placeholder="Оберіть категорію" className="w-full" />
+                <ComboboxContent>
+                  <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
+                  <ComboboxList>
+                    {(name: string) => (
+                      <ComboboxItem key={name} value={name}>
+                        {name}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground block mb-2">
@@ -267,18 +250,6 @@ const CreateReportPage = () => {
                   Щоб подати звернення, додайте гуртожиток у профілі.
                 </p>
               )}
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-2">Опис проблеми</label>
-              <Textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={6}
-                placeholder="Що саме зламалося, коли почалося, де саме…"
-                className="min-h-36 resize-none"
-                required
-              />
             </div>
           </div>
 
