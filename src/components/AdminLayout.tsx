@@ -97,7 +97,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <div className="p-4 border-t border-border">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-2">
+              <Button variant="ghost" className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/50">
                 <UserAvatar user={user} size="md" fallback="AD" />
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-sm font-bold text-foreground truncate">

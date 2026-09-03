@@ -5,7 +5,6 @@ import { z } from "zod";
 import { changePassword } from "@/services/problemsApi";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SUCCESS, SUCCESS_TEXT } from "@/lib/theme";
 import {
   Form,
   FormField,
@@ -81,8 +80,8 @@ export default function ChangePasswordForm() {
           </div>
         )}
         {success && (
-          <div className={`mb-5 border ${SUCCESS} px-3 py-2.5`}>
-            <p className={`text-xs leading-relaxed ${SUCCESS_TEXT} font-semibold`}>Пароль успішно змінено</p>
+          <div className="mb-5 border text-green-600 dark:text-green-400 bg-green-500/10 border-green-700/50 px-3 py-2.5">
+            <p className="text-xs leading-relaxed font-semibold">Пароль успішно змінено</p>
           </div>
         )}
 

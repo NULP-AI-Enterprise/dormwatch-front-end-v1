@@ -37,7 +37,7 @@ import {
   CancelCircleIcon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import { fetchWorkers } from "@/services/problemsApi";
+import { fetchWorkers, apiErrorText } from "@/services/problemsApi";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import type { Complaint, Worker } from "@/lib/types";
 
@@ -55,25 +55,6 @@ interface ComplaintAdminActionsProps {
 
 const destructiveActionClass =
   "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-
-// DRF field errors arrive as a JSON-stringified body inside Error.message.
-const errorText = (err: unknown, fallback: string) => {
-  try {
-    const body = JSON.parse((err as Error).message);
-    const field =
-      body.rejection_reason ??
-      body.status ??
-      body.worker_id ??
-      body.priority ??
-      body.deadline ??
-      body.detail;
-    if (typeof field === "string") return field;
-    if (Array.isArray(field)) return field.join(" ");
-  } catch {
-    /* plain message */
-  }
-  return fallback;
-};
 
 // One confirmation dialog + trigger button for the actions that need no input.
 const ConfirmAction = ({
@@ -168,7 +149,7 @@ const ComplaintAdminActions = ({
       setReason("");
     } catch (err) {
       setBusy(false);
-      setError(errorText(err, fallbackError));
+      setError(apiErrorText(err, fallbackError));
       console.warn("Admin action failed", err);
     }
   };
@@ -255,7 +236,7 @@ const ComplaintAdminActions = ({
                         <span className="flex items-center gap-1.5">
                           {w.full_name}
                           {w.has_account && (
-                            <Badge variant="secondary" className="px-1 py-0 text-[10px] leading-none h-4">
+                            <Badge variant="secondary" className="px-1 py-0 text-xs leading-none h-4">
                               доступ
                             </Badge>
                           )}

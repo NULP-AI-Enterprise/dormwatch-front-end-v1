@@ -34,8 +34,8 @@ export const PriorityBadge = ({
   prefix?: boolean;
   className?: string;
 }) => {
-  // No badge for an unset priority — priorityBadgeClass would otherwise paint
-  // a yellow "medium"-styled empty badge for a value that was never assigned.
+  // No badge for an unset priority — the neutral fallback would otherwise paint
+  // an empty badge for a value that was never assigned.
   if (!priority) return null;
   return (
     <Badge variant="outline" className={cn(priorityBadgeClass(priority), className)}>

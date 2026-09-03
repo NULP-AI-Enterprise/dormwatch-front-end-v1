@@ -200,7 +200,7 @@ const ComplaintCard = ({
         // Clickable cards carry their own visible "Деталі" cue in the header
         // (rendered above). Background does not shift on hover — touch devices
         // never see hover, and the persistent label is the honest affordance.
-        onCardClick && "cursor-pointer focus-visible:ring-2 focus-visible:ring-primary",
+        onCardClick && "cursor-pointer focus-visible:ring-1 focus-visible:ring-ring/50",
         cardClassName
       )}
       onClick={

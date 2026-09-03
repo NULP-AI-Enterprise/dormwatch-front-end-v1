@@ -31,6 +31,7 @@ import {
   rejectComplaint,
   withdrawComplaint,
   refileComplaint,
+  apiErrorText,
 } from "@/services/problemsApi";
 import { TERMINAL_STATUSES, statusLabel } from "@/lib/complaintUtils";
 import type { Complaint } from "@/lib/types";
@@ -42,20 +43,6 @@ interface ComplaintResidentActionsProps {
   // Cards use "xs"; the side panel keeps the default height.
   size?: React.ComponentProps<typeof Button>["size"];
 }
-
-// DRF field errors arrive as a JSON-stringified body inside Error.message.
-const errorText = (err: unknown, fallback: string) => {
-  try {
-    const body = JSON.parse((err as Error).message);
-    const field =
-      body.rework_reason ?? body.status ?? body.follow_up_of ?? body.detail;
-    if (typeof field === "string") return field;
-    if (Array.isArray(field)) return field.join(" ");
-  } catch {
-    /* plain message */
-  }
-  return fallback;
-};
 
 // The owner's lifecycle cluster over the single status machine:
 // На перевірці → Прийняти / Не прийняти (reason required, with one-tap
@@ -84,11 +71,12 @@ const ComplaintResidentActions = ({
     try {
       await action();
       reset();
-      window.dispatchEvent(new CustomEvent("complaintUpdated"));
+      // onChanged() is the page's reload — no extra "complaintUpdated" event
+      // here, or hook + page would each fetch (two requests per tap).
       onChanged();
     } catch (err) {
       setBusy(false);
-      setError(errorText(err, fallbackError));
+      setError(apiErrorText(err, fallbackError));
       console.warn("Resident action failed", err);
     }
   };

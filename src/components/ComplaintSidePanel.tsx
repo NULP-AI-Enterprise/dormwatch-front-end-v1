@@ -491,7 +491,7 @@ const ComplaintSidePanel = ({
                             <span className="flex items-center gap-1.5">
                               {w.full_name}
                               {w.has_account && (
-                                <Badge variant="secondary" className="px-1 py-0 text-[10px] leading-none h-4">
+                                <Badge variant="secondary" className="px-1 py-0 text-xs leading-none h-4">
                                   доступ
                                 </Badge>
                               )}

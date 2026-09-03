@@ -19,6 +19,13 @@ consumer trends.
   texture of any kind** (the former patterned overlay was removed).
 - **Language:** the entire UI is Ukrainian. Only the brand "DormWatch" and
   technical identifiers (e.g. `#id`, `@lpnu.ua`) are English.
+- **Accent color is for interaction; color on data is information.** The `--primary`
+  accent is a first-class tool for signaling what can be acted on and what is
+  selected (see §4). Color on data is a different, scarce resource: a small,
+  deliberate palette of hues reserved for the few states where hue genuinely
+  helps scanning — never a rainbow keyed to every row of data, never a hue per
+  pipeline step. When a state's color doesn't earn its meaning, render it
+  monochrome.
 
 ## 2. Motifs
 
@@ -31,7 +38,7 @@ Complaint cards and data containers read as physical work orders.
 - **Separators:** dashed borders via `<Separator dashed />` divide card
   sections; solid separators for page-level and header boundaries.
 - **Status indicators:** small, crisp, rectangular badges with high-contrast
-  text and a subtle translucent background fill (see Semantic Status Colors).
+  text and a subtle translucent background fill (see Semantic status colors).
 
 ### Asymmetrical hover states
 
@@ -96,9 +103,13 @@ Auth-form inputs use a custom focus treatment: a `3px` solid left border in
 
 All text at `text-xs` or smaller keeps a minimum **4.5:1** contrast ratio
 against its background. `--muted-foreground` on `--card` passes AA for 12px
-text (~6.3:1).
+text (~6.3:1). Color is never the sole carrier of meaning, so color-blind-safe
+contrast is a baseline requirement: hue changes must always be paired with a
+label.
 
 ## 4. Color system
+
+### Tokens
 
 Colors are OKLCH custom properties in `src/index.css` under `:root` and
 `.dark` (`.dark` is applied to wrapper elements to activate dark mode).
@@ -116,24 +127,63 @@ app background) · `--foreground: oklch(0.985 0.001 106.423)` (Stone 50) ·
 `--muted-foreground: oklch(0.553 0.013 58.071)` (Stone 600) ·
 `--border: oklch(0.923 0.003 48.717)` (Stone 200).
 
-### Primary accent (brand/action)
+### Color is a scarce resource
 
-- Primary button: `bg-primary` (`hover:bg-primary/80`).
-- Inline accent: `text-blue-400` (dark) / `text-blue-600` (light) for links and
-  highlighted text.
-- Hover left-border bar: `bg-blue-500` on cards and list items; the
-  `link-hover` text pattern uses `var(--primary)`.
+Hierarchy and meaning come primarily from typography, spacing, borders, and
+surfaces; color is additive, not the default grammar. Three allowed uses, in
+priority order:
+
+1. **Interactive accent (`--primary`)** — signals what can be acted on or is
+   currently selected: the primary action per view, links and focus rings,
+   active/selected tabs and nav states, the hover left-bar reveal. This is
+   sanctioned and used widely; leave it alone.
+2. **Semantic status** — a short, fixed hue set for state labels only (see
+   below). The palette is deliberately small: a state gets a hue only when the
+   hue genuinely aids scanning; everything else is neutral (`foreground`,
+   `muted-foreground`, `card`, `muted`, `border`).
+3. **Error (`--destructive`)** — destructive actions, error messages, invalid
+   input, deletion.
+
+Color is never used to decorate — no tinted rows, no hue-coded filters, no
+rainbow bars.
 
 ### Semantic status colors
 
-Applied via Tailwind utilities defined in `src/lib/complaintUtils.ts` — that
-file is the source of truth, not this doc:
+Status hues exist to make a handful of consequential states scannable in dense
+lists. The palette is a hard ceiling of four hues, owned by
+`src/lib/complaintUtils.ts` — that file is the only one allowed to map a
+status to a Tailwind class:
 
-- Pending (Жовтий) · In Progress / Approved (Синій) · Resolved (Зелений) ·
-  Urgent / Rejected (Червоний).
+- `amber` — awaiting action (pending)
+- `blue` — in work / approved
+- `green` — resolved / success
+- `red` — rejected / error / urgent / overdue
+- everything else is neutral (`text-muted-foreground`, no fill)
 
-Each is a `text-*-500 bg-*-500/10 border-*-700/50` trio on the corresponding
-hue (yellow / blue / green / red).
+Rules:
+
+- The label always carries the meaning; color only aids scanning. States that
+  resolve to the same meaning share a hue — "На перевірці", "Не прийнято",
+  priority levels, and roles do **not** earn hues of their own; they are
+  distinct by name and stay uncolored unless genuinely alert-level.
+- Status color is allowed **on the status token itself**: the badge trio
+  `text-*-500 bg-*-500/10 border-*-700/50` on one of the four hues, and the
+  matching `text-*-500` for inline state names.
+- Nothing else borrows these hues: no fills on cards/rows, no progress
+  segmentation, no tinted icons, no status-colored filters or charts.
+
+### Banned
+
+- Per-state hues that stretch the lifecycle into a rainbow (`violet` for
+  in_progress, `cyan` for review, `orange` for not_accepted, …). Sharing the
+  four hues across similar states is expected, not a bug.
+- Colored role banners (roles are names — text only).
+- Full priority spectrum (priority is text — only "critical" may borrow the
+  `red` hue).
+- Tinted surface fills (`bg-*-500/10` on cards, rows, inputs) and any
+  `bg-*-500` behind content.
+- Colored headings, colored body text, and hue-coded data icons that repeat a
+  status hue without being that status.
 
 ## 5. Geometry & surfaces
 
@@ -153,7 +203,7 @@ separation:
 
 | Tier | Usage |
 |---|---|
-| `bg-muted` | Static surfaces needing a visible fill (tab list, future stepper bars, icon boxes) |
+| `bg-muted` | Static surfaces needing a visible fill (tab list, future step bars, icon boxes) |
 | `bg-muted/50` | Hover states, lighter fills (outline button hover, cross-link cards, table header row) |
 | `bg-muted/30` | Subtle tints behind content (comment section, skeleton secondary bars) |
 
@@ -186,7 +236,7 @@ edges (and any divider) must land on the same pixel.
 - **Size discipline:** use the `default` size; avoid `size="sm"` unless a
   layout constraint requires it.
 - Primary: `bg-primary text-primary-foreground hover:bg-primary/80`,
-  `font-semibold`, square corners, `h-8` default.
+  `font-semibold`, square corners, `h-8` default. One primary button per view.
 - Outline: `border-border bg-background hover:bg-muted hover:text-foreground`.
 - Ghost: `text-muted-foreground hover:bg-muted hover:text-foreground`. Keep them
   true ghosts — rely on the variant's own hover; never bolt on structural chrome
@@ -242,18 +292,18 @@ edges (and any divider) must land on the same pixel.
 - `default` variant: segment style with `bg-muted` list and `bg-background`
   active triggers.
 
-### Progress stepper
+### Progress indicators
 
-Used in `TicketCard` to visualize the complaint lifecycle
-(Створено → В роботі → Вирішено).
+Progress visualizations are monochrome by design — the pipeline itself is
+information, and painting each step its own hue would be decoration.
 
-- Three `h-1.5` bars with `gap-0.5`.
-- Completed: `bg-blue-500` · Current: `bg-blue-500 animate-pulse` (in-progress)
-  or solid `bg-blue-500` · Future: `bg-muted`.
-- **Rejected (terminal):** not on the pipeline — collapses to a single
-  full-width solid `bg-red-500` bar (same `h-1.5`) under one "Відхилено" label
-  in `text-xs font-semibold text-red-500`. The label-over-bar layout is kept so
-  rejected steppers align with normal ones in a mixed list.
+- Segments/bars for reached steps fill with a neutral foreground
+  (`bg-foreground` on a `bg-muted` track); unreached stays `bg-muted`.
+- Color appears only for a genuine alert outcome: a rejection/error terminal
+  may collapse to a single full-width `--destructive` bar. Nothing else in a
+  progress indicator may be colored.
+- Terminal labels under the bar use the four-hue status set from §4; the bar
+  itself is monochrome unless it is the destructive case.
 
 ### Intentional empty states
 

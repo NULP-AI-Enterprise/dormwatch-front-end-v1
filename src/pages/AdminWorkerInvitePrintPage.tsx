@@ -90,7 +90,7 @@ const AdminWorkerInvitePrintPage = () => {
           <QRCodeSVG value={redeemUrl} size={224} level="M" />
 
           <div className="text-center space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-semibold text-gray-500">
               Або введіть посилання вручну
             </p>
             <p className="text-xs text-gray-800 break-all">{redeemUrl}</p>

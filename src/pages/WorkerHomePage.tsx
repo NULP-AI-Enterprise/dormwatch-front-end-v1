@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowDown01Icon,
@@ -41,6 +41,7 @@ import {
   fetchWorkerHistory,
   workerComplaintAction,
   logoutUser,
+  apiErrorText,
 } from "@/services/problemsApi";
 import type { Complaint } from "@/lib/types";
 
@@ -102,14 +103,7 @@ const WorkerHomePage = () => {
         setUndo({ id: complaint.id, title: complaint.title, until: Date.now() + UNDO_WINDOW_MS });
       }
     } catch (e) {
-      let message = "Дію не виконано";
-      try {
-        const body = JSON.parse((e as Error).message);
-        message = body.status || body.detail || message;
-      } catch {
-        /* non-JSON error body */
-      }
-      setError(message);
+      setError(apiErrorText(e, "Дію не виконано"));
       await load();
     } finally {
       setBusyId(null);
@@ -293,32 +287,35 @@ const WorkerHomePage = () => {
               </p>
             ) : (
               <Card className="py-0 border-border shadow-none bg-card mt-2">
-                <CardContent className="p-5 divide-y divide-border">
-                  {history.map((job) => (
-                    <div key={job.id} className="py-4 first:pt-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="text-sm font-semibold text-foreground leading-tight">
-                          {job.title}
-                        </h4>
-                        <StatusBadge status={job.status} />
+                <CardContent className="p-5">
+                  {history.map((job, i) => (
+                    <Fragment key={job.id}>
+                      {i > 0 && <Separator dashed />}
+                      <div className="py-4 first:pt-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="text-sm font-semibold text-foreground leading-tight">
+                            {job.title}
+                          </h4>
+                          <StatusBadge status={job.status} />
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          №{job.id} · {job.building || "?"} · {job.placeName || "?"}
+                          {job.isShared && <span className="ml-0.5">(спільна)</span>}
+                          {job.followUpOf != null && ` · Повторне до №${job.followUpOf}`}
+                        </p>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          {job.startedAt && <p>Почато: {formatDateTime(job.startedAt)}</p>}
+                          {job.finishedAt && (
+                            <p className="font-semibold text-foreground">
+                              Виконано: {formatDateTime(job.finishedAt)}
+                            </p>
+                          )}
+                          {job.workNote && (
+                            <p className="whitespace-pre-wrap break-all">Нотатка: {job.workNote}</p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        №{job.id} · {job.building || "?"} · {job.placeName || "?"}
-                        {job.isShared && <span className="ml-0.5">(спільна)</span>}
-                        {job.followUpOf != null && ` · Повторне до №${job.followUpOf}`}
-                      </p>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        {job.startedAt && <p>Почато: {formatDateTime(job.startedAt)}</p>}
-                        {job.finishedAt && (
-                          <p className="font-semibold text-foreground">
-                            Виконано: {formatDateTime(job.finishedAt)}
-                          </p>
-                        )}
-                        {job.workNote && (
-                          <p className="whitespace-pre-wrap break-all">Нотатка: {job.workNote}</p>
-                        )}
-                      </div>
-                    </div>
+                    </Fragment>
                   ))}
                 </CardContent>
               </Card>

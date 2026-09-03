@@ -26,8 +26,11 @@ export const STATUS_LABELS: Record<string, string> = {
   withdrawn: "Скасовано",
 };
 
-// One color row per state, shared by every surface that paints a state:
-// badge chip, accent label text, progress-bar fill.
+// One color row per state, shared by every surface that paints a state.
+// Design system §4: status color is a hard ceiling of four hues, each earned
+// by a distinct meaning — amber = awaiting action, blue = in work, green =
+// resolved/success, red = rejected/error/urgent/overdue. States that resolve
+// to the same meaning share a hue; everything else is neutral.
 const NEUTRAL_COLOR = {
   badge: "text-muted-foreground bg-card border-border",
   text: "text-muted-foreground",
@@ -36,9 +39,9 @@ const NEUTRAL_COLOR = {
 
 const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string }> = {
   pending: {
-    badge: "text-yellow-500 bg-yellow-500/10 border-yellow-700/50",
-    text: "text-yellow-500",
-    fill: "bg-yellow-500",
+    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
+    text: "text-amber-600 dark:text-amber-400",
+    fill: "bg-amber-500",
   },
   approved: {
     badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
@@ -46,14 +49,14 @@ const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string 
     fill: "bg-blue-500",
   },
   in_progress: {
-    badge: "text-violet-500 bg-violet-500/10 border-violet-700/50",
-    text: "text-violet-600 dark:text-violet-400",
-    fill: "bg-violet-500",
+    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
+    text: "text-blue-600 dark:text-blue-400",
+    fill: "bg-blue-500",
   },
   review: {
-    badge: "text-cyan-500 bg-cyan-500/10 border-cyan-700/50",
-    text: "text-cyan-600 dark:text-cyan-400",
-    fill: "bg-cyan-500",
+    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
+    text: "text-blue-600 dark:text-blue-400",
+    fill: "bg-blue-500",
   },
   resolved: {
     badge: "text-green-500 bg-green-500/10 border-green-700/50",
@@ -65,11 +68,7 @@ const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string 
     text: "text-red-500",
     fill: "bg-red-500",
   },
-  not_accepted: {
-    badge: "text-orange-500 bg-orange-500/10 border-orange-700/50",
-    text: "text-orange-500",
-    fill: "bg-orange-500",
-  },
+  not_accepted: NEUTRAL_COLOR,
   withdrawn: NEUTRAL_COLOR,
 };
 
@@ -106,66 +105,27 @@ export const statusLabel = (status: string) => {
 };
 
 
-// Priority palette — decoupled from the status palette. Status uses
-// yellow/blue/violet/cyan/green/red/orange; priority uses slate/indigo/amber/rose
-// so the same color never carries two unrelated meanings on one screen
-// (e.g. low used to be green = resolved, high/critical used to be red = rejected,
-// and "Критичний" was visually identical to "Високий").
-const PRIORITY_COLORS: Record<string, { badge: string; text: string }> = {
-  low: {
-    badge: "text-slate-500 bg-slate-500/10 border-slate-700/50",
-    text: "text-slate-500 dark:text-slate-400",
-  },
-  medium: {
-    badge: "text-indigo-500 bg-indigo-500/10 border-indigo-700/50",
-    text: "text-indigo-600 dark:text-indigo-400",
-  },
-  high: {
-    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
-    text: "text-amber-600 dark:text-amber-400",
-  },
-  critical: {
-    badge: "text-rose-500 bg-rose-500/10 border-rose-700/50",
-    text: "text-rose-600 dark:text-rose-400",
-  },
-};
-
+// Priority is text — no palette. Design system §4: only "critical" (genuinely
+// alert-level) may borrow the `red` status hue; the rest stay neutral.
 const NEUTRAL_PRIORITY = {
   badge: "text-muted-foreground bg-card border-border",
   text: "text-muted-foreground",
 };
 
-export const priorityBadgeClass = (priority: string | null | undefined) =>
-  PRIORITY_COLORS[String(priority || "").toLowerCase()]?.badge ?? NEUTRAL_PRIORITY.badge;
-
-export const priorityColor = (priority: string | null | undefined) =>
-  PRIORITY_COLORS[String(priority || "").toLowerCase()] ?? NEUTRAL_PRIORITY;
-
-// Role badge colors — distinct from the status palette (admin used to be yellow
-// = pending, student used to be blue = approved). Now amber/indigo so they read
-// as role markers, not lifecycle states.
-const ROLE_COLORS: Record<string, { badge: string; text: string }> = {
-  admin: {
-    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
-    text: "text-amber-600 dark:text-amber-400",
-  },
-  student: {
-    badge: "text-indigo-500 bg-indigo-500/10 border-indigo-700/50",
-    text: "text-indigo-600 dark:text-indigo-400",
-  },
-  worker: {
-    badge: "text-teal-500 bg-teal-500/10 border-teal-700/50",
-    text: "text-teal-600 dark:text-teal-400",
-  },
+const CRITICAL_PRIORITY = {
+  badge: "text-red-500 bg-red-500/10 border-red-700/50",
+  text: "text-red-500",
 };
 
-const NEUTRAL_ROLE = {
-  badge: "text-muted-foreground bg-card border-border",
-  text: "text-muted-foreground",
+export const priorityBadgeClass = (priority: string | null | undefined) => {
+  const p = String(priority || "").toLowerCase();
+  return p === "critical" ? CRITICAL_PRIORITY.badge : NEUTRAL_PRIORITY.badge;
 };
 
-export const roleBadgeClass = (roleName: string | null | undefined) =>
-  ROLE_COLORS[String(roleName || "").toLowerCase()]?.badge ?? NEUTRAL_ROLE.badge;
+export const priorityColor = (priority: string | null | undefined) => {
+  const p = String(priority || "").toLowerCase();
+  return p === "critical" ? CRITICAL_PRIORITY : NEUTRAL_PRIORITY;
+};
 
 export const priorityLabel = (priority: string | null | undefined): string => {
   const p = String(priority || "").toLowerCase();

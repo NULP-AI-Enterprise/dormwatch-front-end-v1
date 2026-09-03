@@ -180,7 +180,7 @@ const AdminWorkerReportPrintPage = () => {
             <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
             Назад
           </Button>
-          <span className="text-sm font-medium text-gray-600">Звіт по працівниках</span>
+          <span className="text-sm font-semibold text-gray-600">Звіт по працівниках</span>
         </div>
         <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
           <HugeiconsIcon icon={PrinterIcon} className="size-4" />
@@ -210,7 +210,7 @@ const AdminWorkerReportPrintPage = () => {
               <h2 className="text-xl font-bold text-gray-800 border-b border-gray-400 pb-1 mb-1">
                 {w.full_name}
                 {[w.company, w.phone].filter(Boolean).length > 0 && (
-                  <span className="text-sm font-medium text-gray-500 ml-2">
+                  <span className="text-sm font-normal text-gray-500 ml-2">
                     ({[w.company, w.phone].filter(Boolean).join(", ")})
                   </span>
                 )}

@@ -12,7 +12,7 @@ import {
 } from "@/services/problemsApi";
 import { formatDate } from "@/lib/dateUtils";
 import type { Comment } from "@/lib/types";
-import { ACCENT_BG, ACCENT_BG_HOVER_DARK, SUCCESS_TEXT, ERROR_TEXT } from "@/lib/theme";
+import { ACCENT_BG, ACCENT_BG_HOVER_DARK, ERROR_TEXT } from "@/lib/theme";
 
 interface CommentSectionProps {
   complaintId: number;
@@ -101,7 +101,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                   {c.authorIsAdmin ? (
                     <Badge variant="default" className={`text-xs px-1.5 py-0 h-4 ${ACCENT_BG} text-white ${ACCENT_BG_HOVER_DARK}`}>Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className={`text-xs px-1.5 py-0 h-4 ${SUCCESS_TEXT} border-green-600`}>Автор звернення</Badge>
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Автор звернення</Badge>
                   ) : (
                     <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Студент</Badge>
                   )}

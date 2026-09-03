@@ -8,13 +8,14 @@ import {
   createPlace,
   updatePlace,
   deletePlace,
-fetchWorkers,
+  fetchWorkers,
   createWorker,
   updateWorker,
   deleteWorker,
   fetchRoles,
   createWorkerInvite,
   unlinkWorker,
+  apiErrorText,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -878,16 +879,7 @@ function WorkersTab() {
       const data = await createWorkerInvite(provisioning.worker_id);
       setInviteToken(data.invite_token);
     } catch (err) {
-      let msg = "Не вдалося створити запрошення";
-      if (err instanceof Error) {
-        try {
-          const parsed = JSON.parse(err.message) as { detail?: string };
-          if (parsed?.detail) msg = String(parsed.detail);
-        } catch {
-          // keep the fallback message
-        }
-      }
-      setInviteError(msg);
+      setInviteError(apiErrorText(err, "Не вдалося створити запрошення"));
     } finally {
       setInviting(false);
     }

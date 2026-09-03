@@ -29,6 +29,31 @@ try {
 
 const AUTH_HEADERS = { "Content-Type": "application/json", "Accept": "application/json" };
 
+// DRF field errors arrive as a JSON-stringified body inside Error.message.
+// Picks the first known field message; plain strings fall through to the
+// caller's fallback. Single home for this unwrap — the action clusters used to
+// each carry their own copy.
+export function apiErrorText(err, fallback) {
+  try {
+    const body = JSON.parse(err?.message);
+    if (!body || typeof body !== "object") return fallback;
+    const field =
+      body.rejection_reason ??
+      body.rework_reason ??
+      body.follow_up_of ??
+      body.status ??
+      body.worker_id ??
+      body.priority ??
+      body.deadline ??
+      body.detail;
+    if (typeof field === "string") return field;
+    if (Array.isArray(field)) return field.join(" ");
+  } catch {
+    /* plain message */
+  }
+  return fallback;
+}
+
 async function parseErrorBody(res) {
   const text = await res.text();
   try { return JSON.parse(text); } catch { return null; }

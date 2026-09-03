@@ -29,7 +29,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
-import { isAdminUser, roleBadgeClass } from "@/lib/complaintUtils";
+import { isAdminUser } from "@/lib/complaintUtils";
 import { ERROR_TEXT, ERROR_BG_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 
@@ -69,7 +69,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                   {user ? `${user.first_name} ${user.last_name}` : "Завантаження..."}
                 </p>
                 {user && (
-                  <Badge variant="outline" className={roleBadgeClass(isAdmin ? "admin" : "student")}>
+                  <Badge variant="outline" className="text-muted-foreground bg-card border-border">
                     {isAdmin ? "Адмін" : "Студент"}
                   </Badge>
                 )}

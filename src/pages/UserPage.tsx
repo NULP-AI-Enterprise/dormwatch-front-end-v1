@@ -111,30 +111,6 @@ const UserPage = () => {
         </div>
       )}
 
-      {/* front-and-center CTA — big button with right arrow */}
-      <Button
-        asChild
-        className="group h-auto w-full justify-between gap-4 px-8 py-6 mb-10 text-base"
-      >
-        <Link to="/create-report">
-        <span className="flex items-center gap-4">
-          <span className="inline-flex size-12 items-center justify-center border border-white/20 bg-white/10 shrink-0">
-            <HugeiconsIcon icon={Wrench01Icon} className="size-6" strokeWidth={2} />
-          </span>
-          <span className="text-left">
-            <span className="block text-lg md:text-xl font-semibold">Створити звернення</span>
-            <span className="block text-sm text-primary-foreground/80 mt-0.5">
-              Опишіть несправність — комендант побачить її одразу.
-            </span>
-          </span>
-        </span>
-        <HugeiconsIcon
-          icon={ArrowRight02Icon}
-          className="size-7 shrink-0 group-hover:translate-x-1 transition-transform"
-          strokeWidth={2}
-        />
-        </Link>
-      </Button>
       {/* front-and-center CTA — same affordance as the other pages
           (ArrowLinkButton), kept compact so the recent requests and stats
           start without scrolling on a 1080p screen. */}

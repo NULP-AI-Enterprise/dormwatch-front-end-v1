@@ -126,7 +126,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
         >
           <HugeiconsIcon icon={BellIcon} className="size-5" strokeWidth={1.5} />
           {unreadCount > 0 && (
-            <span className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full ${ACCENT_BG} text-[10px] font-bold text-white border border-card`}>
+            <span className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center ${ACCENT_BG} text-xs leading-none font-bold text-white border border-card`}>
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
