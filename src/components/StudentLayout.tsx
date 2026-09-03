@@ -138,7 +138,7 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
               .then((fresh) => {
                 if (fresh) setSelectedComplaint(fresh);
               })
-              .catch(() => {});
+              .catch(() => setSelectedComplaint(null));
           }}
           currentUserId={user?.user}
           isAdmin={admin}

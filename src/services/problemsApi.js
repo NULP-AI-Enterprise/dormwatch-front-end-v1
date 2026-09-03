@@ -946,25 +946,15 @@ export async function fetchNotifications() {
 }
 
 export async function markNotificationRead(id) {
-  try {
-    return await fetchJson(`/notifications/${id}/`, {
-      method: "PATCH",
-    });
-  } catch (e) {
-    console.warn(`Failed to mark notification ${id} as read`, e);
-    return null;
-  }
+  return fetchJson(`/notifications/${id}/`, {
+    method: "PATCH",
+  });
 }
 
 export async function markAllNotificationsRead() {
-  try {
-    return await fetchJson("/notifications/mark-all-read/", {
-      method: "POST",
-    });
-  } catch (e) {
-    console.warn("Failed to mark all notifications as read", e);
-    return null;
-  }
+  return fetchJson("/notifications/mark-all-read/", {
+    method: "POST",
+  });
 }
 
 // Announcements — resident feed + dashboard widget (global + own building).

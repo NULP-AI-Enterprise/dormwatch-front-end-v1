@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   fetchPublicComplaints,
+  fetchComplaintDetail,
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
@@ -96,21 +97,37 @@ const DashboardPage = () => {
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
 
+  // Refresh the feed and rebind the open panel to the live record. The feed
+  // only holds approved/resolved, so a panel action that moves the complaint
+  // out of that set (admin "Взято в роботу" → in_progress, archive/delete)
+  // would leave the snapshot stale — refetch the detail to keep status and
+  // priority truthful, and close the panel if the record is gone.
+  const refreshFeed = useCallback(async () => {
+    const data = await fetchPublicComplaints().catch(() => []);
+    if (!Array.isArray(data)) return;
+    const fresh = data.filter(Boolean) as Complaint[];
+    setProblems(fresh);
+    const current = selectedProblemRef.current;
+    if (!current) return;
+    const updated = fresh.find((c) => c.id === current.id);
+    if (updated) {
+      setSelectedProblem(updated);
+      return;
+    }
+    try {
+      const detail = await fetchComplaintDetail(current.id);
+      if (detail) setSelectedProblem(detail);
+    } catch {
+      setSelectedProblem(null);
+      setSheetOpen(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const handler = () => {
-      fetchPublicComplaints().then((data) => {
-        const fresh = data.filter(Boolean) as Complaint[];
-        setProblems(fresh);
-        const current = selectedProblemRef.current;
-        if (current) {
-          const updated = fresh.find((c) => c.id === current.id);
-          if (updated) setSelectedProblem(updated);
-        }
-      }).catch(() => {});
-    };
+    const handler = () => { refreshFeed(); };
     window.addEventListener("complaintUpdated", handler);
     return () => window.removeEventListener("complaintUpdated", handler);
-  }, []);
+  }, [refreshFeed]);
 
   const handleDelete = async (id: number) => {
     setDeleteTarget(id);
@@ -291,14 +308,7 @@ const DashboardPage = () => {
           complaint={selectedProblem}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
-          onStatusChange={() => {
-            fetchPublicComplaints().then((data) => {
-              const fresh = data.filter(Boolean) as Complaint[];
-              setProblems(fresh);
-              const updated = fresh.find((c) => c.id === selectedProblem.id);
-              if (updated) setSelectedProblem(updated);
-            }).catch(() => {});
-          }}
+          onStatusChange={refreshFeed}
           currentUserId={currentUser?.user}
           isAdmin={admin}
         />

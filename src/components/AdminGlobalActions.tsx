@@ -56,7 +56,10 @@ export function AdminGlobalActions() {
                 .then((fresh) => {
                   if (fresh) setSelectedComplaint(fresh);
                 })
-                .catch(() => {});
+                .catch(() => {
+                  setSelectedComplaint(null);
+                  setSheetOpen(false);
+                });
             }
           }}
           currentUserId={currentUser?.user}

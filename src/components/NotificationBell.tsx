@@ -83,15 +83,20 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
   };
 
   const handleNotificationClick = async (item: NotificationItem) => {
-    // Optimistically mark as read
+    // Optimistically mark as read; on failure reload so the badge and list
+    // stay truthful to the backend (read flags are server-owned).
     setNotifications((prev) =>
       prev.map((n) =>
         n.notification_id === item.notification_id ? { ...n, is_read: true } : n
       )
     );
 
-    // Call API to mark as read
-    await markNotificationRead(item.notification_id);
+    try {
+      await markNotificationRead(item.notification_id);
+    } catch (err) {
+      console.warn("Failed to mark notification read", err);
+      loadNotifications();
+    }
 
     // If complaint is linked, load its details and open details panel
     if (item.complaint && onSelectComplaint) {
@@ -109,11 +114,16 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Optimistically mark all as read
+
+    // Optimistically mark all as read; restore the server truth on failure.
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    
-    await markAllNotificationsRead();
+
+    try {
+      await markAllNotificationsRead();
+    } catch (err) {
+      console.warn("Failed to mark all notifications as read", err);
+      loadNotifications();
+    }
   };
 
   return (
