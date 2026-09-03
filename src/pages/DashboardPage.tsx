@@ -195,7 +195,7 @@ const DashboardPage = () => {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Опубліковані та вирішені звернення мешканців{admin ? " по гуртожитках" : ""}. Керування
-              чергою — у розділі «Керування зверненнями».
+              чергою — у розділі «Звернення».
             </p>
           </div>
           <ArrowLinkButton to={admin ? "/admin" : "/create-report"}>
@@ -275,7 +275,7 @@ const DashboardPage = () => {
           {filteredProblems.length === 0 && (
             <EmptyState
               icon={SearchIcon2}
-              title="Немає звернень за вибраними фільтрах."
+              title="Немає звернень за вибраними фільтрами."
             />
           )}
 

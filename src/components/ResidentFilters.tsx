@@ -110,12 +110,21 @@ export function PlaceFilterSelect({
     );
   };
 
+  const roomPlural = (n: number) => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+      return "кімнати";
+    }
+    return "кімнат";
+  };
+
   const summary =
     value.length === 0
       ? "Усі кімнати"
       : value.length === 1
         ? labelFor(value[0])
-        : `Обрано кімнат: ${value.length}`;
+        : `Обрано ${value.length} ${roomPlural(value.length)}`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

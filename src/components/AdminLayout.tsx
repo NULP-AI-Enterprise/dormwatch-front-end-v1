@@ -23,9 +23,9 @@ import { logoutUser } from "@/services/problemsApi";
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
   "/admin/residents": "Мешканці",
-  "/admin/complaints": "Керування зверненнями",
+  "/admin/complaints": "Звернення",
   "/admin/announcements": "Оголошення",
-  "/admin/settings": "Довідники",
+  "/admin/settings": "Налаштування",
 };
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -50,9 +50,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
-    { name: "Керування зверненнями", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
+    { name: "Звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
-    { name: "Довідники", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
+    { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];
 
   return (

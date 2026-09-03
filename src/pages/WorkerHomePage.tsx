@@ -124,7 +124,7 @@ const WorkerHomePage = () => {
     try {
       await workerComplaintAction(id, "finish_undo");
     } catch {
-      setError("Не вдалося скасувати — можливо, час вийшов");
+      setError("Не вдалося скасувати — час для скасування минув.");
     }
     await load();
     setBusyId(null);

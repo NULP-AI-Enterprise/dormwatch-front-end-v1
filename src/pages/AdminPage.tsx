@@ -95,7 +95,7 @@ const AdminPage = () => {
                 label="Прострочені"
                 value={overdueCount}
                 to="/admin/complaints"
-                actionLabel="Розібрати прострочені"
+                actionLabel="Розглянути прострочені"
                 state={{ overdueOnly: true }}
               />
               <StatCard

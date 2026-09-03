@@ -370,7 +370,7 @@ const ComplaintAdminActions = ({
         <ConfirmAction
           trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
           title="Позначити як вирішене?"
-          description={'Ви підтверджуєте результат за мешканця — звернення перейде в статус "Вирішено".'}
+          description={'Ви підтверджуєте від імені мешканця, що проблему вирішено. Звернення перейде в статус "Вирішено".'}
           confirmLabel="Вирішити"
           onConfirm={() => onPatch({ status: "resolved" })}
         />
