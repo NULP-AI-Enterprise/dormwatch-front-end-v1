@@ -30,7 +30,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import type { Complaint } from "@/lib/types";
-import { logoutUser } from "@/services/problemsApi";
+import { logoutUser, fetchComplaintDetail } from "@/services/problemsApi";
 
 const StudentLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -132,7 +132,14 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
           onOpenChange={(open) => {
             if (!open) setSelectedComplaint(null);
           }}
-          onStatusChange={() => {}}
+          onStatusChange={() => {
+            if (!selectedComplaint) return;
+            fetchComplaintDetail(selectedComplaint.id)
+              .then((fresh) => {
+                if (fresh) setSelectedComplaint(fresh);
+              })
+              .catch(() => {});
+          }}
           currentUserId={user?.user}
           isAdmin={admin}
         />

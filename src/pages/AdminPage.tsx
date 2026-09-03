@@ -34,6 +34,9 @@ const AdminPage = () => {
   const init = async () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
+    setSelectedComplaint((prev) =>
+      prev ? data.find((c) => c.id === prev.id) || prev : prev
+    );
     setLoading(false);
   };
 
@@ -66,6 +69,9 @@ const AdminPage = () => {
   const handleRefresh = async () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
+    setSelectedComplaint((prev) =>
+      prev ? data.find((c) => c.id === prev.id) || prev : prev
+    );
   };
 
   return (
