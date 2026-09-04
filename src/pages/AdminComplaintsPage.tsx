@@ -203,8 +203,8 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
         <div className="flex-1 p-6 space-y-6">
-          {/* Compact filter toolbar — same paradigm as MyComplaintsPage /
-              DashboardPage. Status, building, priority, worker, overdue-only,
+          {/* Compact filter toolbar — same paradigm as DashboardPage.
+              Status, building, priority, worker, overdue-only,
               category, two date pickers (deadline + filing) all sit in one
               row above the data. */}
           <FilterToolbar onReset={resetFilters}>

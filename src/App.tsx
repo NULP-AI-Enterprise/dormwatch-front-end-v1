@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Home01Icon } from "@hugeicons/core-free-icons";
@@ -10,7 +10,6 @@ import AdminResidentsPage from "@/pages/AdminResidentsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
-import MyComplaintsPage from "@/pages/MyComplaintsPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AuthPage from "@/pages/AuthPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -56,16 +55,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/my-complaints"
-        element={
-          <ProtectedRoute blockAdmin>
-            <StudentLayout>
-              <MyComplaintsPage />
-            </StudentLayout>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/my-complaints" element={<Navigate to="/user" replace />} />
       <Route
         path="/dashboard"
         element={

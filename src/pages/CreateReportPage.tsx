@@ -131,7 +131,7 @@ const CreateReportPage = () => {
         photoFile: photoFile,
       });
       toast.success(`Звернення №${created.id} створено`);
-      navigate(`/my-complaints`, { state: { openComplaintId: created.id } });
+      navigate(`/user`, { state: { openComplaintId: created.id } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Не вдалося надіслати звернення: ${msg}. Спробуйте ще раз.`);

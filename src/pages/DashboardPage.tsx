@@ -36,8 +36,6 @@ import {
 import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
-import AnnouncementsWidget from "@/components/AnnouncementsWidget";
-import PhoneNumbersWidget from "@/components/PhoneNumbersWidget";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
@@ -50,8 +48,8 @@ const DashboardPage = () => {
   const { user: currentUser } = useUser();
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   // All filters (building/priority/category/search) are multi-select and filtered
-  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage/
-  // MyComplaintsPage. Pilot-scale choice: the fetch returns all approved once and
+  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage.
+  // Pilot-scale choice: the fetch returns all approved once and
   // filteredProblems narrows it. Revisit (server-side + pagination) at real scale.
   const [activeCorps, setActiveCorps] = useState<string[]>([]);
   const [activePriority, setActivePriority] = useState<string[]>([]);
@@ -295,11 +293,6 @@ const DashboardPage = () => {
               title="Немає звернень за вибраними фільтрами."
             />
           )}
-
-          <div className="grid lg:grid-cols-2 gap-4 mt-4">
-            <AnnouncementsWidget />
-            <PhoneNumbersWidget />
-          </div>
         </div>
       </div>
 

@@ -48,10 +48,10 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Single tab spine (the nav is the only tab structure — no in-page tabs).
   // The primary "Створити звернення" CTA lives front-and-center in page bodies,
-  // not here. The resident tabs (/user, /my-complaints) are
-  // blockAdmin routes, so they must NOT be shown to an admin who reaches this
-  // layout via /dashboard — they'd bounce straight back to /admin. Admins get
-  // only the two routes they can actually stay on.
+  // not here. The resident tab (/user) is a blockAdmin route, so it must NOT
+  // be shown to an admin who reaches this layout via /dashboard — they'd
+  // bounce straight back to /admin. Admins get only the two routes they can
+  // actually stay on.
   const navItems = admin
     ? [
         // Disambiguated from the admin's moderation queue: this is the public
@@ -60,8 +60,7 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
         { to: "/admin", label: "Адмін-панель" },
       ]
     : [
-        { to: "/user", label: "Огляд" },
-        { to: "/my-complaints", label: "Мої звернення" },
+        { to: "/user", label: "Мої звернення" },
         { to: "/dashboard", label: "Всі звернення" },
       ];
 
