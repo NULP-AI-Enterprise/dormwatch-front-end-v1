@@ -203,10 +203,6 @@ const MyComplaintsPage = () => {
               showProgress
               showPhoto
               photoHeight="h-44"
-              // Follow-ups sit indented under their chain head.
-              cardClassName={
-                p.followUpOf != null ? "ml-3 sm:ml-6 border-l-2 border-l-primary/40" : undefined
-              }
               footerClassName="flex items-center justify-between pt-4"
               commentsMode="inline"
               commentsSide="right"
