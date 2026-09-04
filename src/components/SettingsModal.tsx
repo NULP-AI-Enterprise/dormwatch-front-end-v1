@@ -21,11 +21,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { logoutUser } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Settings02Icon,
+  LockPasswordIcon,
   Logout01Icon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
@@ -83,23 +86,29 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-5">
               <div className="mb-5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-between"
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                >
-                  <span className="flex items-center">
-                    <HugeiconsIcon icon={Settings02Icon} className="size-4 mr-2" />
-                    Змінити пароль
-                  </span>
-                  <span>{showPasswordChange ? "−" : "+"}</span>
-                </Button>
-                {showPasswordChange && (
-                  <div className="mt-4 p-4 border border-border rounded-lg bg-card">
-                    <ChangePasswordForm />
-                  </div>
-                )}
+                <Collapsible open={showPasswordChange} onOpenChange={setShowPasswordChange}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between h-auto py-2 cursor-pointer hover:bg-transparent"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <HugeiconsIcon icon={LockPasswordIcon} className="size-4" strokeWidth={2} />
+                        Змінити пароль
+                      </span>
+                      <HugeiconsIcon
+                        icon={showPasswordChange ? ChevronUpIcon : ChevronDownIcon}
+                        className="size-4 text-muted-foreground"
+                        strokeWidth={2}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-3 border border-border bg-card p-4">
+                      <ChangePasswordForm />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <Separator dashed className="my-5" />
