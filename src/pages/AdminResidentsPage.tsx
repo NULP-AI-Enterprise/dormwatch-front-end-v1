@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
+import { InviteLinkDialog } from "@/components/InviteLinkDialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Edit02Icon, UserMultipleIcon, Add01Icon } from "@hugeicons/core-free-icons";
 import type { Building, Place, Role } from "@/lib/types";
@@ -285,6 +286,12 @@ const AdminResidentsPage = () => {
           setEditing(null);
           await init();
         }}
+      />
+
+      <InviteLinkDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        roles={roles}
       />
     </div>
   );
