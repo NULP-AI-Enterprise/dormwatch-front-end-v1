@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   fetchPublicComplaints,
+  fetchComplaintDetail,
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, SearchIcon as SearchIcon2, Refresh01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, SearchIcon as SearchIcon2 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   FilterSearchInput,
   BuildingFilterSelect,
@@ -17,6 +16,7 @@ import {
   CategoryFilterCombobox,
   StatusFilterSelect,
 } from "@/components/ComplaintFilters";
+import { FilterToolbar } from "@/components/FilterToolbar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,26 +36,20 @@ import {
 import CommentSection from "@/components/CommentSection";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
-import AnnouncementsWidget from "@/components/AnnouncementsWidget";
-import PhoneNumbersWidget from "@/components/PhoneNumbersWidget";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { useBuildings } from "@/hooks/useBuildings";
-import { useMyTicketMap } from "@/hooks/useMyComplaintsAndTickets";
 import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useUser } from "@/context/UserContext";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 const DashboardPage = () => {
   const { user: currentUser } = useUser();
-  // Owner's own work orders, so a resident opening their own complaint here sees
-  // the same read-only tracking block as on /user and /my-complaints.
-  const myTicketByComplaint = useMyTicketMap();
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   // All filters (building/priority/category/search) are multi-select and filtered
-  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage/
-  // MyComplaintsPage. Pilot-scale choice: the fetch returns all approved once and
+  // client-side against the full approved set, matching AdminPage/AdminComplaintsPage.
+  // Pilot-scale choice: the fetch returns all approved once and
   // filteredProblems narrows it. Revisit (server-side + pagination) at real scale.
   const [activeCorps, setActiveCorps] = useState<string[]>([]);
   const [activePriority, setActivePriority] = useState<string[]>([]);
@@ -101,21 +95,37 @@ const DashboardPage = () => {
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
 
+  // Refresh the feed and rebind the open panel to the live record. The feed
+  // only holds approved/resolved, so a panel action that moves the complaint
+  // out of that set (admin "Взято в роботу" → in_progress, archive/delete)
+  // would leave the snapshot stale — refetch the detail to keep status and
+  // priority truthful, and close the panel if the record is gone.
+  const refreshFeed = useCallback(async () => {
+    const data = await fetchPublicComplaints().catch(() => []);
+    if (!Array.isArray(data)) return;
+    const fresh = data.filter(Boolean) as Complaint[];
+    setProblems(fresh);
+    const current = selectedProblemRef.current;
+    if (!current) return;
+    const updated = fresh.find((c) => c.id === current.id);
+    if (updated) {
+      setSelectedProblem(updated);
+      return;
+    }
+    try {
+      const detail = await fetchComplaintDetail(current.id);
+      if (detail) setSelectedProblem(detail);
+    } catch {
+      setSelectedProblem(null);
+      setSheetOpen(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const handler = () => {
-      fetchPublicComplaints().then((data) => {
-        const fresh = data.filter(Boolean) as Complaint[];
-        setProblems(fresh);
-        const current = selectedProblemRef.current;
-        if (current) {
-          const updated = fresh.find((c) => c.id === current.id);
-          if (updated) setSelectedProblem(updated);
-        }
-      }).catch(() => {});
-    };
+    const handler = () => { refreshFeed(); };
     window.addEventListener("complaintUpdated", handler);
     return () => window.removeEventListener("complaintUpdated", handler);
-  }, []);
+  }, [refreshFeed]);
 
   const handleDelete = async (id: number) => {
     setDeleteTarget(id);
@@ -165,6 +175,14 @@ const DashboardPage = () => {
     return <PageSpinner />;
   }
 
+  const resetDashboardFilters = () => {
+    setActiveCategories([]);
+    setActiveCorps([]);
+    setActivePriority([]);
+    setActiveStatus([]);
+    setSearchQuery("");
+  };
+
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
@@ -177,7 +195,7 @@ const DashboardPage = () => {
               alt="Full size"
             />
           )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-stone-300">
+          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
             <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
@@ -188,10 +206,11 @@ const DashboardPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              {admin ? "Всі звернення" : `Всі звернення у Вашому гуртожитку (${userBuildingName})`}
+              {admin ? "Публічна дошка звернень" : userBuildingName ? `Всі звернення у Вашому гуртожитку (${userBuildingName})` : "Всі звернення у Вашому гуртожитку"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Опубліковані та вирішені звернення мешканців{admin ? " по гуртожитках" : ""}.
+              Опубліковані та вирішені звернення мешканців{admin ? " по гуртожитках" : ""}. Керування
+              чергою — у розділі «Звернення».
             </p>
           </div>
           <ArrowLinkButton to={admin ? "/admin" : "/create-report"}>
@@ -199,126 +218,90 @@ const DashboardPage = () => {
           </ArrowLinkButton>
         </div>
 
-        <div className="grid lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-1 space-y-4">
-            <Card className="border-border shadow-none bg-card">
-              <CardContent>
-                <div className="mb-4">
-                  <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-                </div>
-
-                {admin && (
-                  <>
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">Гуртожиток</h4>
-                    <BuildingFilterSelect
-                      value={activeCorps}
-                      onChange={setActiveCorps}
-                      buildings={buildings}
-                    />
-
-                    <Separator className="my-4" />
-                  </>
-                )}
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Пріоритет</h4>
-                <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
-
-                <Separator className="my-4" />
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Статус</h4>
-                <StatusFilterSelect
-                  value={activeStatus}
-                  onChange={setActiveStatus}
-                  codes={["approved", "resolved"]}
-                />
-
-                <Separator className="my-4" />
-
-                <h4 className="text-xs font-normal text-muted-foreground mb-3">Категорії</h4>
-                <CategoryFilterCombobox
-                  value={activeCategories}
-                  onChange={setActiveCategories}
-                  categories={categories}
-                />
-              </CardContent>
-            </Card>
-
-            <AnnouncementsWidget />
-            <PhoneNumbersWidget />
-          </div>
-          <div className="lg:col-span-3 space-y-4">
-            {filteredProblems.map((problem) => {
-              const manage = canManage(problem);
-              return (
-                <ComplaintCard
-                  key={problem.id}
-                  complaint={problem}
-                  footerClassName="flex items-center justify-between pt-4"
-                  onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
-                  showPhoto
-                  photoZoom
-                  photoHeight="h-44"
-                  onPhotoPreview={setPreviewImage}
-                  footerLeft="added-date"
-                  commentsMode={manage ? "inline" : "hidden"}
-                  commentsOpen={comments.isOpen(problem.id)}
-                  commentsSeparator
-                  onCommentToggle={() => comments.toggle(problem.id)}
-                  commentsContent={
-                    <CommentSection
-                      complaintId={problem.id}
-                      currentUserId={currentUser?.user}
-                      isAdmin={admin}
-                      complaintAuthorId={problem.user_id}
-                    />
-                  }
-                  showDelete={manage}
-                  deleteHoverReveal
-                  onDelete={handleDelete}
-                />
-              );
-            })}
-
-            {filteredProblems.length === 0 && (
-              <EmptyState
-                icon={SearchIcon2}
-                title="Немає звернень за вибраними фільтрами."
-                action={
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => {
-                      setActiveCategories([]);
-                      setActiveCorps([]);
-                      setActivePriority([]);
-                      setActiveStatus([]);
-                      setSearchQuery("");
-                    }}
-                  >
-                    <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
-                    Скинути фільтри
-                  </Button>
-                }
+        {/* Compact filter toolbar — same paradigm as the other list pages:
+            one row with search, status, priority, building (admin), category;
+            reset on the right. */}
+        <div className="mb-6">
+          <FilterToolbar onReset={resetDashboardFilters}>
+            <div className="w-full sm:w-64">
+              <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            <div className="w-full sm:w-48">
+              <StatusFilterSelect
+                value={activeStatus}
+                onChange={setActiveStatus}
+                codes={["approved", "resolved"]}
               />
+            </div>
+            <div className="w-full sm:w-48">
+              <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
+            </div>
+            {admin && (
+              <div className="w-full sm:w-48">
+                <BuildingFilterSelect
+                  value={activeCorps}
+                  onChange={setActiveCorps}
+                  buildings={buildings}
+                />
+              </div>
             )}
-          </div>
+            <div className="w-full sm:w-56">
+              <CategoryFilterCombobox
+                value={activeCategories}
+                onChange={setActiveCategories}
+                categories={categories}
+              />
+            </div>
+          </FilterToolbar>
+        </div>
+
+        <div className="space-y-4">
+          {filteredProblems.map((problem) => {
+            const manage = canManage(problem);
+            return (
+              <ComplaintCard
+                key={problem.id}
+                complaint={problem}
+                footerClassName="flex items-center justify-between pt-4"
+                onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
+                showPhoto
+                photoZoom
+                photoHeight="h-44"
+                onPhotoPreview={setPreviewImage}
+                footerLeft="added-date"
+                commentsMode={manage ? "inline" : "hidden"}
+                commentsOpen={comments.isOpen(problem.id)}
+                commentsSeparator
+                onCommentToggle={() => comments.toggle(problem.id)}
+                commentsContent={
+                  <CommentSection
+                    complaintId={problem.id}
+                    currentUserId={currentUser?.user}
+                    isAdmin={admin}
+                    complaintAuthorId={problem.user_id}
+                  />
+                }
+                showDelete={manage}
+                onDelete={handleDelete}
+              />
+            );
+          })}
+
+          {filteredProblems.length === 0 && (
+            <EmptyState
+              icon={SearchIcon2}
+              title="Немає звернень за вибраними фільтрами."
+            />
+          )}
         </div>
       </div>
 
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={myTicketByComplaint.get(selectedProblem.id) ?? null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
-          onStatusChange={() => {
-            fetchPublicComplaints().then((data) => {
-              const fresh = data.filter(Boolean) as Complaint[];
-              setProblems(fresh);
-              const updated = fresh.find((c) => c.id === selectedProblem.id);
-              if (updated) setSelectedProblem(updated);
-            }).catch(() => {});
-          }}
+          onStatusChange={refreshFeed}
           currentUserId={currentUser?.user}
           isAdmin={admin}
         />

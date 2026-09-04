@@ -21,17 +21,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { logoutUser } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  ShieldIcon,
-  Briefcase01Icon,
+  LockPasswordIcon,
   Logout01Icon,
-  Settings02Icon,
+  ChevronUpIcon,
+  ChevronDownIcon,
 } from "@hugeicons/core-free-icons";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import { isAdminUser } from "@/lib/complaintUtils";
+import { ERROR_TEXT, ERROR_BG_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 
 interface SettingsModalProps {
@@ -44,13 +46,6 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const isAdmin = isAdminUser(user);
-
-  // Per-dorm emergency contacts come from the user's building config; a building
-  // without a number simply omits that row (no fabricated placeholder). Prefer
-  // the room's building, falling back to the profile building for users who have
-  // a building set but no room yet.
-  const building = user?.place?.building ?? user?.building;
-  const commandantPhone = building?.commandant_phone;
 
   const handleLogout = async () => {
     await logoutUser();
@@ -65,7 +60,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Профіль</DialogTitle>
-          <DialogDescription>Ваш профіль та екстрені контакти</DialogDescription>
+          <DialogDescription>Ваш профіль та налаштування</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col max-h-[80vh]">
@@ -77,7 +72,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                   {user ? `${user.first_name} ${user.last_name}` : "Завантаження..."}
                 </p>
                 {user && (
-                  <Badge variant="outline" className={`${isAdmin ? "text-yellow-500 bg-yellow-500/10 border-yellow-700/50" : "text-blue-500 bg-blue-500/10 border-blue-700/50"}`}>
+                  <Badge variant="outline" className="text-muted-foreground bg-card border-border">
                     {isAdmin ? "Адмін" : "Студент"}
                   </Badge>
                 )}
@@ -90,64 +85,40 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-5">
-              <h4 className="text-xs font-bold text-muted-foreground mb-6">
-                Екстрені контакти
-              </h4>
-              <div className="space-y-4">
-                {commandantPhone && (
-                  <div className="flex items-center gap-4 bg-muted border border-border p-4">
-                    <div className="p-2 bg-card border border-border shrink-0">
-                      <HugeiconsIcon icon={Briefcase01Icon} className="size-4 text-primary" strokeWidth={2} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground">
-                        Комендант
-                      </p>
-                      <p className="text-sm font-bold text-foreground mt-0.5">
-                        {commandantPhone}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-3 border border-dashed border-border text-center">
-                  <HugeiconsIcon icon={ShieldIcon} className="size-5 text-muted-foreground mx-auto mb-2" strokeWidth={1.5} />
-                  <p className="text-xs text-muted-foreground font-normal">
-                    Екстрені ситуації — телефонуйте 101 або 112
-                  </p>
-                </div>
-              </div>
-
-              <Separator dashed className="my-5" />
-
               <div className="mb-5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-between"
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                >
-                  <span className="flex items-center">
-                    <HugeiconsIcon icon={Settings02Icon} className="size-4 mr-2" />
-                    Змінити пароль
-                  </span>
-                  <span>{showPasswordChange ? "−" : "+"}</span>
-                </Button>
-                {showPasswordChange && (
-                  <div className="mt-4 p-4 border border-border rounded-lg bg-card">
-                    <ChangePasswordForm />
-                  </div>
-                )}
+                <Collapsible open={showPasswordChange} onOpenChange={setShowPasswordChange}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between h-auto py-2 cursor-pointer hover:bg-transparent"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <HugeiconsIcon icon={LockPasswordIcon} className="size-4" strokeWidth={2} />
+                        Змінити пароль
+                      </span>
+                      <HugeiconsIcon
+                        icon={showPasswordChange ? ChevronUpIcon : ChevronDownIcon}
+                        className="size-4 text-muted-foreground"
+                        strokeWidth={2}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-3 border border-border bg-card p-4">
+                      <ChangePasswordForm />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <Separator dashed className="my-5" />
 
-              <AlertDialog>
+<AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full text-red-400 hover:text-red-300 hover:bg-red-900/10"
+                    className={`w-full ${ERROR_TEXT} ${ERROR_BG_HOVER}`}
                   >
                     <HugeiconsIcon icon={Logout01Icon} className="size-3 mr-1.5" strokeWidth={2} />
                     Вийти

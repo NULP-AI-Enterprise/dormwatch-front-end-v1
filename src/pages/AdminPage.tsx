@@ -5,7 +5,7 @@ import {
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
-import { StatusBadge } from "@/components/StatusBadge";
+import { StatusBadge, OverdueBadge } from "@/components/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,9 +17,10 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free-icons";
+import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
-import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
+import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
+import { LINK, LINK_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 import type { Complaint } from "@/lib/types";
 
@@ -33,6 +34,9 @@ const AdminPage = () => {
   const init = async () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
+    setSelectedComplaint((prev) =>
+      prev ? data.find((c) => c.id === prev.id) || prev : prev
+    );
     setLoading(false);
   };
 
@@ -44,8 +48,9 @@ const AdminPage = () => {
   }, []);
 
   const pendingCount = complaints.filter((c) => c.status === "pending").length;
-  const inProgressCount = complaints.filter((c) => c.status === "approved").length;
+  const inProgressCount = complaints.filter((c) => c.status === "in_progress").length;
   const resolvedCount = complaints.filter((c) => c.status === "resolved").length;
+  const overdueCount = complaints.filter((c) => complaintIsOverdue(c)).length;
 
   const recentComplaints = [...complaints]
     .sort((a, b) => {
@@ -64,6 +69,9 @@ const AdminPage = () => {
   const handleRefresh = async () => {
     const data = await fetchAllComplaints();
     setComplaints(data);
+    setSelectedComplaint((prev) =>
+      prev ? data.find((c) => c.id === prev.id) || prev : prev
+    );
   };
 
   return (
@@ -71,17 +79,30 @@ const AdminPage = () => {
         <div className="flex-1 overflow-auto p-6">
           <div className="mx-auto max-w-6xl space-y-8">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {Array.from({ length: 3 }).map((_, i) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
                   <StatCardSkeleton key={i} />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Triage shortcuts: the counts that need action link straight
+                    into the filtered management queue — one click per item. */}
                 <StatCard
                 icon={<HugeiconsIcon icon={ClockIcon} className="size-4" strokeWidth={1.5} />}
                 label="Очікує"
                 value={pendingCount}
+                to="/admin/complaints"
+                actionLabel="Розглянути очікувані"
+                state={{ selectedStatus: "pending" }}
+              />
+              <StatCard
+                icon={<HugeiconsIcon icon={TimeIcon} className="size-4" strokeWidth={1.5} />}
+                label="Прострочені"
+                value={overdueCount}
+                to="/admin/complaints"
+                actionLabel="Розглянути прострочені"
+                state={{ overdueOnly: true }}
               />
               <StatCard
                 icon={<HugeiconsIcon icon={HammerIcon} className="size-4" strokeWidth={1.5} />}
@@ -99,8 +120,8 @@ const AdminPage = () => {
             <div className="bg-card border border-border overflow-hidden">
               <div className="px-6 py-4 flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-foreground">Останні звернення</h2>
-                <Link to="/admin/complaints" className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400">
-                  Всі звернення
+                <Link to="/admin/complaints" className={`text-sm font-semibold ${LINK} ${LINK_HOVER}`}>
+                  Керування зверненнями
                 </Link>
               </div>
               <Separator />
@@ -112,6 +133,7 @@ const AdminPage = () => {
                     <TableHead className="px-6 py-3 font-semibold">Дата подання</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Пріоритет</TableHead>
                     <TableHead className="px-6 py-3 font-semibold">Статус</TableHead>
+                    <TableHead className="px-4 py-3 font-semibold sr-only">Дія</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-base divide-y divide-border">
@@ -130,7 +152,7 @@ const AdminPage = () => {
                     ))
                   ) : recentComplaints.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="px-6 py-8 text-center">
+                      <TableCell colSpan={6} className="px-6 py-8 text-center">
                         <p className="text-sm text-muted-foreground">Звернень поки немає.</p>
                       </TableCell>
                     </TableRow>
@@ -161,7 +183,16 @@ const AdminPage = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <StatusBadge status={c.status} />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={c.status} />
+                            <OverdueBadge complaint={c} />
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4 py-4 text-right">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                            Деталі
+                            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))

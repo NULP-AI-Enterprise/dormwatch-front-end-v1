@@ -29,6 +29,31 @@ try {
 
 const AUTH_HEADERS = { "Content-Type": "application/json", "Accept": "application/json" };
 
+// DRF field errors arrive as a JSON-stringified body inside Error.message.
+// Picks the first known field message; plain strings fall through to the
+// caller's fallback. Single home for this unwrap — the action clusters used to
+// each carry their own copy.
+export function apiErrorText(err, fallback) {
+  try {
+    const body = JSON.parse(err?.message);
+    if (!body || typeof body !== "object") return fallback;
+    const field =
+      body.rejection_reason ??
+      body.rework_reason ??
+      body.follow_up_of ??
+      body.status ??
+      body.worker_id ??
+      body.priority ??
+      body.deadline ??
+      body.detail;
+    if (typeof field === "string") return field;
+    if (Array.isArray(field)) return field.join(" ");
+  } catch {
+    /* plain message */
+  }
+  return fallback;
+}
+
 async function parseErrorBody(res) {
   const text = await res.text();
   try { return JSON.parse(text); } catch { return null; }
@@ -470,21 +495,23 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
 function normalizeComplaint(raw) {
   if (!raw) return null;
 
-  // A record with no real id is unusable — every action (delete/status/ticket)
+  // A record with no real id is unusable — every action (delete/status)
   // targets its id, so a fabricated id would silently 404. Skip it entirely.
   const realId = raw.id ?? raw.complaint_id;
   if (realId === undefined || realId === null) return null;
 
-  let status = raw.status || "pending";
-  if (status === "published") status = "approved";
-  if (status === "denied") status = "rejected";
+  // The server speaks the canonical slugs (pending/approved/in_progress/...)
+  // byte-identical with STATUS_LABELS in lib/complaintUtils.ts — no aliasing.
+  const status = raw.status || "pending";
 
   let safeRoom = "";
   let safeFloor = "";
   let safeBuilding = "";
+  let shared = false;
 
   if (raw.place && typeof raw.place === "object") {
     safeRoom = String(raw.place.place_name || "");
+    shared = !!raw.place.is_shared;
     if (raw.place.building) {
       safeBuilding = String(raw.place.building.name || raw.place.building.building_id || "");
     }
@@ -499,25 +526,42 @@ function normalizeComplaint(raw) {
   } else {
     safeRoom = raw.room || "";
     safeFloor = raw.floor || "";
-    safeBuilding = raw.building || "";
+    // Public payloads emit `building_name` (no room/place); authenticated
+    // payloads emit a nested `place`. Fall back to the flat label so the
+    // public feed shows the building without leaking the room.
+    safeBuilding = raw.building || raw.building_name || "";
   }
 
   return {
     id: realId,
     title: raw.title ?? "Без назви",
     description: raw.description ?? "",
-    // null (not a fabricated label) when the payload has no category — the UI
+    // null when the payload has no category/priority/timestamp — the UI
     // omits the chip rather than showing the literal word "Категорія".
     category: raw.category?.name ?? raw.category ?? null,
     building: safeBuilding,
     room: safeRoom,
     placeName: safeRoom,
+    isShared: shared,
     floor: safeFloor,
     photoUrl: raw.photo_url ?? raw.photoUrl ?? null,
     thumbnail: raw.thumbnail ?? null,
     status: status,
     // null when unset — the UI omits the badge instead of inventing "medium".
     priority: raw.priority ?? null,
+    // Assignment + lifecycle (merged into Complaint on the server): the
+    // assigned contractor object, schedule, stamps, and re-file chain links.
+    worker: raw.worker ?? null,
+    deadline: raw.deadline ?? null,
+    startedAt: raw.started_at ?? null,
+    finishedAt: raw.finished_at ?? null,
+    resolvedAt: raw.resolved_at ?? null,
+    workNote: raw.work_note || "",
+    rejectionReason: raw.rejection_reason || "",
+    reworkReason: raw.rework_reason || "",
+    followUpOf: raw.follow_up_of ?? null,
+    root: raw.root ?? null,
+    isOverdue: !!raw.is_overdue,
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
@@ -616,12 +660,8 @@ export async function fetchAllComplaints(filters = {}) {
   return fetchComplaints({ filters });
 }
 
-export async function fetchApprovedComplaints(filters = {}) {
-  return fetchComplaints({ status: "approved", filters });
-}
-
-// The public board feed: active ("approved" = published) plus completed
-// ("resolved") issues. Matches the server's non-admin visibility rule; excludes
+// The public board feed: active ("approved") plus completed ("resolved")
+// issues. Matches the server's non-admin visibility rule; excludes
 // pending/rejected. Admins get every status from the API but this same cut keeps
 // the public dashboard's meaning consistent across roles.
 export async function fetchPublicComplaints(filters = {}) {
@@ -633,33 +673,113 @@ export async function deleteProblem(id) {
   return true;
 }
 
-export async function updateComplaintStatus(id, newStatus, rejectionReason = "") {
-  let backendStatus = newStatus;
-  if (newStatus === "approved") backendStatus = "published";
-  if (newStatus === "rejected") backendStatus = "denied";
+// Admin delete: hard-delete before a worker is assigned, archive afterwards
+// (archived flag + archived_by/archived_at) so rejection marks and follow-up
+// chains survive. Routes through the admin endpoint whose state-aware logic
+// keeps the hard-delete and archive paths distinct.
+export async function deleteAdminComplaint(id) {
+  await fetchJson(`/admin/complaints/${id}/`, { method: "DELETE" });
+  return true;
+}
 
-  const formData = new FormData();
-  formData.append("status", backendStatus);
-  if (rejectionReason) {
-    formData.append("rejection_reason", rejectionReason);
-  }
+// ── Resident lifecycle verbs (owner-only, server-enforced transitions) ──
+// accept: review → resolved; reject: review → terminal not_accepted
+// (rework_reason required by the server); withdraw: pending → withdrawn.
+export async function acceptComplaint(id) {
+  await fetchJson(`/me/complaints/${id}/accept/`, { method: "POST" });
+  return true;
+}
 
-  await fetchJson(`/admin/complaints/${id}/status/`, {
-    method: "PATCH",
-    body: formData,
+export async function rejectComplaint(id, reworkReason) {
+  await fetchJson(`/me/complaints/${id}/reject/`, {
+    method: "POST",
+    body: { rework_reason: reworkReason },
   });
-  return { id, status: newStatus, rejectionReason };
+  return true;
+}
+
+export async function withdrawComplaint(id) {
+  await fetchJson(`/me/complaints/${id}/withdraw/`, { method: "POST" });
+  return true;
+}
+
+// One-tap re-file: the server creates a fresh Очікує complaint prefilled from
+// the closed one (title/description/category/place/photo), linked via
+// follow_up_of. 409 means this source already has one open follow-up.
+export async function refileComplaint(id) {
+  const raw = await fetchJson(`/complaints/${id}/refile/`, { method: "POST" });
+  return normalizeComplaint(raw);
+}
+
+// ── WORKER PANEL ──
+// The provisioned worker's own jobs. Active list = live work sorted by next
+// deadline (server-side); history = past jobs with their stamps.
+export async function fetchWorkerJobs() {
+  try {
+    const data = await fetchJson("/worker/complaints/");
+    if (Array.isArray(data)) {
+      return data.map(normalizeComplaint).filter(Boolean);
+    }
+  } catch (e) {
+    console.warn("Failed to fetch worker jobs", e);
+  }
+  return [];
+}
+
+export async function fetchWorkerHistory() {
+  try {
+    const data = await fetchJson("/worker/complaints/?history=true");
+    if (Array.isArray(data)) {
+      return data.map(normalizeComplaint).filter(Boolean);
+    }
+  } catch (e) {
+    console.warn("Failed to fetch worker history", e);
+  }
+  return [];
+}
+
+// One-tap lifecycle stamps for the assigned worker: start (Взято в роботу),
+// finish (Виконано), start_undo / finish_undo, with an optional short note.
+// The server enforces the transition matrix; the 30s undo window before a
+// resident is notified lives server-side too.
+export async function workerComplaintAction(id, action, note) {
+  const body = { action };
+  if (note && note.trim()) body.note = note.trim();
+  const raw = await fetchJson(`/worker/complaints/${id}/`, {
+    method: "PATCH",
+    body,
+  });
+  return normalizeComplaint(raw);
+}
+
+// Generic admin PATCH over the single complaint endpoint: any subset of
+// { status, worker_id, deadline, priority, rejection_reason } in one call —
+// this is what backs the combined triage moves (схвалити + призначити,
+// reject with reason).
+export async function updateComplaintAdmin(id, patch) {
+  return await fetchJson(`/admin/complaints/${id}/`, {
+    method: "PATCH",
+    body: patch,
+  });
+}
+
+// Admin lifecycle moves go through the single complaint PATCH. The server
+// speaks the canonical slugs directly — no published/denied translation.
+export async function updateComplaintStatus(id, newStatus) {
+  return updateComplaintAdmin(id, { status: newStatus });
 }
 
 export async function updateComplaintPriority(id, newPriority) {
-  const formData = new FormData();
-  formData.append("priority", newPriority);
+  return updateComplaintAdmin(id, { priority: newPriority });
+}
 
-  await fetchJson(`/admin/complaints/${id}/status/`, {
-    method: "PATCH",
-    body: formData,
-  });
-  return { id, priority: newPriority };
+// Admin assignment surface (worker + deadline on the complaint itself).
+// workerId null clears the assignment; deadline null clears the deadline.
+export async function updateComplaintAssignment(id, { workerId, deadline } = {}) {
+  const body = {};
+  if (workerId !== undefined) body.worker_id = workerId;
+  if (deadline !== undefined) body.deadline = deadline;
+  return updateComplaintAdmin(id, body);
 }
 
 export async function fetchComments(complaintId) {
@@ -679,10 +799,10 @@ export async function fetchComments(complaintId) {
   }
 }
 
-// ------------------ WORKERS & TICKETS ------------------
+// ------------------ WORKERS ------------------
 
-// External contractors assignable to tickets (managed in Admin Settings). Also
-// serves the ticket assignment dropdown.
+// External contractors assignable to complaints (managed in Admin Settings).
+// Also serves the complaint assignment dropdown in the admin panel.
 export async function fetchWorkers() {
   try {
       const data = await fetchJson("/admin/workers/");
@@ -710,6 +830,25 @@ export async function updateWorker(workerId, fields) {
 export async function deleteWorker(workerId) {
   await fetchJson(`/admin/workers/${workerId}/`, { method: "DELETE" });
   return true;
+}
+
+// Provision a worker account: mints a single-use invite token bound to this
+// worker. The admin delivers the redemption link by email or printed QR; the
+// worker supplies their own email/password at /auth?invite=...
+export async function createWorkerInvite(workerId) {
+  return await fetchJson(`/admin/workers/${workerId}/invite/`, {
+    method: "POST",
+  });
+}
+
+// Sever a worker's account link (Worker.account → None). The worker endpoints
+// then 403 at the next request because the live link check
+// (`getattr(actor, 'worker', None)`) no longer resolves — access is stripped
+// instead of riding an old refresh cookie. Reversible: re-provision anytime.
+export async function unlinkWorker(workerId) {
+  return await fetchJson(`/admin/workers/${workerId}/unlink/`, {
+    method: "POST",
+  });
 }
 
 // ------------------ RESIDENTS (admin user management) ------------------
@@ -746,22 +885,10 @@ export async function updateUser(userId, fields) {
   });
 }
 
-export async function fetchTickets(filters = {}) {
-  try {
-      const q = buildQueryParams(filters, ["worker", "priority", "date_from", "date_to"]);
-
-      const data = await fetchJson(`/tickets/${q}`);
-      if (Array.isArray(data)) return data;
-  } catch (e) {
-      console.warn("Failed to fetch tickets", e);
-  }
-  return [];
-}
-
-// Admin completed-tickets report: resolved complaints that have a ticket,
+// Admin completed-work report: resolved complaints with an assigned worker,
 // filtered by resolution date within [date_from, date_to] (inclusive by day).
 // Backed by GET /admin/reports/completed/. Returns the raw report rows
-// (complaint title, resolved_at, building/room, category, tickets[]).
+// (complaint title, resolved_at, building/room, category, worker, deadline).
 export async function fetchCompletedReport({ date_from, date_to } = {}) {
   try {
     const params = new URLSearchParams();
@@ -776,57 +903,18 @@ export async function fetchCompletedReport({ date_from, date_to } = {}) {
   return [];
 }
 
-// Read-only: the tickets (work orders) opened for the current resident's own
-// complaints. Backed by GET /me/tickets/ — residents cannot list all tickets
-// (that stays admin-gated via fetchTickets).
-export async function fetchMyTickets() {
+// Admin per-worker resource-tracking report: jobs count, per-job duration
+// (started_at → finished_at, shown per job — never summed), average resolution
+// time on resolved_at, on-time vs overdue, and rejection rate. Backed by
+// GET /admin/reports/workers/. Returns { workers: [...], caveats: [...] }.
+export async function fetchWorkerReport() {
   try {
-      const data = await fetchJson("/me/tickets/");
-      if (Array.isArray(data)) return data;
+    const data = await fetchJson("/admin/reports/workers/");
+    if (data && Array.isArray(data.workers)) return data;
   } catch (e) {
-      console.warn("Failed to fetch my tickets", e);
+    console.warn("Failed to fetch worker report", e);
   }
-  return [];
-}
-
-/**
- * @param {any} complaintId
- * @param {any} workerId
- * @param {string | null} [deadline]
- */
-export async function createTicket(complaintId, workerId, deadline = null) {
-  const payload = {
-      complaint: complaintId,
-      worker: workerId,
-      deadline: deadline
-  };
-  return await fetchJson("/tickets/", {
-      method: "POST",
-      body: payload
-  });
-}
-
-/**
- * @param {any} ticketId
- * @param {any} workerId
- * @param {string | null} [deadline]
- */
-export async function updateTicket(ticketId, workerId, deadline = null) {
-  const payload = {};
-  if (workerId !== undefined) payload.worker = workerId;
-  if (deadline !== undefined) payload.deadline = deadline;
-
-  return await fetchJson(`/tickets/${ticketId}/`, {
-      method: "PATCH",
-      body: payload
-  });
-}
-
-// The complaint owner marks their own request resolved. Backed by
-// PATCH /me/complaints/<id>/resolve/ (owner-only, published -> resolved).
-export async function resolveMyComplaint(complaintId) {
-  await fetchJson(`/me/complaints/${complaintId}/resolve/`, { method: "PATCH" });
-  return { id: complaintId, status: "resolved" };
+  return { workers: [], caveats: [] };
 }
 
 export async function postComment(complaintId, text) {
@@ -858,25 +946,15 @@ export async function fetchNotifications() {
 }
 
 export async function markNotificationRead(id) {
-  try {
-    return await fetchJson(`/notifications/${id}/`, {
-      method: "PATCH",
-    });
-  } catch (e) {
-    console.warn(`Failed to mark notification ${id} as read`, e);
-    return null;
-  }
+  return fetchJson(`/notifications/${id}/`, {
+    method: "PATCH",
+  });
 }
 
 export async function markAllNotificationsRead() {
-  try {
-    return await fetchJson("/notifications/mark-all-read/", {
-      method: "POST",
-    });
-  } catch (e) {
-    console.warn("Failed to mark all notifications as read", e);
-    return null;
-  }
+  return fetchJson("/notifications/mark-all-read/", {
+    method: "POST",
+  });
 }
 
 // Announcements — resident feed + dashboard widget (global + own building).

@@ -1,66 +1,88 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import ComplaintCard from "@/components/ComplaintCard";
-import AnnouncementCard from "@/components/AnnouncementCard";
-import AnnouncementsModal from "@/components/AnnouncementsModal";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import AnnouncementsWidget from "@/components/AnnouncementsWidget";
 import PhoneNumbersWidget from "@/components/PhoneNumbersWidget";
-import { StatCard } from "@/components/StatCard";
+import ArrowLinkButton from "@/components/ArrowLinkButton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import PageSpinner from "@/components/PageSpinner";
 import EmptyState from "@/components/EmptyState";
-import { Button } from "@/components/ui/button";
-import { isAdminUser, isActiveStatus } from "@/lib/complaintUtils";
-import { useMyComplaintsAndTickets } from "@/hooks/useMyComplaintsAndTickets";
+import { deleteProblem } from "@/services/problemsApi";
+import { isAdminUser, isActiveStatus, groupByChain } from "@/lib/complaintUtils";
+import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
-import { fetchAnnouncements } from "@/services/problemsApi";
-import type { Announcement } from "@/lib/types";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  MapPinIcon,
-  File01Icon,
-  CheckmarkCircle02Icon,
-  Clock01Icon,
-  ArrowRight02Icon,
-  Wrench01Icon,
-  Megaphone01Icon,
-  Cancel01Icon,
-} from "@hugeicons/core-free-icons";
+import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+
+const STATUS_FILTERS = [
+  { value: "all", label: "Всі" },
+  { value: "active", label: "Активні" },
+  { value: "resolved", label: "Вирішені" },
+] as const;
 
 const UserPage = () => {
+  const location = useLocation();
+  const openComplaintId = (location.state as { openComplaintId?: number } | null)?.openComplaintId;
   const { user: currentUser } = useUser();
-  const { problems, loading, reload, complaintById, ticketByComplaint } =
-    useMyComplaintsAndTickets();
-
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { problems, loading, reload, complaintById } = useMyComplaints();
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>(STATUS_FILTERS[0].value);
 
+  // Deep link: open the side panel for a specific complaint (e.g. right after
+  // filing one from /create-report) once its record has loaded.
   useEffect(() => {
-    const msg = sessionStorage.getItem("studentReportSuccess");
-    if (msg) {
-      setSuccessMessage(msg);
-      sessionStorage.removeItem("studentReportSuccess");
+    if (openComplaintId != null && complaintById.has(openComplaintId)) {
+      setSelectedId(openComplaintId);
+      setSheetOpen(true);
     }
+  }, [openComplaintId, complaintById]);
 
-    fetchAnnouncements()
-      .then((all) => setAnnouncements(all.filter((a) => !a.is_expired)))
-      .catch(() => {});
-  }, []);
+  const filtered = useMemo(() => {
+    const scoped = problems.filter((p) => {
+      if (statusFilter === "active") return isActiveStatus(p.status);
+      if (statusFilter === "resolved") return p.status === "resolved";
+      return true;
+    });
+    return groupByChain(scoped);
+  }, [problems, statusFilter]);
 
   if (loading) return <PageSpinner />;
 
   const firstName = currentUser?.first_name || "Користувач";
   const building = currentUser?.place?.building?.name || "";
   const room = currentUser?.place?.place_name || "";
+  const subtitle = [firstName && `Вітаємо, ${firstName}!`, building, room && `Кімната ${room}`]
+    .filter(Boolean)
+    .join(" · ");
 
-  const resolvedCount = problems.filter((p) => p.status === "resolved").length;
-  const activeCount = problems.filter((p) => isActiveStatus(p.status)).length;
+  const onDelete = (id: number) => {
+    setDeleteTarget(id);
+  };
 
-  const recent = problems.slice(0, 4);
+  const confirmDelete = async () => {
+    if (deleteTarget === null) return;
+    try {
+      await deleteProblem(deleteTarget);
+      reload();
+    } catch (err) {
+      console.warn("Failed to delete problem", err);
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   const selectedProblem = selectedId != null ? complaintById.get(selectedId) ?? null : null;
 
@@ -71,153 +93,89 @@ const UserPage = () => {
 
   return (
     <>
-      {/* greeting */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-          Вітаємо, {firstName}!
-        </h1>
-        {(building || room) && (
-          <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-            <HugeiconsIcon icon={MapPinIcon} className="size-4" strokeWidth={1.5} />
-            {building}
-            {building && room && <span className="w-1 h-1 bg-border inline-block mx-1.5" />}
-            {room && `Кімната ${room}`}
-          </p>
-        )}
-      </div>
-
-      {successMessage && (
-        <div className="mb-8 p-4 bg-emerald-500/10 border border-emerald-500/30 text-foreground rounded-xl flex items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-emerald-500/20 text-emerald-500 rounded-lg shrink-0">
-              <HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-5" strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-emerald-500">Успішно створено</p>
-              <p className="text-xs text-muted-foreground">{successMessage}</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => setSuccessMessage(null)}
-            className="text-muted-foreground hover:text-foreground shrink-0 rounded-lg"
-            title="Закрити"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
-          </Button>
+      {/* header row + front-and-center CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            Мої звернення
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
         </div>
-      )}
-
-      {/* front-and-center CTA — big button with right arrow */}
-      <Button
-        asChild
-        className="group h-auto w-full justify-between gap-4 px-8 py-6 mb-10 text-base"
-      >
-        <Link to="/create-report">
-        <span className="flex items-center gap-4">
-          <span className="inline-flex size-12 items-center justify-center border border-white/20 bg-white/10 shrink-0">
-            <HugeiconsIcon icon={Wrench01Icon} className="size-6" strokeWidth={2} />
-          </span>
-          <span className="text-left">
-            <span className="block text-lg md:text-xl font-semibold">Створити звернення</span>
-            <span className="block text-sm text-primary-foreground/80 mt-0.5">
-              Опишіть несправність — комендант побачить її одразу.
-            </span>
-          </span>
-        </span>
-        <HugeiconsIcon
-          icon={ArrowRight02Icon}
-          className="size-7 shrink-0 group-hover:translate-x-1 transition-transform"
-          strokeWidth={2}
-        />
-        </Link>
-      </Button>
-
-      {/* stat row — same grid/gap and icon stroke as AdminPage's StatCard row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <StatCard
-          icon={<HugeiconsIcon icon={File01Icon} className="size-4" strokeWidth={1.5} />}
-          label="Всього звернень"
-          value={problems.length}
-        />
-        <StatCard
-          icon={<HugeiconsIcon icon={CheckmarkCircle02Icon} className="size-4" strokeWidth={1.5} />}
-          label="Вирішено"
-          value={resolvedCount}
-        />
-        <StatCard
-          icon={<HugeiconsIcon icon={Clock01Icon} className="size-4" strokeWidth={1.5} />}
-          label="Активні"
-          value={activeCount}
-        />
+        <ArrowLinkButton to="/create-report">Створити звернення</ArrowLinkButton>
       </div>
 
-      {/* two columns: recent requests + announcements */}
+      {/* Status segmented control — three buckets over the resident's own set:
+          все / активні (still on the pipeline) / вирішені. Rejected and
+          withdrawn stay visible in «Всі» via their status badge. */}
+      <div className="mb-6">
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          spacing={0}
+          value={statusFilter}
+          // Radix emits "" when the active item is clicked again; ignore it so
+          // a bucket stays selected at all times.
+          onValueChange={(value) => {
+            if (value) setStatusFilter(value);
+          }}
+          aria-label="Фільтр за статусом"
+        >
+          {STATUS_FILTERS.map((option) => (
+            <ToggleGroupItem
+              key={option.value}
+              value={option.value}
+              // design-system.md §7: ToggleGroup on-states carry the primary fill,
+              // not the muted on-state shadcn ships by default.
+              className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
+            >
+              {option.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
+
+      {/* two columns: the full complaint list + sticky contact sidebar */}
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg md:text-xl font-semibold text-foreground">Останні звернення</h2>
-            <Link to="/my-complaints" className="text-sm font-semibold text-primary hover:underline">
-              Усі мої звернення →
-            </Link>
-          </div>
-
-          {recent.length === 0 ? (
+          {problems.length === 0 ? (
             <EmptyState
               icon={CheckmarkCircle02Icon}
               title="Тут поки порожньо"
-              subtitle="Щось зламалося? Створіть перше звернення — комендант одразу його побачить."
+              subtitle="Створіть перше звернення. Комендант побачить його одразу."
+              action={
+                <ArrowLinkButton to="/create-report" size="sm">
+                  Створити звернення
+                </ArrowLinkButton>
+              }
+            />
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={Search01Icon}
+              title="Нічого не знайшли за цим фільтром."
             />
           ) : (
-            recent.map((p) => (
+            filtered.map((p) => (
               <ComplaintCard
                 key={p.id}
                 complaint={p}
                 metaVariant="date"
                 descriptionFallback="—"
-                showProgress
-                footerLeft="id"
-                ticket={ticketByComplaint.get(p.id) ?? null}
-                showTicketTracking
                 onCardClick={() => openSheet(p.id)}
+                showProgress
+                showPhoto
+                photoHeight="h-44"
+                footerClassName="flex items-center justify-between pt-4"
+                showResidentActions
+                onResidentChange={reload}
+                showDelete
+                onDelete={onDelete}
               />
             ))
           )}
         </div>
 
-        <div className="lg:col-span-1 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg md:text-xl font-semibold text-foreground">Оголошення</h2>
-            {announcements.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs font-semibold text-primary h-auto p-0 hover:bg-transparent hover:underline"
-                onClick={() => { setSelectedAnnouncement(null); setAnnouncementsModalOpen(true); }}
-              >
-                Усі
-              </Button>
-            )}
-          </div>
-
-          {announcements.length === 0 ? (
-            <EmptyState
-              icon={Megaphone01Icon}
-              title="Поки немає оголошень"
-              subtitle="Оголошення від адміністрації з'являться тут."
-            />
-          ) : (
-            announcements.slice(0, 2).map((a) => (
-              <AnnouncementCard
-                key={a.announcement_id}
-                announcement={a}
-                clickable
-                onClick={() => { setSelectedAnnouncement(a); setAnnouncementsModalOpen(true); }}
-              />
-            ))
-          )}
-
+        <div className="lg:col-span-1 lg:sticky lg:top-20 self-start space-y-4">
+          <AnnouncementsWidget />
           <PhoneNumbersWidget />
         </div>
       </div>
@@ -225,7 +183,6 @@ const UserPage = () => {
       {selectedProblem && (
         <ComplaintSidePanel
           complaint={selectedProblem}
-          ticket={null}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
           onStatusChange={reload}
@@ -234,12 +191,18 @@ const UserPage = () => {
         />
       )}
 
-      <AnnouncementsModal
-        open={announcementsModalOpen}
-        onOpenChange={setAnnouncementsModalOpen}
-        announcements={announcements}
-        initialAnnouncementId={selectedAnnouncement?.announcement_id}
-      />
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Видалити звернення?</AlertDialogTitle>
+            <AlertDialogDescription>Цю дію не можна скасувати.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Видалити</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

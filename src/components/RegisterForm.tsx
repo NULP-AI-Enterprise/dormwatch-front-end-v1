@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { registerUser } from "@/services/problemsApi";
+import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -120,7 +121,7 @@ function RegisterForm() {
     setError("");
     setLoading(true);
     try {
-      await registerUser({
+      const result = await registerUser({
         email: data.email,
         password: data.password,
         confirm_password: data.confirm_password,
@@ -131,7 +132,7 @@ function RegisterForm() {
         ...(inviteToken ? { invite_token: inviteToken } : {}),
       });
       window.dispatchEvent(new Event("profileUpdated"));
-      navigate("/");
+      navigate(roleHomeRoute(result.role), { replace: true });
     } catch (err: any) {
       if (err.requiresVerification) {
         navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
@@ -214,17 +215,13 @@ function RegisterForm() {
                   <FormItem>
                     <FormLabel>Електронна пошта</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder={inviteToken ? "name@example.com" : "student@lpnu.ua"}
-                        {...field}
-                      />
+                      <Input type="email" placeholder={inviteToken ? "ваш.email@example.com" : "student@lpnu.ua"} {...field} />
                     </FormControl>
-                    {!inviteToken && (
-                      <FormDescription>
-                        Дозволені домени: @lpnu.ua
-                      </FormDescription>
-                    )}
+                    <FormDescription>
+                      {inviteToken
+                        ? "Реєстрація за запрошенням — підійде будь-яка електронна пошта"
+                        : "Дозволені домени: @lpnu.ua"}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

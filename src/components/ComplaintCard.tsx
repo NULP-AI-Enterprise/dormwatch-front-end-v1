@@ -9,25 +9,24 @@ import {
   ChevronDownIcon,
   Message01Icon,
   Delete01Icon,
-  EditIcon,
-  AddIcon,
+  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import { resolveImageUrl } from "@/services/imageUtils";
-import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
+import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
+import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
-import TicketInfo from "@/components/TicketInfo";
 import { formatDate } from "@/lib/dateUtils";
-import { lifecycleStage } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
-import type { Complaint, Ticket } from "@/lib/types";
+import { ERROR_TEXT, ERROR_BORDER, ERROR_BG_HOVER } from "@/lib/theme";
+import type { Complaint } from "@/lib/types";
 
 interface ComplaintCardProps {
   complaint: Complaint;
   variant?: "default" | "compact";
 
   // Layout
-  bodyPadding?: string; // "p-5" | "p-6"
+  bodyPadding?: "p-5" | "p-6";
   cardClassName?: string;
   footerClassName?: string;
 
@@ -41,7 +40,7 @@ interface ComplaintCardProps {
   // Photo
   showPhoto?: boolean;
   photoZoom?: boolean;
-  photoHeight?: string; // "h-40" | "h-44" | "h-48"
+  photoHeight?: "h-40" | "h-44" | "h-48";
   onPhotoPreview?: (url: string) => void;
 
   // Priority row
@@ -61,27 +60,22 @@ interface ComplaintCardProps {
   onCommentToggle?: () => void;
   commentsContent?: ReactNode;
 
-  // Delete (non-admin)
+  // Delete (non-admin). Rendered as an always-visible footer icon so the
+  // control is reachable on touch devices — hover-only reveal is gone.
   showDelete?: boolean;
-  deleteHoverReveal?: boolean; // true = dashboard absolute reveal; false = user bar icon
   onDelete?: (id: number) => void;
 
-  // Admin actions (approve / reject / resolve + delete dialog)
+  // Admin actions (triage cluster + delete dialog)
   showAdminActions?: boolean;
-  onStatusChange?: (id: number, status: string, reason?: string) => void;
+  onAdminPatch?: (id: number, body: Record<string, unknown>) => void;
   onAdminDelete?: (id: number) => void;
 
-  // Ticket controls (compact variant)
-  ticket?: Ticket | null;
-  showTicketControls?: boolean;
-  onTicketAction?: (complaint: Complaint, ticket?: Ticket) => void;
-
-  // Read-only ticket tracking strip (default variant, resident-facing): shows
-  // assignee + deadline when a work order exists. No edit affordance.
-  showTicketTracking?: boolean;
+  // Resident lifecycle (accept/reject finished work, withdraw, re-file)
+  showResidentActions?: boolean;
+  onResidentChange?: () => void;
 }
 
-const Dot = ({ className }: { className?: string }) => (
+export const Dot = ({ className }: { className?: string }) => (
   <span className={cn("w-1 h-1 bg-border inline-block mx-1", className)} />
 );
 
@@ -108,19 +102,16 @@ const ComplaintCard = ({
   onCommentToggle,
   commentsContent,
   showDelete = false,
-  deleteHoverReveal = false,
   onDelete,
   showAdminActions = false,
-  onStatusChange,
+  onAdminPatch,
   onAdminDelete,
-  ticket,
-  showTicketControls = false,
-  onTicketAction,
-  showTicketTracking = false,
+  showResidentActions = false,
+  onResidentChange,
 }: ComplaintCardProps) => {
   const p = complaint;
 
-  // ── Compact variant (ticket cards) ──────────────────────────────
+  // ── Compact variant ──────────────────────────────────────────────
   if (variant === "compact") {
     return (
       <Card className={cn("py-0 border-border shadow-none bg-card", cardClassName)}>
@@ -139,65 +130,52 @@ const ComplaintCard = ({
             )}
             <span className="text-xs text-muted-foreground">
               {p.building || "?"}
-              <Dot />
-              {p.placeName || "?"}
+              {p.placeName && <><Dot />{p.placeName}</>}
+              {p.isShared && <span className="ml-0.5">(спільна)</span>}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">
             {p.description}
           </p>
-
-          {showTicketControls &&
-            (ticket ? (
-              <TicketInfo
-                variant="callout"
-                ticket={ticket}
-                tone="primary"
-                heading={`Тікет створено (ID: ${ticket.ticket_id})`}
-                action={
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => onTicketAction?.(p, ticket)}
-                    className="absolute top-2 right-2 text-primary hover:text-blue-600 dark:hover:text-blue-300 opacity-0 group-hover/ticket:opacity-100 transition-opacity"
-                  >
-                    <HugeiconsIcon icon={EditIcon} className="size-3.5" strokeWidth={2} />
-                  </Button>
-                }
-              />
-            ) : (
-              <Button onClick={() => onTicketAction?.(p)}>
-                <HugeiconsIcon icon={AddIcon} className="size-4 mr-1.5" strokeWidth={2} />
-                Створити тікет
-              </Button>
-            ))}
         </div>
       </Card>
     );
   }
 
   // ── Default variant ─────────────────────────────────────────────
-  const hoverRevealDelete = showDelete && deleteHoverReveal;
+
+  // Re-file chain flag: a follow-up cites its source so a saga reads as one
+  // story in every list that renders it. Public payloads carry no
+  // follow_up_of, so the mark never leaks to the board.
+  const redoMark = p.followUpOf != null && (
+    <>
+      <span className="text-xs font-semibold text-foreground shrink-0">
+        Повторне до №{p.followUpOf}
+      </span>
+      <Dot />
+    </>
+  );
 
   const metaLine =
     metaVariant === "date" ? (
       <>
+        {redoMark}
         {p.category || ""}
         <Dot className="mx-1.5" />
         {formatDate(p.createdAt)}
       </>
     ) : (
       <>
+        {redoMark}
         {p.category}
         <Dot />
         {p.building || "?"}
-        <Dot />
-        {p.placeName || "?"}
+        {p.placeName && <><Dot />{p.placeName}</>}
+        {p.isShared && <span className="ml-0.5">(спільна)</span>}
       </>
     );
 
   const statusBadge = <StatusBadge status={p.status} />;
-
   const commentButton = commentsMode === "inline" && (
     <Button
       variant="ghost"
@@ -219,8 +197,10 @@ const ComplaintCard = ({
     <Card
       className={cn(
         "py-0 border-border shadow-none bg-card",
-        onCardClick && "group hover:bg-muted/50 transition-colors cursor-pointer",
-        hoverRevealDelete && "group relative",
+        // Clickable cards carry their own visible "Деталі" cue in the header
+        // (rendered above). Background does not shift on hover — touch devices
+        // never see hover, and the persistent label is the honest affordance.
+        onCardClick && "cursor-pointer focus-visible:ring-1 focus-visible:ring-ring/50",
         cardClassName
       )}
       onClick={
@@ -231,28 +211,33 @@ const ComplaintCard = ({
             }
           : undefined
       }
-    >
-      {hoverRevealDelete && (
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={() => onDelete?.(p.id)}
-          className="absolute top-2 right-2 z-10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Видалити"
-        >
-          <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
-        </Button>
-      )}
-
+      >
       <div className={bodyPadding}>
         {/* Unified header: status badge left, meta line right, bold title below.
             Same across admin / feed / reports — role-specific controls live in
-            the footer, not the header. */}
+            the footer, not the header. Cards showing the progress stepper omit
+            the badge: the stepper already names the current state. When the
+            whole card is a tap target, an inline "Деталі" cue gives the row a
+            persistent affordance — hover-only background shifts don't read as
+            clickable on touch. */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
-          <div className="flex flex-wrap gap-2">{statusBadge}</div>
-          <span className="text-xs font-normal text-muted-foreground shrink-0">
-            {metaLine}
-          </span>
+          {!showProgress && (
+            <div className="flex flex-wrap gap-2">
+              {statusBadge}
+              <OverdueBadge complaint={p} />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-normal text-muted-foreground shrink-0">
+              {metaLine}
+            </span>
+            {onCardClick && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
+                Деталі
+                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+              </span>
+            )}
+          </div>
         </div>
         <h3 className="text-sm font-semibold text-foreground mb-2">
           {p.title || "Без назви"}
@@ -272,13 +257,6 @@ const ComplaintCard = ({
         <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
           {p.description || descriptionFallback}
         </p>
-
-        {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
-            <span className="font-bold text-destructive block mb-1">Причина відхилення:</span>
-            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{p.rejectionReason}</p>
-          </div>
-        )}
 
         {showPhoto && p.photoUrl && (
           <div
@@ -310,17 +288,8 @@ const ComplaintCard = ({
         {showProgress && (
           <div className="mb-4">
             <Separator className="mb-4" />
-            <ProgressStepper stage={lifecycleStage(p.status)} />
+            <ProgressStepper status={p.status} />
           </div>
-        )}
-
-        {showTicketTracking && ticket && lifecycleStage(p.status) === "in_progress" && (
-          <TicketInfo
-            variant="callout"
-            ticket={ticket}
-            heading={`Звернення взято в роботу · Тікет #${ticket.ticket_id}`}
-            className="mb-4"
-          />
         )}
 
         <div className={footerClassName}>
@@ -338,12 +307,19 @@ const ComplaintCard = ({
 
           <div className="flex flex-wrap gap-2 items-center">
             {commentsSide === "right" && commentButton}
-            {showDelete && !deleteHoverReveal && (
+            {showResidentActions && (
+              <ComplaintResidentActions
+                complaint={p}
+                onChanged={() => onResidentChange?.()}
+                size="xs"
+              />
+            )}
+            {showDelete && (
               <Button
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => onDelete?.(p.id)}
-                className="text-red-400 border border-red-400/30 hover:bg-red-400/10 transition-colors"
+                className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
               >
                 <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
               </Button>
@@ -351,7 +327,7 @@ const ComplaintCard = ({
             {showAdminActions && (
               <ComplaintAdminActions
                 complaint={p}
-                onStatusChange={(status, reason) => onStatusChange?.(p.id, status, reason)}
+                onPatch={(body) => onAdminPatch?.(p.id, body)}
                 onDelete={() => onAdminDelete?.(p.id)}
               />
             )}

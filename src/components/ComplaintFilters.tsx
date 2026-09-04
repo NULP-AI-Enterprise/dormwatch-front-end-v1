@@ -10,7 +10,7 @@ import {
   ComboboxValue,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { PRIORITY_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
+import { PRIORITY_OPTIONS, STATUS_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
 import type { Building, CategoryOption } from "@/lib/types";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SearchIcon } from "@hugeicons/core-free-icons";
@@ -103,12 +103,12 @@ function MultiFilterCombobox({
   );
 }
 
-const STATUS_CODES = ["pending", "approved", "rejected", "resolved"];
+const STATUS_CODES = [...STATUS_OPTIONS];
 
 // `codes` lets a page restrict the option set to statuses it can actually
 // return — the public dashboard only surfaces approved/resolved, so offering
-// pending/rejected there would just yield empty results. Defaults to all four
-// for the admin panel.
+// the rest there would just yield empty results. Defaults to all eight
+// canonical slugs for the admin panel and resident lists.
 export function StatusFilterSelect({
   value,
   onChange,
@@ -133,6 +133,27 @@ export function PriorityFilterSelect({ value, onChange }: MultiFilterProps) {
       items={[...PRIORITY_OPTIONS]}
       itemLabel={priorityLabel}
       placeholder="Пріоритети..."
+    />
+  );
+}
+
+type WorkerFilterSelectProps = {
+  value: string[];
+  onChange: (value: string[]) => void;
+  workers: { worker_id: number; full_name: string }[];
+};
+
+// Admin complaints list filter over assigned contractors — parity with what
+// the resident's list had. Operates over full_name so the predicate stays
+// `selected.includes(p.worker.full_name)`.
+export function WorkerFilterSelect({ value, onChange, workers }: WorkerFilterSelectProps) {
+  const names = workers.map((w) => w.full_name);
+  return (
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={names}
+      placeholder="Виконавці..."
     />
   );
 }

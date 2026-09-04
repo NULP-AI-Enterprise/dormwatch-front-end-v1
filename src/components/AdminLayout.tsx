@@ -1,20 +1,29 @@
 import { Link, useLocation } from "react-router-dom";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ArrowRight01Icon, Settings01Icon, Megaphone01Icon } from "@hugeicons/core-free-icons";
+import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ChevronDownIcon, Settings01Icon, Megaphone01Icon, UserIcon, Logout01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import React, { type ReactNode, useState } from "react";
 import { useUser } from "@/context/UserContext";
+import { SELECTED } from "@/lib/theme";
 import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
 import { AdminGlobalActions } from "@/components/AdminGlobalActions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
+import { logoutUser } from "@/services/problemsApi";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
   "/admin/residents": "Мешканці",
-  "/admin/complaints": "Всі звернення",
+  "/admin/complaints": "Звернення",
   "/admin/announcements": "Оголошення",
   "/admin/settings": "Налаштування",
 };
@@ -28,6 +37,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   // useAdminHeaderActions; the global chrome (export + bell) is always present.
   const [pageActions, setPageActions] = useState<ReactNode>(null);
 
+  const handleLogout = async () => {
+    await logoutUser();
+    window.location.href = "/auth";
+  };
+
   // Real office from the admin's profile; empty when they have no place assigned
   // (no invented "Головний офіс").
   const placeName = user?.place?.place_name || "";
@@ -36,13 +50,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
     { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
-    { name: "Всі звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
+    { name: "Звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
     { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background bg-dot-grid relative">
+    <div className="min-h-screen flex flex-col md:flex-row bg-background relative">
       <aside className="w-full md:w-64 bg-card border-r border-border flex flex-col md:sticky md:top-0 md:h-screen z-40 relative">
         <div className="h-20 px-6 flex items-center border-b border-border">
           <Logo to="/admin" className="gap-3" />
@@ -69,7 +83,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-all border-l-4 ${
                   isActive
-                    ? "border-blue-500 bg-primary/5 text-foreground"
+                    ? SELECTED
                     : "border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 }`}
               >
@@ -81,18 +95,33 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </nav>
 
         <div className="p-4 border-t border-border">
-          <Button variant="ghost" onClick={() => setIsProfileOpen(true)} className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-2">
-            <UserAvatar user={user} size="md" fallback="AD" />
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-bold text-foreground truncate">
-                {user ? `${user.first_name} ${user.last_name}` : "Адмін"}
-              </span>
-              <span className="text-xs text-muted-foreground font-normal truncate">
-                {placeName}
-              </span>
-            </div>
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4 ml-auto shrink-0 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/50">
+                <UserAvatar user={user} size="md" fallback="AD" />
+                <div className="flex flex-col overflow-hidden">
+                  <span className="text-sm font-bold text-foreground truncate">
+                    {user ? `${user.first_name} ${user.last_name}` : "Адмін"}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-normal truncate">
+                    {placeName}
+                  </span>
+                </div>
+                <HugeiconsIcon icon={ChevronDownIcon} className="size-4 ml-auto shrink-0 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
+                <HugeiconsIcon icon={UserIcon} className="size-4" />
+                <span>Профіль</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
+                <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+                <span>Вийти</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 

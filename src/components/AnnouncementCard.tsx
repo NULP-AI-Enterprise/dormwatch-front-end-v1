@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PinIcon } from "@hugeicons/core-free-icons";
 import { formatDate } from "@/lib/dateUtils";
+import { HOVER_ACCENT } from "@/lib/theme";
 import type { Announcement } from "@/lib/types";
 
 interface AnnouncementCardProps {
@@ -45,7 +46,7 @@ const AnnouncementCard = ({
             {formatDate(a.created_at)}
           </span>
         </div>
-        <h3 className={`text-sm font-semibold text-foreground mb-2 ${clickable ? "group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" : ""}`}>
+        <h3 className={`text-sm font-semibold text-foreground mb-2 ${clickable ? `${HOVER_ACCENT} transition-colors` : ""}`}>
           {a.title || "Без назви"}
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 break-words whitespace-pre-wrap">

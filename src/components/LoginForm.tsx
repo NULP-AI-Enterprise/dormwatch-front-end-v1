@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { loginUser } from "@/services/problemsApi";
+import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,9 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await loginUser(data.email, data.password);
+      const res = await loginUser(data.email, data.password);
       window.dispatchEvent(new Event("profileUpdated"));
-      navigate("/");
+      navigate(roleHomeRoute(res.role), { replace: true });
     } catch (err: any) {
       if (err.requiresVerification) {
         navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
@@ -100,9 +101,8 @@ function LoginForm() {
                 type="submit"
                 disabled={loading}
                 size="lg"
-                className="w-full relative overflow-hidden group"
+                className="w-full"
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                 {loading ? "Входимо…" : "Увійти"}
               </Button>
             </form>
@@ -110,16 +110,17 @@ function LoginForm() {
         </CardContent>
       </Card>
 
-      <Card className="mt-6 border-border shadow-lg bg-muted/50 p-0 relative">
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted-foreground" />
-        <CardContent className="p-5 text-center">
+      {/* Secondary nudge: account creation. Plain card (no shadow/accent
+          bar) so the primary login card stays the visual focus. */}
+      <Card className="mt-6 border-border p-0">
+        <CardContent className="p-4 text-center">
           <p className="text-sm text-muted-foreground">Новий студент у гуртожитку?</p>
           <Link
             to="/auth?tab=register"
-            className="inline-flex items-center gap-1 mt-2 text-primary hover:text-primary/80 font-bold transition-colors group"
+            className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-primary hover:text-primary/80 hover:underline transition-colors"
           >
             Створити обліковий запис
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4 group-hover:translate-x-1 transition-transform" />
+            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
           </Link>
         </CardContent>
       </Card>

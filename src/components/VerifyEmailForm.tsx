@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { verifyEmail } from "@/services/problemsApi";
+import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,9 +39,9 @@ export default function VerifyEmailForm({ email }: { email: string }) {
     setError("");
     setLoading(true);
     try {
-      await verifyEmail(email, data.code);
+      const res = await verifyEmail(email, data.code);
       window.dispatchEvent(new Event("profileUpdated"));
-      navigate("/");
+      navigate(roleHomeRoute(res.role), { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Невірний код. Спробуйте ще раз.");
     } finally {

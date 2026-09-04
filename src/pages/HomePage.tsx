@@ -9,7 +9,8 @@ import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Footer from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
-import { isAdminUser, statusBadgeClass } from "@/lib/complaintUtils";
+import { isAdminUser, isWorkerUser, statusBadgeClass } from "@/lib/complaintUtils";
+import { ACCENT, ACCENT_BORDER_DARK } from "@/lib/theme";
 import { FeatureCard } from "@/components/FeatureCard";
 
 const HomePage = () => {
@@ -23,7 +24,8 @@ const HomePage = () => {
         const user = await fetchUserProfile();
         if (!mounted) return;
         if (user) {
-          navigate(isAdminUser(user) ? "/admin" : "/user", { replace: true });
+          const target = isAdminUser(user) ? "/admin" : isWorkerUser(user) ? "/worker" : "/user";
+          navigate(target, { replace: true });
           return;
         }
       } catch {
@@ -62,11 +64,11 @@ const HomePage = () => {
         <Separator />
       </nav>
 
-      <section className="relative pt-24 pb-32 overflow-hidden">
+      <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative z-10">
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
-              Зламаний кран? Холодна кімната? <span className="text-blue-600 dark:text-blue-400">Ми допоможемо.</span>
+              Зламаний кран? Холодна кімната? <span className={ACCENT}>Ми допоможемо.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
               Створюйте звернення про ремонт у вашому гуртожитку менш ніж за 15 секунд. Відстежуйте оновлення статусу в режимі реального часу. Без завантаження додатків та очікування на лінії.
@@ -86,8 +88,8 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-card border border-border transform -rotate-2 scale-100 opacity-80" />
             <div className="absolute inset-0 bg-background border border-border p-6 flex flex-col gap-4">
               <div className="flex justify-between items-center pb-4">
-                <div className="w-32 h-4 bg-card" />
-                <div className="w-8 h-8 bg-primary/90 border border-blue-800" />
+                <div className="w-32 h-4 bg-muted" />
+                <div className={`w-8 h-8 bg-primary/90 border ${ACCENT_BORDER_DARK}`} />
               </div>
               <Separator />
               <div className="bg-card border border-border p-4">
@@ -102,7 +104,7 @@ const HomePage = () => {
               <div className="bg-card border border-border p-4">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-xs text-muted-foreground font-normal">Опалення</span>
-                  <span className={`px-2 py-0.5 ${statusBadgeClass("approved")} text-xs font-semibold`}>В роботі</span>
+                  <span className={`px-2 py-0.5 ${statusBadgeClass("in_progress")} text-xs font-semibold`}>В роботі</span>
                 </div>
                 <div className="w-1/2 h-3 bg-muted mb-2" />
                 <div className="w-full h-2 bg-muted mb-1" />
@@ -138,29 +140,13 @@ const HomePage = () => {
           />
           <FeatureCard
             icon={ShieldIcon}
-            title="Екстрене реагування"
-            description="Критичні проблеми, такі як відключення електроенергії або затоплення, миттєво позначаються та надсилаються черговій бригаді аварійної служби."
+            title="Без загублених звернень"
+            description="Кожне звернення отримує унікальний номер і закріплюється за відповідальним. Комендант бачить усе, що надійшло, і вирішує, хто працює над кожним."
           />
         </div>
       </section>
 
       <Separator />
-      <section className="bg-background py-20 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-3xl font-bold text-foreground mb-6">Потрібно щось полагодити?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Увійдіть за допомогою студентського квитка, щоб надіслати звернення безпосередньо до служби експлуатації кампусу.</p>
-          <div className="flex justify-center gap-4">
-            <Button asChild size="lg" className="gap-2">
-              <Link to="/auth">
-                Розпочати
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" strokeWidth={2} />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-      <Separator />
-
       <Footer />
     </div>
   );

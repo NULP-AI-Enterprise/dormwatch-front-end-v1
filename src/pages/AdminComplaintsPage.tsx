@@ -4,36 +4,28 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
-  fetchApprovedComplaints,
-  updateComplaintStatus,
-  deleteProblem,
+  updateComplaintAdmin,
+  deleteAdminComplaint,
   fetchCategories,
-  fetchTickets,
   fetchWorkers,
 } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
-import { TicketCard } from "@/components/TicketCard";
-import TicketSidePanel from "@/components/TicketSidePanel";
 import {
   FilterSearchInput,
   StatusFilterSelect,
   BuildingFilterSelect,
   PriorityFilterSelect,
   CategoryFilterCombobox,
+  WorkerFilterSelect,
 } from "@/components/ComplaintFilters";
+import { FilterToolbar } from "@/components/FilterToolbar";
 import EmptyState from "@/components/EmptyState";
+import { complaintIsOverdue } from "@/lib/complaintUtils";
+import { ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, ERROR, ERROR_TEXT } from "@/lib/theme";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -41,14 +33,9 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
-
-import { Separator } from "@/components/ui/separator";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Cancel01Icon,
-  InboxIcon,
-} from "@hugeicons/core-free-icons";
-import type { Complaint, Ticket, Worker, CategoryOption } from "@/lib/types";
+import { Cancel01Icon, InboxIcon } from "@hugeicons/core-free-icons";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -59,31 +46,32 @@ const AdminComplaintsPage = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<string[]>([]);
   const [selectedPriority, setSelectedPriority] = useState<string[]>([]);
+  const [selectedWorkers, setSelectedWorkers] = useState<string[]>([]);
+  const [selectedDeadline, setSelectedDeadline] = useState<Date | undefined>(undefined);
+  // Triage shortcut target: the overview's Прострочені stat lands here with
+  // the derived overdue flag pre-filtered.
+  const [overdueOnly, setOverdueOnly] = useState<boolean>(
+    !!location.state?.overdueOnly
+  );
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const [ticketStatus, setTicketStatus] = useState("all");
-  const [ticketCategories, setTicketCategories] = useState<string[]>([]);
-
   const [complaints, setComplaints] = useState<Complaint[]>([]);
-  const [approvedForTickets, setApprovedForTickets] = useState<Complaint[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [ticketSheetOpen, setTicketSheetOpen] = useState(false);
-  const [selectedTicketComplaint, setSelectedTicketComplaint] = useState<Complaint | null>(null);
-  const [ticketToEdit, setTicketToEdit] = useState<Ticket | null>(null);
-  const [ticketReadOnly, setTicketReadOnly] = useState(false);
-  const [workers, setWorkers] = useState<Worker[]>([]);
 
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [workers, setWorkers] = useState<{ worker_id: number; full_name: string }[]>([]);
   const buildings = useBuildings();
+
+  useEffect(() => {
+    fetchWorkers().then(setWorkers).catch(() => setWorkers([]));
+  }, []);
 
   const loadCategories = async () => {
     const data = await fetchCategories();
@@ -123,10 +111,6 @@ const AdminComplaintsPage = () => {
     }
   };
 
-  const loadTickets = async () => {
-    fetchTickets().then(setTickets);
-  };
-
   useEffect(() => {
     loadComplaints();
     loadCategories();
@@ -135,39 +119,22 @@ const AdminComplaintsPage = () => {
     return () => window.removeEventListener("adminComplaintUpdated", loadComplaints);
   }, []);
 
-  const [tab, setTab] = useState<"requests" | "tickets">("requests");
-
-  useEffect(() => {
-    if (tab === "tickets") {
-      loadTickets();
-      fetchApprovedComplaints().then(setApprovedForTickets);
-      fetchWorkers().then(setWorkers);
-    }
-  }, [tab]);
-
-  const handleChangeStatus = async (id: number, newStatus: string, reason?: string) => {
+  const handleAdminPatch = async (id: number, body: Record<string, unknown>) => {
     try {
-      await updateComplaintStatus(id, newStatus, reason);
+      await updateComplaintAdmin(id, body);
       loadComplaints();
     } catch (err) {
-      console.warn('Failed to change complaint status', err);
+      console.warn('Failed to update complaint', err);
     }
   };
 
   const handleRemove = async (id: number) => {
     try {
-      await deleteProblem(id);
+      await deleteAdminComplaint(id);
       setComplaints((prev) => prev.filter((p) => String(p.id) !== String(id)));
     } catch (err) {
       console.warn('Failed to remove complaint', err);
     }
-  };
-
-  const openTicketSheet = (complaint: Complaint, ticket?: Ticket, readOnly = false) => {
-    setSelectedTicketComplaint(complaint);
-    setTicketToEdit(ticket || null);
-    setTicketReadOnly(readOnly);
-    setTicketSheetOpen(true);
   };
 
   const filteredComplaints = useMemo(
@@ -183,34 +150,38 @@ const AdminComplaintsPage = () => {
         const priorityOk =
           selectedPriority.length === 0 ||
           (p.priority != null && selectedPriority.includes(p.priority));
+        // Worker filter matches the assigned contractor's name (unassigned
+        // complaints only show when the filter is empty).
+        const workerOk =
+          selectedWorkers.length === 0 ||
+          (p.worker != null && selectedWorkers.includes(p.worker.full_name));
+        const deadlineOk =
+          !selectedDeadline || isSameLocalDay(p.deadline, selectedDeadline);
+        const overdueOk = !overdueOnly || complaintIsOverdue(p);
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.description || "").toLowerCase().includes(searchQuery.toLowerCase());
         const dateOk = !selectedDate || isSameLocalDay(p.createdAt, selectedDate);
-        return statusOk && categoryOk && buildingOk && priorityOk && searchOk && dateOk;
+        return (
+          statusOk && categoryOk && buildingOk && priorityOk &&
+          workerOk && deadlineOk && overdueOk && searchOk && dateOk
+        );
       }),
-    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, selectedWorkers, selectedDeadline, overdueOnly, searchQuery, selectedDate]
   );
 
-  const filteredTickets = useMemo(
-    () =>
-      approvedForTickets.filter((p) => {
-        const categoryOk =
-          ticketCategories.length === 0 ||
-          (p.category != null && ticketCategories.includes(p.category));
-        const searchOk =
-          ticketSearchQuery === "" ||
-          (p.title || "").toLowerCase().includes(ticketSearchQuery.toLowerCase()) ||
-          (p.description || "").toLowerCase().includes(ticketSearchQuery.toLowerCase());
-        const hasTicket = tickets.some((t) => t.complaint === p.id);
-        let statusOk = true;
-        if (ticketStatus === "created") statusOk = hasTicket;
-        else if (ticketStatus === "not_created") statusOk = !hasTicket;
-        return categoryOk && searchOk && statusOk;
-      }),
-    [approvedForTickets, tickets, ticketCategories, ticketStatus, ticketSearchQuery]
-  );
+  const resetFilters = () => {
+    setSelectedStatus([]);
+    setSelectedCategories([]);
+    setSelectedBuilding([]);
+    setSelectedPriority([]);
+    setSelectedWorkers([]);
+    setSelectedDeadline(undefined);
+    setOverdueOnly(false);
+    setSelectedDate(undefined);
+    setSearchQuery("");
+  };
 
   return (
     <>
@@ -224,223 +195,127 @@ const AdminComplaintsPage = () => {
               alt="Full size"
             />
           )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-stone-300">
+          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
             <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
       </Dialog>
 
       <div className="flex-1 flex flex-col min-h-screen">
-      <Tabs value={tab} onValueChange={(v) => setTab(v as "requests" | "tickets")} className="flex-1 flex flex-col">
-          <div className="px-6 pt-6">
-            <TabsList variant="line">
-              <TabsTrigger value="requests" className="text-xs font-semibold">
-                Звернення
-              </TabsTrigger>
-              <TabsTrigger value="tickets" className="text-xs font-semibold">
-                Тікети
-              </TabsTrigger>
-            </TabsList>
+        <div className="flex-1 p-6 space-y-6">
+          {/* Compact filter toolbar — same paradigm as DashboardPage.
+              Status, building, priority, worker, overdue-only,
+              category, two date pickers (deadline + filing) all sit in one
+              row above the data. */}
+          <FilterToolbar onReset={resetFilters}>
+            <div className="w-full sm:w-64">
+              <FilterSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Пошук звернень..."
+              />
+            </div>
+            <div className="w-full sm:w-48">
+              <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
+            </div>
+            <div className="w-full sm:w-48">
+              <BuildingFilterSelect
+                value={selectedBuilding}
+                onChange={setSelectedBuilding}
+                buildings={buildings}
+              />
+            </div>
+            <div className="w-full sm:w-48">
+              <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
+            </div>
+            <div className="w-full sm:w-48">
+              <WorkerFilterSelect
+                value={selectedWorkers}
+                onChange={setSelectedWorkers}
+                workers={workers}
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <DatePicker
+                date={selectedDeadline}
+                setDate={setSelectedDeadline}
+                placeholder="Дедлайн"
+              />
+            </div>
+            <div className="w-full sm:w-56">
+              <CategoryFilterCombobox
+                value={selectedCategories}
+                onChange={setSelectedCategories}
+                categories={categories}
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <DatePicker
+                date={selectedDate}
+                setDate={setSelectedDate}
+                placeholder="Дата подання"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
+              <Checkbox
+                id="overdue-only"
+                checked={overdueOnly}
+                onCheckedChange={(v) => setOverdueOnly(v === true)}
+              />
+              <span>Лише прострочені</span>
+            </label>
+          </FilterToolbar>
+
+          <div className="space-y-4">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner size="md" />
+              </div>
+            )}
+            {!loading && err && (
+              <div className={`border ${ERROR} ${ERROR_TEXT} p-4 text-xs font-semibold`}>
+                {err}
+              </div>
+            )}
+
+            {!loading && !err && filteredComplaints.length === 0 && (
+              <EmptyState
+                icon={InboxIcon}
+                title="Звернень не знайдено"
+                subtitle="Жодне звернення не відповідає поточним фільтрам."
+              />
+            )}
+
+            {!loading &&
+              !err &&
+              filteredComplaints.map((p) => (
+                <ComplaintCard
+                  key={p.id}
+                  complaint={p}
+                  cardClassName={`group transition-colors cursor-pointer ${
+                    p.status === "pending" && !viewedComplaints.has(p.id as number)
+                      ? `border-l-2 ${ACCENT_BORDER} border-y-border border-r-border ${ACCENT_BG_LIGHT} ${ACCENT_BG_HOVER_LIGHT}`
+                      : ""
+                  }`}
+                  onCardClick={() => {
+                    markAsViewed(p.id as number);
+                    setSelectedComplaint(p);
+                    setSheetOpen(true);
+                  }}
+                  showPriority
+                  descriptionFallback={"\u2014"}
+                  showPhoto
+                  photoZoom
+                  photoHeight="h-44"
+                  onPhotoPreview={setPreviewImage}
+                  footerLeft="id"
+                  showAdminActions
+                  onAdminPatch={handleAdminPatch}
+                  onAdminDelete={handleRemove}
+                />
+              ))}
           </div>
-
-          <TabsContent value="requests" className="flex-1 p-6">
-            <div className="grid lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-4">
-                <Card className="border-border shadow-none bg-card">
-                  <CardContent>
-                    <div className="mb-4">
-                      <FilterSearchInput
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        placeholder="Пошук звернень..."
-                      />
-                    </div>
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Статус
-                    </h4>
-                    <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Гуртожиток
-                    </h4>
-                    <BuildingFilterSelect
-                      value={selectedBuilding}
-                      onChange={setSelectedBuilding}
-                      buildings={buildings}
-                    />
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Пріоритет
-                    </h4>
-                    <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Категорії
-                    </h4>
-                    <CategoryFilterCombobox
-                      value={selectedCategories}
-                      onChange={setSelectedCategories}
-                      categories={categories}
-                    />
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Дата подання
-                    </h4>
-                    <div className="space-y-2">
-                      <DatePicker
-                        date={selectedDate}
-                        setDate={setSelectedDate}
-                        placeholder="Оберіть дату"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-3 space-y-4">
-                {loading && (
-                  <div className="flex items-center justify-center py-12">
-                    <LoadingSpinner size="md" />
-                  </div>
-                )}
-                {!loading && err && (
-                  <div className="border border-red-500/30 bg-red-500/10 text-red-400 p-4 text-xs font-semibold">
-                    {err}
-                  </div>
-                )}
-
-                {!loading && !err && filteredComplaints.length === 0 && (
-                  <EmptyState
-                    icon={InboxIcon}
-                    title="Звернень не знайдено"
-                    subtitle="Жодне звернення не відповідає поточним фільтрам."
-                  />
-                )}
-
-                {!loading &&
-                  !err &&
-                  filteredComplaints.map((p) => (
-                    <ComplaintCard
-                      key={p.id}
-                      complaint={p}
-                      cardClassName={`group transition-colors cursor-pointer ${
-                        p.status === "pending" && !viewedComplaints.has(p.id as number)
-                          ? "border-l-2 border-l-blue-500 border-y-border border-r-border bg-blue-500/5 hover:bg-blue-500/10"
-                          : "hover:bg-muted/50"
-                      }`}
-                      onCardClick={() => {
-                        markAsViewed(p.id as number);
-                        setSelectedComplaint(p);
-                        setSheetOpen(true);
-                      }}
-                      showPriority
-                      descriptionFallback={"\u2014"}
-                      showPhoto
-                      photoZoom
-                      photoHeight="h-44"
-                      onPhotoPreview={setPreviewImage}
-                      footerLeft="id"
-                      showAdminActions
-                      onStatusChange={handleChangeStatus}
-                      onAdminDelete={handleRemove}
-                    />
-                  ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="tickets" className="flex-1 p-6">
-            <div className="grid lg:grid-cols-4 gap-8">
-              <div className="lg:col-span-1 space-y-4">
-                <Card className="border-border shadow-none bg-card">
-                  <CardContent>
-                    <div className="mb-4">
-                      <FilterSearchInput
-                        value={ticketSearchQuery}
-                        onChange={setTicketSearchQuery}
-                        placeholder="Пошук тікетів..."
-                      />
-                    </div>
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Статус тікету
-                    </h4>
-                    <Select value={ticketStatus} onValueChange={setTicketStatus}>
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Статус тікету" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Всі</SelectItem>
-                        <SelectItem value="not_created">Без тікета</SelectItem>
-                        <SelectItem value="created">З тікетом</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Separator className="my-4" />
-
-                    <h4 className="text-xs font-normal text-muted-foreground mb-3">
-                      Категорії
-                    </h4>
-                    <CategoryFilterCombobox
-                      value={ticketCategories}
-                      onChange={setTicketCategories}
-                      categories={categories}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-3 space-y-6">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Тікети для підтверджених звернень
-                </h3>
-                {filteredTickets.length === 0 ? (
-                  <EmptyState
-                    icon={InboxIcon}
-                    title="Жодне звернення не відповідає фільтрам."
-                  />
-                ) : (
-                  <div className="grid lg:grid-cols-2 gap-4">
-                    {filteredTickets.map((p) => {
-                      const ticket = tickets.find((t) => t.complaint === p.id);
-                      // A complaint that already has a ticket → view it via the
-                      // real TicketCard. One without → keep the compact
-                      // ComplaintCard "Створити тікет" create flow.
-                      return ticket ? (
-                        <TicketCard
-                          key={p.id}
-                          ticket={ticket}
-                          complaint={p}
-                          readOnly={false}
-                          onOpen={(ro) => openTicketSheet(p, ticket, ro)}
-                        />
-                      ) : (
-                        <ComplaintCard
-                          key={p.id}
-                          complaint={p}
-                          variant="compact"
-                          showPriority
-                          showTicketControls
-                          ticket={ticket}
-                          onTicketAction={openTicketSheet}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
 
       {selectedComplaint && (
@@ -454,31 +329,6 @@ const AdminComplaintsPage = () => {
           onStatusChange={loadComplaints}
           currentUserId={currentUser?.user}
           isAdmin={true}
-          onCreateTicket={(c) => {
-            setSheetOpen(false);
-            setSelectedComplaint(null);
-            openTicketSheet(c);
-          }}
-        />
-      )}
-
-      {selectedTicketComplaint && (
-        <TicketSidePanel
-          complaint={selectedTicketComplaint}
-          ticket={ticketToEdit}
-          open={ticketSheetOpen}
-          onOpenChange={(open) => {
-            setTicketSheetOpen(open);
-            if (!open) {
-              setSelectedTicketComplaint(null);
-              setTicketToEdit(null);
-              setTicketReadOnly(false);
-            }
-          }}
-          workers={workers}
-          allTickets={tickets}
-          onTicketChange={loadTickets}
-          readOnly={ticketReadOnly}
         />
       )}
     </>

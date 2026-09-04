@@ -1,4 +1,7 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Home01Icon } from "@hugeicons/core-free-icons";
 import HomePage from "@/pages/HomePage";
 import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
@@ -7,8 +10,6 @@ import AdminResidentsPage from "@/pages/AdminResidentsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
-import MyComplaintsPage from "@/pages/MyComplaintsPage";
-import MyTicketsPage from "@/pages/MyTicketsPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AuthPage from "@/pages/AuthPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -16,12 +17,24 @@ import StudentLayout from "@/components/StudentLayout";
 import AdminLayout from "@/components/AdminLayout";
 import AdminTicketsPrintPage from "@/pages/AdminTicketsPrintPage";
 import AdminCompletedReportPrintPage from "@/pages/AdminCompletedReportPrintPage";
+import AdminWorkerReportPrintPage from "@/pages/AdminWorkerReportPrintPage";
+import WorkerHomePage from "@/pages/WorkerHomePage";
+import AdminWorkerInvitePrintPage from "@/pages/AdminWorkerInvitePrintPage";
 
 function App() {
   return (
+    <>
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route
+        path="/worker"
+        element={
+          <ProtectedRoute requireWorker>
+            <WorkerHomePage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/user"
         element={
@@ -42,26 +55,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/my-complaints"
-        element={
-          <ProtectedRoute blockAdmin>
-            <StudentLayout>
-              <MyComplaintsPage />
-            </StudentLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-tickets"
-        element={
-          <ProtectedRoute blockAdmin>
-            <StudentLayout>
-              <MyTicketsPage />
-            </StudentLayout>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/my-complaints" element={<Navigate to="/user" replace />} />
       <Route
         path="/dashboard"
         element={
@@ -138,8 +132,43 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<div className="p-8 font-bold text-muted-foreground">404 — сторінку не знайдено</div>} />
+      <Route
+        path="/admin/reports/workers/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminWorkerReportPrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/workers/invite/print"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AdminWorkerInvitePrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="text-center max-w-md">
+            <p className="text-6xl font-bold text-muted-foreground mb-4">404</p>
+            <h1 className="text-xl font-bold text-foreground mb-2">Сторінку не знайдено</h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              Сторінка, яку ви шукаєте, не існує або була переміщена.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-border bg-background hover:bg-muted transition-colors text-foreground"
+            >
+              <HugeiconsIcon icon={Home01Icon} className="size-4" strokeWidth={2} />
+              На головну
+            </Link>
+          </div>
+        </div>
+      } />
     </Routes>
+    <Toaster />
+    </>
   );
 }
 

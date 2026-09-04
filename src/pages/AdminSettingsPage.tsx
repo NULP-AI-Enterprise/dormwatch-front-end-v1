@@ -13,6 +13,9 @@ import {
   updateWorker,
   deleteWorker,
   fetchRoles,
+  createWorkerInvite,
+  unlinkWorker,
+  apiErrorText,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,8 +43,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { Dot } from "@/components/ComplaintCard";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Edit02Icon,
@@ -52,9 +64,14 @@ import {
   DoorIcon,
   Wrench01Icon,
   Add01Icon,
+  UserAdd01Icon,
+  Copy01Icon,
+  MailSend01Icon,
+  QrCode01Icon,
 } from "@hugeicons/core-free-icons";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { InviteLinkDialog } from "@/components/InviteLinkDialog";
+import { Link } from "react-router-dom";
 import type { Building, Place, Role, Worker } from "@/lib/types";
 
 // Admin reference-data management: Categories, Buildings, Rooms. Deletes are
@@ -742,9 +759,11 @@ function RoomsTab() {
 }
 
 // ── Workers tab ────────────────────────────────────────────────────────
-// External contractors assignable to tickets. They never log in; this is the
-// only surface to maintain them. Delete is non-destructive to tickets — the
-// backend SET_NULLs the assignment (the work order stays, just unassigned).
+// External contractors assignable to complaints. A worker may hold a
+// provisioned account (single-use invite link / printed QR; the worker
+// supplies their own email at redemption) — `has_account` shows that state,
+// the invite dialog mints the token. Delete is non-destructive to complaints
+// — the backend SET_NULLs the assignment.
 function WorkersTab() {
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -762,6 +781,20 @@ function WorkersTab() {
 
   const [pending, setPending] = useState<Worker | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+   // Account unlinking: sever the Worker→account bond. The live link check on
+   // the worker endpoints then 403s at the next request instead of letting the
+   // old refresh cookie ride for up to 7 days (call #21).
+   const [unlinking, setUnlinking] = useState<Worker | null>(null);
+   const [unlinkingBusy, setUnlinkingBusy] = useState(false);
+
+   // Account provisioning: one dialog per worker — mint the token, then hand
+   // over the redemption link by email or printed QR.
+  const [provisioning, setProvisioning] = useState<Worker | null>(null);
+  const [inviteToken, setInviteToken] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -831,6 +864,54 @@ function WorkersTab() {
     }
   };
 
+  const openProvision = (w: Worker) => {
+    setProvisioning(w);
+    setInviteToken("");
+    setInviteError("");
+    setCopied(false);
+  };
+
+  const mintInvite = async () => {
+    if (!provisioning) return;
+    setInviting(true);
+    setInviteError("");
+    try {
+      const data = await createWorkerInvite(provisioning.worker_id);
+      setInviteToken(data.invite_token);
+    } catch (err) {
+      setInviteError(apiErrorText(err, "Не вдалося створити запрошення"));
+    } finally {
+      setInviting(false);
+    }
+  };
+
+   const confirmUnlink = async () => {
+     if (!unlinking) return;
+     setUnlinkingBusy(true);
+     try {
+       await unlinkWorker(unlinking.worker_id);
+       await load();
+       setUnlinking(null);
+     } catch (err) {
+       console.warn("Failed to unlink worker", err);
+     } finally {
+       setUnlinkingBusy(false);
+     }
+   };
+
+   const inviteUrl = inviteToken
+    ? `${window.location.origin}/auth?tab=register&invite=${inviteToken}`
+    : "";
+
+  const copyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+    } catch (err) {
+      console.warn("Failed to copy invite link", err);
+    }
+  };
+
   return (
     <Card className="border-border shadow-none bg-card">
       <CardContent className="space-y-4">
@@ -887,10 +968,38 @@ function WorkersTab() {
                   <p className="text-sm text-foreground truncate">{w.full_name}</p>
                   {(w.company || w.phone) && (
                     <p className="text-xs text-muted-foreground truncate">
-                      {[w.company, w.phone].filter(Boolean).join(" · ")}
+                      {w.company}
+                      {w.company && w.phone && <Dot />}
+                      {w.phone}
                     </p>
                   )}
                 </div>
+                {w.has_account ? (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="secondary" className="shrink-0">
+                      має доступ до панелі
+                    </Badge>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => setUnlinking(w)}
+                      aria-label="Відкликати доступ"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openProvision(w)}
+                    className="gap-1.5 shrink-0"
+                  >
+                    <HugeiconsIcon icon={UserAdd01Icon} data-icon="inline-start" />
+                    Надати доступ
+                  </Button>
+                )}
                 <Button
                   size="icon-sm"
                   variant="ghost"
@@ -981,6 +1090,91 @@ function WorkersTab() {
               }}
             >
               Видалити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Provisioning dialog: invite link + printed QR, never a set password */}
+      <Dialog open={!!provisioning} onOpenChange={(o) => { if (!o) { setProvisioning(null); if (inviteToken) load(); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Надати доступ — {provisioning?.full_name}</DialogTitle>
+            <DialogDescription>
+              Створіть одноразове запрошення: працівник відкриє посилання або
+              відсканує QR і самостійно вкаже свою електронну пошту та пароль.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!inviteToken ? (
+            <>
+              {inviteError && (
+                <p className="text-xs font-semibold text-destructive">{inviteError}</p>
+              )}
+              <DialogFooter>
+                <Button onClick={mintInvite} disabled={inviting}>
+                  {inviting ? "Створення..." : "Створити запрошення"}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label className="text-xs">Посилання для реєстрації</Label>
+                <Input readOnly value={inviteUrl} className="h-8 text-xs" onFocus={(e) => e.target.select()} />
+                <p className="text-xs text-muted-foreground">
+                  Запрошення одноразове й не має строку давності.
+                </p>
+              </div>
+              <DialogFooter className="flex-row sm:justify-between sm:flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={copyInvite} className="gap-1.5">
+                    <HugeiconsIcon icon={Copy01Icon} data-icon="inline-start" />
+                    {copied ? "Скопійовано" : "Копіювати"}
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent("Запрошення до DormWatch")}&body=${encodeURIComponent(`Вітаємо! Посилання для створення вашого облікового запису DormWatch:\n\n${inviteUrl}\n\nЗапрошення одноразове. Перейдіть за ним, вкажіть свою електронну пошту та пароль, потім підтвердіть пошту кодом із листа.`)}`}
+                    >
+                      <HugeiconsIcon icon={MailSend01Icon} data-icon="inline-start" />
+                      Надіслати листом
+                    </a>
+                  </Button>
+                </div>
+                <Button asChild size="sm" className="gap-1.5">
+                  <Link to={`/admin/workers/invite/print?token=${inviteToken}&name=${encodeURIComponent(provisioning?.full_name ?? "")}`}>
+                    <HugeiconsIcon icon={QrCode01Icon} data-icon="inline-start" />
+                    Роздрукувати QR
+                  </Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlink dialog: sever the account bond — worker endpoints 403 next request */}
+      <AlertDialog open={!!unlinking} onOpenChange={(o) => !o && setUnlinking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Відкликати доступ — {unlinking?.full_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Працівник втратить доступ до панелі — при наступному запиті йому
+              буде відмовлено. Обліковий запис залишиться, доступ можна
+              відновити новим запрошенням.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={unlinkingBusy}>Скасувати</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={unlinkingBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmUnlink();
+              }}
+            >
+              Відкликати
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { changePassword } from "@/services/problemsApi";
+import { SUCCESS, SUCCESS_TEXT } from "@/lib/theme";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,8 +81,8 @@ export default function ChangePasswordForm() {
           </div>
         )}
         {success && (
-          <div className="mb-5 border border-green-500/40 bg-green-500/10 px-3 py-2.5">
-            <p className="text-xs leading-relaxed text-green-500 font-semibold">Пароль успішно змінено</p>
+          <div className={`mb-5 border px-3 py-2.5 ${SUCCESS}`}>
+            <p className={`text-xs leading-relaxed font-semibold ${SUCCESS_TEXT}`}>Пароль успішно змінено</p>
           </div>
         )}
 
@@ -92,7 +93,7 @@ export default function ChangePasswordForm() {
             <FormItem>
               <FormLabel className="text-xs">Старий пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" autoComplete="current-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -106,7 +107,7 @@ export default function ChangePasswordForm() {
             <FormItem>
               <FormLabel className="text-xs">Новий пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" autoComplete="new-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -120,14 +121,14 @@ export default function ChangePasswordForm() {
             <FormItem>
               <FormLabel className="text-xs">Підтвердіть новий пароль</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" autoComplete="new-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={loading} size="sm" className="w-full">
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Збереження..." : "Змінити пароль"}
         </Button>
       </form>

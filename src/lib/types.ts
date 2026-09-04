@@ -44,6 +44,10 @@ export interface Complaint {
   building: string;
   room: string;
   placeName: string;
+  // True when the complaint's location is a shared/common area (kitchen,
+  // laundry, hallway) rather than a residence room. Drives the "(спільна)"
+  // marker downstream so common areas never read as someone's room.
+  isShared: boolean;
   floor: string;
   photoUrl: string | null;
   thumbnail: string | null;
@@ -51,7 +55,20 @@ export interface Complaint {
   priority: string | null;
   createdAt: string | null;
   user_id: number | null;
-  rejectionReason?: string | null;
+  // Assignment + lifecycle (merged into the complaint server-side).
+  worker: Worker | null;
+  deadline: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  resolvedAt: string | null;
+  workNote: string;
+  rejectionReason: string;
+  reworkReason: string;
+  followUpOf: number | null;
+  root: number | null;
+  // Derived server-side (never stored): "В роботі" past its deadline. Drives
+  // the red Прострочено badge and the admin overdue filter.
+  isOverdue: boolean;
 }
 
 export interface Comment {
@@ -68,13 +85,8 @@ export interface Worker {
   full_name: string;
   company?: string;
   phone?: string;
-}
-
-export interface Ticket {
-  ticket_id: number;
-  complaint: number;
-  worker?: Worker;
-  deadline?: string;
+  // True once a provisioned account is linked 1:1 from this worker.
+  has_account?: boolean;
 }
 
 // An admin-posted announcement. `building` null = global (all buildings);

@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Building03Icon } from "@hugeicons/core-free-icons";
+import { LINK, LINK_HOVER } from "@/lib/theme";
 
 const Footer = () => {
   return (
@@ -13,18 +14,16 @@ const Footer = () => {
           <p className="text-muted-foreground text-sm">Система прямої комунікації між студентами та адміністрацією.</p>
         </div>
 
-        <div className="flex gap-6 text-sm text-muted-foreground font-semibold">
-          {/* TODO: add privacy/terms pages, then re-enable these as links. */}
-          <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Конфіденційність</span>
-          <span className="opacity-50 cursor-not-allowed" aria-disabled="true">Умови використання</span>
-        </div>
+        {/* No dead affordances: the previous "Конфіденційність" / "Умови
+            використання" were rendered as grayed-out non-links (TODO was to
+            build the pages). Drop them rather than keep inert grayed text. */}
 
         <div className="flex flex-col items-center md:items-end gap-1">
-          <a href="mailto:support@dormwatch.edu.ua" className="text-primary hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs transition-colors">
+          <a href="mailto:support@dormwatch.edu.ua" className={`${LINK} ${LINK_HOVER} font-bold text-xs transition-colors`}>
             support@dormwatch.edu.ua
           </a>
           <span className="text-muted-foreground text-sm">
-            &copy; 2025 DormWatch. Всі права захищено.
+            &copy; {new Date().getFullYear()} DormWatch. Всі права захищено.
           </span>
         </div>
       </div>
