@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlaces } from "@/services/problemsApi";
+import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlaces, fetchSimilarComplaints, upvoteComplaint } from "@/services/problemsApi";
 import PlaceCombobox from "@/components/PlaceCombobox";
+import ComplaintCard from "@/components/ComplaintCard";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
@@ -17,7 +18,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import type { CategoryOption, Place } from "@/lib/types";
+import type { CategoryOption, Place, Complaint } from "@/lib/types";
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
@@ -43,6 +44,47 @@ const CreateReportPage = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  const [similarComplaints, setSimilarComplaints] = useState<Complaint[]>([]);
+  const [isSearchingSimilar, setIsSearchingSimilar] = useState(false);
+  const [upvotingId, setUpvotingId] = useState<number | null>(null);
+
+  // Debounced search for similar complaints
+  useEffect(() => {
+    const text = (formData.title + " " + formData.description).trim();
+    if (text.length < 10) {
+      setSimilarComplaints([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setIsSearchingSimilar(true);
+      fetchSimilarComplaints(
+        text,
+        categories.find(c => c.name === selectedCategory)?.category_id || null,
+        profileBuildingId
+      )
+        .then((data) => setSimilarComplaints(data))
+        .catch(() => setSimilarComplaints([]))
+        .finally(() => setIsSearchingSimilar(false));
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [formData.title, formData.description, selectedCategory, profileBuildingId, categories]);
+
+  const handleUpvote = async (complaintId: number) => {
+    setUpvotingId(complaintId);
+    try {
+      await upvoteComplaint(complaintId);
+      toast.success("Ви приєдналися до існуючого звернення");
+      navigate(`/user`, { state: { openComplaintId: complaintId } });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Помилка: ${msg}`);
+    } finally {
+      setUpvotingId(null);
+    }
+  };
 
   useEffect(() => {
     Promise.all([fetchMyComplaintPlaces(), fetchUserProfile()])
@@ -281,6 +323,43 @@ const CreateReportPage = () => {
             )}
           </div>
         </div>
+
+        {similarComplaints.length > 0 && (
+          <div className="bg-muted/30 border border-border p-5 rounded-lg space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+                Знайдено схожі відкриті проблеми
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Можливо, хтось уже повідомив про це? Приєднайтесь до звернення, щоб підвищити його пріоритет та отримувати сповіщення, замість створення нового.
+              </p>
+            </div>
+            
+            <div className="grid gap-3">
+              {similarComplaints.map(sc => (
+                <div key={sc.id} className="relative">
+                  <ComplaintCard complaint={sc} variant="compact" showPriority />
+                  <div className="mt-2 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleUpvote(sc.id)}
+                      disabled={upvotingId === sc.id || submitting}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {upvotingId === sc.id ? "Приєднуємось..." : "👍 У мене така ж проблема"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Button
           type="submit"
