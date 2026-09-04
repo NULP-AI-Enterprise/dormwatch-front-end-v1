@@ -128,6 +128,11 @@ const ComplaintCard = ({
                 {p.category}
               </Badge>
             )}
+            {(p as any).supporters_count > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent">
+                👍 {(p as any).supporters_count}
+              </Badge>
+            )}
             <span className="text-xs text-muted-foreground">
               {p.building || "?"}
               {p.placeName && <><Dot />{p.placeName}</>}
@@ -222,9 +227,14 @@ const ComplaintCard = ({
             clickable on touch. */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
           {!showProgress && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
               {statusBadge}
               <OverdueBadge complaint={p} />
+              {(p as any).supporters_count > 0 && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent">
+                  👍 {(p as any).supporters_count}
+                </Badge>
+              )}
             </div>
           )}
           <div className="flex items-center gap-3">

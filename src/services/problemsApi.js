@@ -562,11 +562,11 @@ function normalizeComplaint(raw) {
     followUpOf: raw.follow_up_of ?? null,
     root: raw.root ?? null,
     isOverdue: !!raw.is_overdue,
+    supporters_count: raw.supporters_count ?? 0,
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
     user_id: raw.user?.id || raw.user?.user || raw.user || null,
-    rejectionReason: raw.rejection_reason ?? raw.rejectionReason ?? null,
   };
 }
 
@@ -1011,4 +1011,27 @@ export async function generateInviteLink(payload) {
     method: "POST",
     body: payload,
   });
+}
+
+export async function upvoteComplaint(complaintId) {
+  return await fetchJson(`/api/complaints/${complaintId}/upvote/`, {
+    method: "POST"
+  });
+}
+
+export async function fetchSimilarComplaints(text, categoryId = null, buildingId = null) {
+  try {
+    const params = new URLSearchParams();
+    if (text) params.append("text", text);
+    if (categoryId) params.append("category_id", categoryId);
+    if (buildingId) params.append("building_id", buildingId);
+
+    const data = await fetchJson(`/api/complaints/similar/?${params.toString()}`);
+    if (Array.isArray(data)) {
+      return data.map(normalizeComplaint).filter(Boolean);
+    }
+  } catch (e) {
+    console.warn("Similarity fetch error:", e);
+  }
+  return [];
 }
