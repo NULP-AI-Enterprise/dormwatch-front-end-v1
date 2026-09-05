@@ -62,7 +62,8 @@ const CreateReportPage = () => {
       fetchSimilarComplaints(
         text,
         categories.find(c => c.name === selectedCategory)?.category_id || null,
-        profileBuildingId
+        profileBuildingId,
+        place?.place_id || null
       )
         .then((data) => setSimilarComplaints(data))
         .catch(() => setSimilarComplaints([]))
@@ -70,7 +71,7 @@ const CreateReportPage = () => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [formData.title, formData.description, selectedCategory, profileBuildingId, categories]);
+  }, [formData.title, formData.description, selectedCategory, profileBuildingId, categories, place?.place_id]);
 
   const handleUpvote = async (complaintId: number) => {
     setUpvotingId(complaintId);

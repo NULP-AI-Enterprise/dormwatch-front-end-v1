@@ -1019,12 +1019,13 @@ export async function upvoteComplaint(complaintId) {
   });
 }
 
-export async function fetchSimilarComplaints(text, categoryId = null, buildingId = null) {
+export async function fetchSimilarComplaints(text, categoryId = null, buildingId = null, placeId = null) {
   try {
     const params = new URLSearchParams();
     if (text) params.append("text", text);
     if (categoryId) params.append("category_id", categoryId);
     if (buildingId) params.append("building_id", buildingId);
+    if (placeId) params.append("place_id", placeId);
 
     const data = await fetchJson(`/api/complaints/similar/?${params.toString()}`);
     if (Array.isArray(data)) {
