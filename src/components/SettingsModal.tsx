@@ -23,13 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { logoutUser } from "@/services/problemsApi";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  LockPasswordIcon,
-  Logout01Icon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-} from "@hugeicons/core-free-icons";
+import { LockKeyhole, LogOut, ChevronUp, ChevronDown } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import { isAdminUser } from "@/lib/complaintUtils";
@@ -93,14 +87,20 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                       className="w-full justify-between h-auto py-2 cursor-pointer hover:bg-transparent"
                     >
                       <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <HugeiconsIcon icon={LockPasswordIcon} className="size-4" strokeWidth={2} />
+                        <LockKeyhole className="size-4" strokeWidth={2} />
                         Змінити пароль
                       </span>
-                      <HugeiconsIcon
-                        icon={showPasswordChange ? ChevronUpIcon : ChevronDownIcon}
-                        className="size-4 text-muted-foreground"
-                        strokeWidth={2}
-                      />
+                      {showPasswordChange ? (
+                        <ChevronUp
+                          className="size-4 text-muted-foreground"
+                          strokeWidth={2}
+                        />
+                      ) : (
+                        <ChevronDown
+                          className="size-4 text-muted-foreground"
+                          strokeWidth={2}
+                        />
+                      )}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -120,7 +120,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                     size="sm"
                     className={`w-full ${ERROR_TEXT} ${ERROR_BG_HOVER}`}
                   >
-                    <HugeiconsIcon icon={Logout01Icon} className="size-3 mr-1.5" strokeWidth={2} />
+                    <LogOut className="size-3 mr-1.5" strokeWidth={2} />
                     Вийти
                   </Button>
                 </AlertDialogTrigger>

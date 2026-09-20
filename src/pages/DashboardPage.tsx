@@ -5,8 +5,7 @@ import {
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, SearchIcon as SearchIcon2 } from "@hugeicons/core-free-icons";
+import { X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
 import {
@@ -196,7 +195,7 @@ const DashboardPage = () => {
             />
           )}
           <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
-            <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
+            <X className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
       </Dialog>
@@ -289,7 +288,7 @@ const DashboardPage = () => {
 
           {filteredProblems.length === 0 && (
             <EmptyState
-              icon={SearchIcon2}
+              icon={Search}
               title="Немає звернень за вибраними фільтрами."
             />
           )}

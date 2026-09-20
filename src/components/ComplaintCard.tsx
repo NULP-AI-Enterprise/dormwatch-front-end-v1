@@ -3,14 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  Message01Icon,
-  Delete01Icon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
+import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight } from "lucide-react";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
@@ -188,12 +181,12 @@ const ComplaintCard = ({
       onClick={onCommentToggle}
       className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
     >
-      <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} />
+      <MessageSquare className="size-3" strokeWidth={2} />
       Коментарі{" "}
       {commentsOpen ? (
-        <HugeiconsIcon icon={ChevronUpIcon} className="size-3 inline" strokeWidth={2} />
+        <ChevronUp className="size-3 inline" strokeWidth={2} />
       ) : (
-        <HugeiconsIcon icon={ChevronDownIcon} className="size-3 inline" strokeWidth={2} />
+        <ChevronDown className="size-3 inline" strokeWidth={2} />
       )}
     </Button>
   );
@@ -244,7 +237,7 @@ const ComplaintCard = ({
             {onCardClick && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
                 Деталі
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+                <ChevronRight className="size-3" strokeWidth={2} />
               </span>
             )}
           </div>
@@ -331,7 +324,7 @@ const ComplaintCard = ({
                 onClick={() => onDelete?.(p.id)}
                 className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
               >
-                <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={2} />
+                <Trash2 className="size-3.5" strokeWidth={2} />
               </Button>
             )}
             {showAdminActions && (

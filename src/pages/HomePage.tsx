@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchUserProfile } from "@/services/problemsApi";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, Camera01Icon, Activity01Icon, ShieldIcon } from "@hugeicons/core-free-icons";
+import { ChevronRight, Camera, Activity, Shield } from "lucide-react";
 import PageSpinner from "@/components/PageSpinner";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -77,7 +76,7 @@ const HomePage = () => {
               <Button asChild size="lg" className="gap-2">
                 <Link to="/auth">
                   Повідомити про проблему
-                  <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" strokeWidth={2} />
+                  <ChevronRight className="size-4" strokeWidth={2} />
                 </Link>
               </Button>
             </div>
@@ -129,17 +128,17 @@ const HomePage = () => {
         </div>
         <div className="grid md:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
           <FeatureCard
-            icon={Camera01Icon}
+            icon={Camera}
             title="Сфотографуйте та надішліть"
             description="Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить звернення до потрібного відділу."
           />
           <FeatureCard
-            icon={Activity01Icon}
+            icon={Activity}
             title="Прозоре відстеження"
             description="Припиніть гадати, чи бачив хтось ваше звернення. Отримуйте оновлення статусу в реальному часі, коли ваше звернення переглядається, призначається майстру та вирішується."
           />
           <FeatureCard
-            icon={ShieldIcon}
+            icon={Shield}
             title="Без загублених звернень"
             description="Кожне звернення отримує унікальний номер і закріплюється за відповідальним. Комендант бачить усе, що надійшло, і вирішує, хто працює над кожним."
           />

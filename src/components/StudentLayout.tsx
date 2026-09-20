@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronDownIcon, Logout01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { SELECTED } from "@/lib/theme";
@@ -98,12 +97,12 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-auto gap-2 py-1.5 cursor-pointer">
                   <UserAvatar user={user} size="sm" fallback="Г" />
-                  <HugeiconsIcon icon={ChevronDownIcon} className="size-4 text-muted-foreground" />
+                  <ChevronDown className="size-4 text-muted-foreground" strokeWidth={1.5} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
-                  <HugeiconsIcon icon={UserIcon} className="size-4" />
+                  <User className="size-4" strokeWidth={1.5} />
                   <span>Профіль</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -112,7 +111,7 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
                   variant="destructive"
                   className="cursor-pointer"
                 >
-                  <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+                  <LogOut className="size-4" strokeWidth={1.5} />
                   <span>Вийти</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

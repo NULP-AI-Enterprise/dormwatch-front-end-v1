@@ -1,5 +1,4 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon } from "@hugeicons/core-free-icons";
+import { Building2 } from "lucide-react";
 import { LINK, LINK_HOVER } from "@/lib/theme";
 
 const Footer = () => {
@@ -8,7 +7,7 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <HugeiconsIcon icon={Building03Icon} className="size-5 text-primary" />
+            <Building2 className="size-5 text-primary" strokeWidth={1.5} />
             <span className="text-lg font-bold">DormWatch</span>
           </div>
           <p className="text-muted-foreground text-sm">Система прямої комунікації між студентами та адміністрацією.</p>

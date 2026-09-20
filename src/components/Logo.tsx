@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon } from "@hugeicons/core-free-icons";
+import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -14,7 +13,7 @@ interface LogoProps {
 const Logo = ({ to, className }: LogoProps) => {
   const content = (
     <>
-      <HugeiconsIcon icon={Building03Icon} className="size-6" strokeWidth={1.5} />
+      <Building2 className="size-6" strokeWidth={1.5} />
       <span>DormWatch</span>
     </>
   );

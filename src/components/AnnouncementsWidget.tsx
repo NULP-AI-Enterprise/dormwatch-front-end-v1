@@ -3,8 +3,7 @@ import { fetchAnnouncements } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Megaphone01Icon, PinIcon } from "@hugeicons/core-free-icons";
+import { Megaphone, Pin } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { sortAnnouncements } from "@/lib/announcementUtils";
 import type { Announcement } from "@/lib/types";
@@ -46,11 +45,9 @@ const AnnouncementsWidget = () => {
           {loaded && items.length === 0 ? (
             <div className="border border-dashed border-border p-8 text-center">
               <div className="mx-auto mb-3 flex size-12 items-center justify-center border border-border bg-card">
-                <HugeiconsIcon
-                  icon={Megaphone01Icon}
+                <Megaphone 
                   className="size-5 text-muted-foreground"
-                  strokeWidth={1.5}
-                />
+                  strokeWidth={1.5} />
               </div>
               <p className="text-sm text-muted-foreground">Оголошень поки немає</p>
             </div>
@@ -65,11 +62,9 @@ const AnnouncementsWidget = () => {
                     className="flex items-start gap-2 text-left w-full group cursor-pointer p-2 -m-2 border border-transparent hover:bg-muted/50 hover:border-border transition-colors"
                   >
                     {a.is_pinned && (
-                      <HugeiconsIcon
-                        icon={PinIcon}
+                      <Pin 
                         className="size-3.5 mt-0.5 shrink-0 text-primary"
-                        strokeWidth={2}
-                      />
+                        strokeWidth={2} />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-foreground group-hover:text-primary transition-colors truncate">
@@ -94,7 +89,7 @@ const AnnouncementsWidget = () => {
               className="w-full mt-4 font-semibold text-xs border-border text-foreground hover:bg-muted"
               onClick={() => openAnnouncement()}
             >
-              <HugeiconsIcon icon={Megaphone01Icon} className="size-3.5 mr-1.5" strokeWidth={1.5} />
+              <Megaphone className="size-3.5 mr-1.5" strokeWidth={1.5} />
               Переглянути всі оголошення
             </Button>
           )}

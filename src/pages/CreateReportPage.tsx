@@ -4,8 +4,7 @@ import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlace
 import PlaceCombobox from "@/components/PlaceCombobox";
 import ComplaintCard from "@/components/ComplaintCard";
 import { toast } from "sonner";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, Cancel01Icon, Forward01Icon } from "@hugeicons/core-free-icons";
+import { ChevronLeft, X, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +45,7 @@ const CreateReportPage = () => {
   const [error, setError] = useState("");
 
   const [similarComplaints, setSimilarComplaints] = useState<Complaint[]>([]);
-  const [isSearchingSimilar, setIsSearchingSimilar] = useState(false);
+  const [, setIsSearchingSimilar] = useState(false);
   const [upvotingId, setUpvotingId] = useState<number | null>(null);
 
   // Debounced search for similar complaints
@@ -188,7 +187,7 @@ const CreateReportPage = () => {
       <div className="flex items-center gap-4 mb-10">
         <Button asChild variant="outline" size="icon">
           <Link to="/user">
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" strokeWidth={2} />
+            <ChevronLeft className="size-4" strokeWidth={2} />
           </Link>
         </Button>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -312,7 +311,7 @@ const CreateReportPage = () => {
                   onClick={handleRemovePhoto}
                   className="absolute top-2 right-2 bg-card border border-border text-destructive hover:bg-card transition-all"
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+                  <X className="size-4" strokeWidth={2} />
                 </Button>
               </div>
             ) : (
@@ -368,7 +367,7 @@ const CreateReportPage = () => {
           disabled={submitting}
           className="w-full"
         >
-          <HugeiconsIcon icon={Forward01Icon} className="size-4 mr-2" strokeWidth={2} />
+          <SkipForward className="size-4 mr-2" strokeWidth={2} />
           {submitting ? "Надсилаємо…" : "Надіслати звернення"}
         </Button>
       </form>

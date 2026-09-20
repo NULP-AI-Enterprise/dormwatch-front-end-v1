@@ -22,7 +22,7 @@ import { deleteProblem } from "@/services/problemsApi";
 import { isAdminUser, isActiveStatus, groupByChain } from "@/lib/complaintUtils";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
-import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { CircleCheck, Search } from "lucide-react";
 
 const STATUS_FILTERS = [
   { value: "all", label: "Всі" },
@@ -139,7 +139,7 @@ const UserPage = () => {
         <div className="lg:col-span-2 space-y-4">
           {problems.length === 0 ? (
             <EmptyState
-              icon={CheckmarkCircle02Icon}
+              icon={CircleCheck}
               title="Тут поки порожньо"
               subtitle="Створіть перше звернення. Комендант побачить його одразу."
               action={
@@ -150,7 +150,7 @@ const UserPage = () => {
             />
           ) : filtered.length === 0 ? (
             <EmptyState
-              icon={Search01Icon}
+              icon={Search}
               title="Нічого не знайшли за цим фільтром."
             />
           ) : (

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { BellIcon } from "@hugeicons/core-free-icons";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -134,7 +133,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
           size="icon"
           className="relative text-muted-foreground hover:text-foreground cursor-pointer outline-none"
         >
-          <HugeiconsIcon icon={BellIcon} className="size-5" strokeWidth={1.5} />
+          <Bell className="size-5" strokeWidth={1.5} />
           {unreadCount > 0 && (
             <span className={`absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center ${ACCENT_BG} text-xs leading-none font-bold text-white border border-card`}>
               {unreadCount > 99 ? "99+" : unreadCount}

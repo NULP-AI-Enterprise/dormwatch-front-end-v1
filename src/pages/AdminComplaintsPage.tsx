@@ -33,8 +33,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, InboxIcon } from "@hugeicons/core-free-icons";
+import { X, Inbox } from "lucide-react";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 const AdminComplaintsPage = () => {
@@ -196,7 +195,7 @@ const AdminComplaintsPage = () => {
             />
           )}
           <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
-            <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
+            <X className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
       </Dialog>
@@ -280,7 +279,7 @@ const AdminComplaintsPage = () => {
 
             {!loading && !err && filteredComplaints.length === 0 && (
               <EmptyState
-                icon={InboxIcon}
+                icon={Inbox}
                 title="Звернень не знайдено"
                 subtitle="Жодне звернення не відповідає поточним фільтрам."
               />

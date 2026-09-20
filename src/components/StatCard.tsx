@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ChevronRight } from "lucide-react";
 import { ACCENT } from "@/lib/theme";
 
 interface StatCardProps {
@@ -37,7 +36,7 @@ const StatCard = ({ icon, label, value, loading, to, actionLabel, state }: StatC
         {to && actionLabel && (
           <span className={`flex items-center gap-1 text-xs font-semibold ${ACCENT}`}>
             {actionLabel}
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+            <ChevronRight className="size-3" strokeWidth={2} />
           </span>
         )}
       </div>

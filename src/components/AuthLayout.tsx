@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Building03Icon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Building2, ChevronLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function AuthLayout({ children, heading, subtitle }: { children: ReactNode; heading: string; subtitle: string }) {
@@ -13,7 +12,7 @@ function AuthLayout({ children, heading, subtitle }: { children: ReactNode; head
       <div className="w-full max-w-lg">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2 text-primary font-bold text-2xl mb-2">
-            <HugeiconsIcon icon={Building03Icon} strokeWidth={2} className="size-8" />
+            <Building2 strokeWidth={2} className="size-8" />
             <span>DormWatch</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">{heading}</h1>
@@ -27,7 +26,7 @@ function AuthLayout({ children, heading, subtitle }: { children: ReactNode; head
             to="/"
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors group"
           >
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4 group-hover:-translate-x-1 transition-transform" />
+            <ChevronLeft strokeWidth={2} className="size-4 group-hover:-translate-x-1 transition-transform" />
             Повернутися на головну
           </Link>
         </div>

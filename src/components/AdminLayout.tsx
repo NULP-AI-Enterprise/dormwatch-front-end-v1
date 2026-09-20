@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { DashboardSquare01Icon, UserMultipleIcon, File01Icon, ChevronDownIcon, Settings01Icon, Megaphone01Icon, UserIcon, Logout01Icon } from "@hugeicons/core-free-icons";
+import { LayoutDashboard, Users, FileText, ChevronDown, Settings, Megaphone, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,11 +47,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const title = ROUTE_TITLES[currentPath] || "";
 
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
-    { name: "Загальний огляд", path: "/admin", icon: <HugeiconsIcon icon={DashboardSquare01Icon} className="size-5" /> },
-    { name: "Мешканці", path: "/admin/residents", icon: <HugeiconsIcon icon={UserMultipleIcon} className="size-5" /> },
-    { name: "Звернення", path: "/admin/complaints", icon: <HugeiconsIcon icon={File01Icon} className="size-5" /> },
-    { name: "Оголошення", path: "/admin/announcements", icon: <HugeiconsIcon icon={Megaphone01Icon} className="size-5" /> },
-    { name: "Налаштування", path: "/admin/settings", icon: <HugeiconsIcon icon={Settings01Icon} className="size-5" /> },
+    { name: "Загальний огляд", path: "/admin", icon: <LayoutDashboard className="size-5" strokeWidth={1.5} /> },
+    { name: "Мешканці", path: "/admin/residents", icon: <Users className="size-5" strokeWidth={1.5} /> },
+    { name: "Звернення", path: "/admin/complaints", icon: <FileText className="size-5" strokeWidth={1.5} /> },
+    { name: "Оголошення", path: "/admin/announcements", icon: <Megaphone className="size-5" strokeWidth={1.5} /> },
+    { name: "Налаштування", path: "/admin/settings", icon: <Settings className="size-5" strokeWidth={1.5} /> },
   ];
 
   return (
@@ -107,17 +106,17 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                     {placeName}
                   </span>
                 </div>
-                <HugeiconsIcon icon={ChevronDownIcon} className="size-4 ml-auto shrink-0 text-muted-foreground" />
+                <ChevronDown className="size-4 ml-auto shrink-0 text-muted-foreground" strokeWidth={1.5} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
-                <HugeiconsIcon icon={UserIcon} className="size-4" />
+                <User className="size-4" strokeWidth={1.5} />
                 <span>Профіль</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
-                <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+                <LogOut className="size-4" strokeWidth={1.5} />
                 <span>Вийти</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

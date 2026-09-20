@@ -25,8 +25,7 @@ import {
   ComboboxList,
   ComboboxValue,
 } from "@/components/ui/combobox";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { ChevronDown } from "lucide-react";
 import { roleLabel } from "@/lib/complaintUtils";
 import type { Building, Place, Role } from "@/lib/types";
 
@@ -137,11 +136,9 @@ export function PlaceFilterSelect({
           <span className="truncate">
             {disabled ? "Спершу оберіть гуртожиток" : summary}
           </span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
+          <ChevronDown 
             className="size-4 text-muted-foreground"
-            strokeWidth={2}
-          />
+            strokeWidth={2} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2 pointer-events-auto" align="start">

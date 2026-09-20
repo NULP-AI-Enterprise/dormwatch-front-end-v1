@@ -16,8 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Link01Icon, Copy01Icon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
+import { Link, Copy, CircleCheck } from "lucide-react";
 import { generateInviteLink } from "@/services/problemsApi";
 import type { Building, Role } from "@/lib/types";
 
@@ -85,7 +84,7 @@ export function InviteLinkDialog({
       <DialogContent className="max-w-md border-border">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
-            <HugeiconsIcon icon={Link01Icon} className="size-5" />
+            <Link className="size-5" strokeWidth={1.5} />
             <DialogTitle>Запросити адміністратора</DialogTitle>
           </div>
           <DialogDescription>
@@ -139,12 +138,12 @@ export function InviteLinkDialog({
               <Button onClick={handleCopy} className="gap-2 w-32">
                 {copied ? (
                   <>
-                    <HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-4" />
+                    <CircleCheck className="size-4" strokeWidth={1.5} />
                     Скопійовано
                   </>
                 ) : (
                   <>
-                    <HugeiconsIcon icon={Copy01Icon} className="size-4" />
+                    <Copy className="size-4" strokeWidth={1.5} />
                     Копіювати
                   </>
                 )}

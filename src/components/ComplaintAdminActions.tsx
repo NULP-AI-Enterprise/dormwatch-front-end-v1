@@ -29,14 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { HugeiconsIcon } from "@hugeicons/react";
-import type { IconSvgElement } from "@hugeicons/react";
-import {
-  Delete01Icon,
-  CheckmarkCircleIcon,
-  CancelCircleIcon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
+import { Trash2, CircleCheck, CircleX, ChevronRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { fetchWorkers, apiErrorText } from "@/services/problemsApi";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import type { Complaint, Worker } from "@/lib/types";
@@ -95,12 +89,12 @@ const ActionButton = forwardRef<
   HTMLButtonElement,
   {
     variant?: "destructive";
-    icon: IconSvgElement;
+    icon: LucideIcon;
     children: React.ReactNode;
   } & React.ComponentProps<typeof Button>
->(({ variant, icon, children, ...props }, ref) => (
+>(({ variant, icon: Icon, children, ...props }, ref) => (
   <Button ref={ref} variant={variant} {...props}>
-    <HugeiconsIcon icon={icon} className="size-3 mr-1" strokeWidth={2} />
+    <Icon className="size-3 mr-1" strokeWidth={2} />
     {children}
   </Button>
 ));
@@ -160,7 +154,7 @@ const ComplaintAdminActions = ({
     !(hideDeleteWhenClosed && ["resolved", "rejected"].includes(complaint.status)) ? (
       <ConfirmAction
         trigger={
-          <ActionButton variant="destructive" icon={Delete01Icon}>
+          <ActionButton variant="destructive" icon={Trash2}>
             Видалити
           </ActionButton>
         }
@@ -176,7 +170,7 @@ const ComplaintAdminActions = ({
     return (
       <>
         <ConfirmAction
-          trigger={<ActionButton icon={CheckmarkCircleIcon}>Схвалити</ActionButton>}
+          trigger={<ActionButton icon={CircleCheck}>Схвалити</ActionButton>}
           title="Схвалити звернення?"
           description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Схвалено". Виконавця можна призначити пізніше.'}
           confirmLabel="Схвалити"
@@ -193,7 +187,7 @@ const ComplaintAdminActions = ({
             setAssignOpen(true);
           }}
         >
-          <HugeiconsIcon icon={ArrowRight01Icon} className="size-3 mr-1" strokeWidth={2} />
+          <ChevronRight className="size-3 mr-1" strokeWidth={2} />
           Схвалити і призначити
         </Button>
 
@@ -205,7 +199,7 @@ const ComplaintAdminActions = ({
             setRejectOpen(true);
           }}
         >
-          <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
+          <CircleX className="size-3 mr-1" strokeWidth={2} />
           Відхилити
         </Button>
 
@@ -349,7 +343,7 @@ const ComplaintAdminActions = ({
     return (
       <>
         <ConfirmAction
-          trigger={<ActionButton icon={CheckmarkCircleIcon}>Вирішити</ActionButton>}
+          trigger={<ActionButton icon={CircleCheck}>Вирішити</ActionButton>}
           title="Позначити як вирішене?"
           description={'Ви підтверджуєте від імені мешканця, що проблему вирішено. Звернення перейде в статус "Вирішено".'}
           confirmLabel="Вирішити"
@@ -370,7 +364,7 @@ const ComplaintAdminActions = ({
     return (
       <>
         <ActionButton
-          icon={ArrowRight01Icon}
+          icon={ChevronRight}
           onClick={() => onPatch({ status: "in_progress" })}
         >
           Взято в роботу
@@ -387,7 +381,7 @@ const ComplaintAdminActions = ({
     return (
       <>
         <ActionButton
-          icon={CheckmarkCircleIcon}
+          icon={CircleCheck}
           onClick={() => onPatch({ status: "review" })}
         >
           Виконано

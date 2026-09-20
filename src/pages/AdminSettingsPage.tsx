@@ -54,21 +54,7 @@ import {
 import EmptyState from "@/components/EmptyState";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Dot } from "@/components/ComplaintCard";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Edit02Icon,
-  Delete02Icon,
-  Tick02Icon,
-  Cancel01Icon,
-  Building03Icon,
-  DoorIcon,
-  Wrench01Icon,
-  Add01Icon,
-  UserAdd01Icon,
-  Copy01Icon,
-  MailSend01Icon,
-  QrCode01Icon,
-} from "@hugeicons/core-free-icons";
+import { Pencil, Trash2, Check, X, Building2, DoorOpen, Wrench, Plus, UserPlus, Copy, Send, QrCode } from "lucide-react";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { InviteLinkDialog } from "@/components/InviteLinkDialog";
 import { Link } from "react-router-dom";
@@ -90,7 +76,7 @@ const AdminSettingsPage = () => {
 
   const headerActions = useMemo(() => (
     <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
-      <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
+      <Plus className="size-4" strokeWidth={2} />
       Запросити користувача
     </Button>
   ), []);
@@ -282,7 +268,7 @@ function BuildingsTab() {
             <LoadingSpinner size="md" />
           </div>
         ) : buildings.length === 0 ? (
-          <EmptyState icon={Building03Icon} title="Гуртожитків ще немає" />
+          <EmptyState icon={Building2} title="Гуртожитків ще немає" />
         ) : (
           <div className="divide-y divide-border">
             {buildings.map((b) => (
@@ -299,7 +285,7 @@ function BuildingsTab() {
                   onClick={() => openEdit(b)}
                   aria-label="Редагувати"
                 >
-                  <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+                  <Pencil className="size-4" strokeWidth={2} />
                 </Button>
                 <Button
                   size="icon-sm"
@@ -311,7 +297,7 @@ function BuildingsTab() {
                   aria-label="Видалити"
                   className="text-destructive hover:text-destructive"
                 >
-                  <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+                  <Trash2 className="size-4" strokeWidth={2} />
                 </Button>
               </div>
             ))}
@@ -563,7 +549,7 @@ function RoomEditableRow({
             disabled={saving}
             aria-label="Зберегти"
           >
-            <HugeiconsIcon icon={Tick02Icon} className="size-4" strokeWidth={2} />
+            <Check className="size-4" strokeWidth={2} />
           </Button>
           <Button
             size="icon-sm"
@@ -572,7 +558,7 @@ function RoomEditableRow({
             disabled={saving}
             aria-label="Скасувати"
           >
-            <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+            <X className="size-4" strokeWidth={2} />
           </Button>
         </div>
         <div className="flex items-center gap-2">
@@ -603,7 +589,7 @@ function RoomEditableRow({
         </span>
       )}
       <Button size="icon-sm" variant="ghost" onClick={start} aria-label="Редагувати">
-        <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+        <Pencil className="size-4" strokeWidth={2} />
       </Button>
       <Button
         size="icon-sm"
@@ -612,7 +598,7 @@ function RoomEditableRow({
         aria-label="Видалити"
         className="text-destructive hover:text-destructive"
       >
-        <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+        <Trash2 className="size-4" strokeWidth={2} />
       </Button>
     </div>
   );
@@ -702,7 +688,7 @@ function RoomsTab() {
                 <LoadingSpinner size="md" />
               </div>
             ) : places.length === 0 ? (
-              <EmptyState icon={DoorIcon} title="Кімнат ще немає" />
+              <EmptyState icon={DoorOpen} title="Кімнат ще немає" />
             ) : (
               <div className="divide-y divide-border">
                 {places.map((p) => (
@@ -723,7 +709,7 @@ function RoomsTab() {
 
         {!building && (
           <EmptyState
-            icon={DoorIcon}
+            icon={DoorOpen}
             title="Оберіть гуртожиток"
             subtitle="Виберіть гуртожиток, щоб керувати його кімнатами."
           />
@@ -959,7 +945,7 @@ function WorkersTab() {
             <LoadingSpinner size="md" />
           </div>
         ) : workers.length === 0 ? (
-          <EmptyState icon={Wrench01Icon} title="Працівників ще немає" />
+          <EmptyState icon={Wrench} title="Працівників ще немає" />
         ) : (
           <div className="divide-y divide-border">
             {workers.map((w) => (
@@ -986,7 +972,7 @@ function WorkersTab() {
                       aria-label="Відкликати доступ"
                       className="text-destructive hover:text-destructive"
                     >
-                      <HugeiconsIcon icon={Cancel01Icon} className="size-4" strokeWidth={2} />
+                      <X className="size-4" strokeWidth={2} />
                     </Button>
                   </div>
                 ) : (
@@ -996,7 +982,7 @@ function WorkersTab() {
                     onClick={() => openProvision(w)}
                     className="gap-1.5 shrink-0"
                   >
-                    <HugeiconsIcon icon={UserAdd01Icon} data-icon="inline-start" />
+                    <UserPlus data-icon="inline-start" strokeWidth={1.5} />
                     Надати доступ
                   </Button>
                 )}
@@ -1006,7 +992,7 @@ function WorkersTab() {
                   onClick={() => openEdit(w)}
                   aria-label="Редагувати"
                 >
-                  <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+                  <Pencil className="size-4" strokeWidth={2} />
                 </Button>
                 <Button
                   size="icon-sm"
@@ -1015,7 +1001,7 @@ function WorkersTab() {
                   aria-label="Видалити"
                   className="text-destructive hover:text-destructive"
                 >
-                  <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+                  <Trash2 className="size-4" strokeWidth={2} />
                 </Button>
               </div>
             ))}
@@ -1129,21 +1115,21 @@ function WorkersTab() {
               <DialogFooter className="flex-row sm:justify-between sm:flex-wrap gap-2">
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={copyInvite} className="gap-1.5">
-                    <HugeiconsIcon icon={Copy01Icon} data-icon="inline-start" />
+                    <Copy data-icon="inline-start" strokeWidth={1.5} />
                     {copied ? "Скопійовано" : "Копіювати"}
                   </Button>
                   <Button asChild variant="outline" size="sm" className="gap-1.5">
                     <a
                       href={`mailto:?subject=${encodeURIComponent("Запрошення до DormWatch")}&body=${encodeURIComponent(`Вітаємо! Посилання для створення вашого облікового запису DormWatch:\n\n${inviteUrl}\n\nЗапрошення одноразове. Перейдіть за ним, вкажіть свою електронну пошту та пароль, потім підтвердіть пошту кодом із листа.`)}`}
                     >
-                      <HugeiconsIcon icon={MailSend01Icon} data-icon="inline-start" />
+                      <Send data-icon="inline-start" strokeWidth={1.5} />
                       Надіслати листом
                     </a>
                   </Button>
                 </div>
                 <Button asChild size="sm" className="gap-1.5">
                   <Link to={`/admin/workers/invite/print?token=${inviteToken}&name=${encodeURIComponent(provisioning?.full_name ?? "")}`}>
-                    <HugeiconsIcon icon={QrCode01Icon} data-icon="inline-start" />
+                    <QrCode data-icon="inline-start" strokeWidth={1.5} />
                     Роздрукувати QR
                   </Link>
                 </Button>

@@ -49,8 +49,7 @@ import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { X } from "lucide-react";
 import type { Complaint, CategoryOption, Worker } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
@@ -238,7 +237,7 @@ const ComplaintSidePanel = ({
             />
           )}
           <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
-            <HugeiconsIcon icon={Cancel01Icon} className="size-6" strokeWidth={2} />
+            <X className="size-6" strokeWidth={2} />
           </DialogClose>
         </DialogContent>
       </Dialog>

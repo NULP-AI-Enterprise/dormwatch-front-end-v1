@@ -1019,6 +1019,12 @@ export async function upvoteComplaint(complaintId) {
   });
 }
 
+/**
+ * @param {string} text
+ * @param {number|null} [categoryId]
+ * @param {number|null} [buildingId]
+ * @param {number|null} [placeId]
+ */
 export async function fetchSimilarComplaints(text, categoryId = null, buildingId = null, placeId = null) {
   try {
     const params = new URLSearchParams();

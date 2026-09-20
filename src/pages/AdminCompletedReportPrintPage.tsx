@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchCompletedReport } from "@/services/problemsApi";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PrinterIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Printer, ChevronLeft } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -134,13 +133,13 @@ const AdminCompletedReportPrintPage = () => {
       <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+            <ChevronLeft className="size-4" strokeWidth={1.5} />
             Назад
           </Button>
           <span className="text-sm font-medium text-gray-600">Звіт про виконані: {rangeLabel}</span>
         </div>
         <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
-          <HugeiconsIcon icon={PrinterIcon} className="size-4" />
+          <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>

@@ -20,12 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  CheckmarkCircleIcon,
-  CancelCircleIcon,
-  Refresh01Icon,
-} from "@hugeicons/core-free-icons";
+import { CircleCheck, CircleX, RefreshCw } from "lucide-react";
 import {
   acceptComplaint,
   rejectComplaint,
@@ -105,7 +100,7 @@ const ComplaintResidentActions = ({
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button size={size}>
-              <HugeiconsIcon icon={CheckmarkCircleIcon} className="size-3 mr-1" strokeWidth={2} />
+              <CircleCheck className="size-3 mr-1" strokeWidth={2} />
               Прийняти
             </Button>
           </AlertDialogTrigger>
@@ -124,7 +119,7 @@ const ComplaintResidentActions = ({
         </AlertDialog>
 
         <Button variant="destructive" size={size} onClick={() => { setError(null); setRejectOpen(true); }}>
-          <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
+          <CircleX className="size-3 mr-1" strokeWidth={2} />
           Не прийняти
         </Button>
 
@@ -152,7 +147,7 @@ const ComplaintResidentActions = ({
             )}
             <DialogFooter>
               <Button variant="outline" disabled={!reason.trim() || busy} onClick={() => handleReject(true)}>
-                <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+                <RefreshCw className="size-3 mr-1" strokeWidth={2} />
                 Подати повторно
               </Button>
               <Button variant="destructive" disabled={!reason.trim() || busy} onClick={() => handleReject(false)}>
@@ -171,7 +166,7 @@ const ComplaintResidentActions = ({
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" size={size}>
-              <HugeiconsIcon icon={CancelCircleIcon} className="size-3 mr-1" strokeWidth={2} />
+              <CircleX className="size-3 mr-1" strokeWidth={2} />
               Скасувати
             </Button>
           </AlertDialogTrigger>
@@ -204,7 +199,7 @@ const ComplaintResidentActions = ({
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" size={size}>
-              <HugeiconsIcon icon={Refresh01Icon} className="size-3 mr-1" strokeWidth={2} />
+              <RefreshCw className="size-3 mr-1" strokeWidth={2} />
               Подати повторно
             </Button>
           </AlertDialogTrigger>

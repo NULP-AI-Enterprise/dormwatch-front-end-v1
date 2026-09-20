@@ -12,8 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PRIORITY_OPTIONS, STATUS_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
 import type { Building, CategoryOption } from "@/lib/types";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon } from "@hugeicons/core-free-icons";
+import { Search } from "lucide-react";
 
 // Filter primitives shared by the dashboard, user, and admin sidebars. These
 // were copy-pasted (with per-page state names) across UserPage, AdminPage,
@@ -33,11 +32,9 @@ export function FilterSearchInput({
 }: FilterSearchInputProps) {
   return (
     <div className="relative">
-      <HugeiconsIcon
-        icon={SearchIcon}
+      <Search 
         className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground"
-        strokeWidth={2}
-      />
+        strokeWidth={2} />
       <Input
         placeholder={placeholder}
         value={value}

@@ -51,8 +51,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAdminHeaderActions } from "@/components/AdminHeaderContext";
 import { InviteLinkDialog } from "@/components/InviteLinkDialog";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Edit02Icon, UserMultipleIcon, Add01Icon } from "@hugeicons/core-free-icons";
+import { Pencil, Users, Plus } from "lucide-react";
 import type { Building, Place, Role } from "@/lib/types";
 
 // A user profile as returned by GET /admin/users/ (UserSerializer): building /
@@ -83,7 +82,7 @@ const AdminResidentsPage = () => {
 
   const headerActions = useMemo(() => (
     <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
-      <HugeiconsIcon icon={Add01Icon} className="size-4" strokeWidth={2} />
+      <Plus className="size-4" strokeWidth={2} />
       Запросити адміністратора
     </Button>
   ), []);
@@ -214,7 +213,7 @@ const AdminResidentsPage = () => {
 
           {!loading && filteredUsers.length === 0 && (
             <EmptyState
-              icon={UserMultipleIcon}
+              icon={Users}
               title="Мешканців не знайдено"
               subtitle="Жоден мешканець не відповідає поточним фільтрам."
             />
@@ -264,7 +263,7 @@ const AdminResidentsPage = () => {
                           aria-label={`Редагувати ${fullName(u)}`}
                           onClick={() => setEditing(u)}
                         >
-                          <HugeiconsIcon icon={Edit02Icon} className="size-4" strokeWidth={2} />
+                          <Pencil className="size-4" strokeWidth={2} />
                         </Button>
                       </TableCell>
                     </TableRow>

@@ -1,11 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  Logout01Icon,
-  Wrench01Icon,
-} from "@hugeicons/core-free-icons";
+import { ChevronDown, ChevronUp, LogOut, Wrench } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -147,7 +141,7 @@ const WorkerHomePage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
-                  <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+                  <LogOut className="size-4" strokeWidth={1.5} />
                   <span>Вийти</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -171,7 +165,7 @@ const WorkerHomePage = () => {
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <HugeiconsIcon icon={Wrench01Icon} className="size-5" />
+                <Wrench className="size-5" strokeWidth={1.5} />
               </EmptyMedia>
               <EmptyTitle>Завдань немає</EmptyTitle>
               <EmptyDescription>
@@ -274,10 +268,11 @@ const WorkerHomePage = () => {
               <span className="text-lg font-semibold text-foreground">
                 Виконано ({history.length})
               </span>
-              <HugeiconsIcon
-                icon={historyOpen ? ArrowUp01Icon : ArrowDown01Icon}
-                className="size-4 text-muted-foreground"
-              />
+              {historyOpen ? (
+                <ChevronUp className="size-4 text-muted-foreground" strokeWidth={1.5} />
+              ) : (
+                <ChevronDown className="size-4 text-muted-foreground" strokeWidth={1.5} />
+              )}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>

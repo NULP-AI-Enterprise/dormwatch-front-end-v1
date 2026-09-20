@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Refresh01Icon } from "@hugeicons/core-free-icons";
+import { RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
 
 // Compact single-row filter toolbar. Replaces the 4-section filter sidebar
@@ -42,11 +41,9 @@ export function FilterToolbar({
               onClick={onReset}
               className="sm:ml-auto"
             >
-              <HugeiconsIcon
-                icon={Refresh01Icon}
+              <RefreshCw 
                 className="size-3 mr-1"
-                strokeWidth={2}
-              />
+                strokeWidth={2} />
               {resetLabel}
             </Button>
           )}

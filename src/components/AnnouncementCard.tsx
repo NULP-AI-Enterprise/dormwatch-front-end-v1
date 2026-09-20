@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PinIcon } from "@hugeicons/core-free-icons";
+import { Pin } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { HOVER_ACCENT } from "@/lib/theme";
 import type { Announcement } from "@/lib/types";
@@ -34,7 +33,7 @@ const AnnouncementCard = ({
             <Badge variant="secondary">{a.building_name || "Всі гуртожитки"}</Badge>
             {a.is_pinned && (
               <Badge>
-                <HugeiconsIcon icon={PinIcon} data-icon="inline-start" strokeWidth={2} />
+                <Pin data-icon="inline-start" strokeWidth={2} />
                 Закріплено
               </Badge>
             )}

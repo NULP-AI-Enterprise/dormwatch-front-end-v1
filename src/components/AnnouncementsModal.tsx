@@ -2,17 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Megaphone01Icon,
-  PinIcon,
-  Link01Icon,
-  Clock01Icon,
-  Briefcase01Icon,
-  ArrowRight01Icon,
-  ArrowLeft01Icon,
-  UserIcon,
-} from "@hugeicons/core-free-icons";
+import { Megaphone, Pin, Link, Clock, Briefcase, ChevronRight, ChevronLeft, User } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { sortAnnouncements } from "@/lib/announcementUtils";
 import { fetchAnnouncements } from "@/services/problemsApi";
@@ -117,11 +107,9 @@ const AnnouncementsModal = ({
               </div>
             ) : sortedItems.length === 0 ? (
               <div className="border border-dashed border-border p-12 text-center">
-                <HugeiconsIcon
-                  icon={Megaphone01Icon}
+                <Megaphone 
                   className="size-8 text-muted-foreground mx-auto mb-3"
-                  strokeWidth={1.5}
-                />
+                  strokeWidth={1.5} />
                 <p className="text-sm font-bold text-foreground">Поки немає оголошень</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Нові оголошення від адміністрації з'являться тут
@@ -136,7 +124,7 @@ const AnnouncementsModal = ({
                   className="text-xs font-semibold text-primary p-0 h-auto hover:bg-transparent hover:underline"
                   onClick={() => setDetailedAnnouncement(null)}
                 >
-                  <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5 mr-1" strokeWidth={2} />
+                  <ChevronLeft className="size-3.5 mr-1" strokeWidth={2} />
                   Назад до всіх оголошень
                 </Button>
 
@@ -145,24 +133,24 @@ const AnnouncementsModal = ({
                     <div className="flex flex-wrap items-center gap-2">
                       {detailedAnnouncement.is_pinned && (
                          <Badge variant="outline" className={`gap-1 ${ACCENT_BORDER_LIGHT} ${ACCENT_SUBTLE} ${ACCENT} font-semibold`}>
-                          <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
+                          <Pin className="size-3" strokeWidth={2} />
                           Закріплено
                         </Badge>
                       )}
                       <Badge variant="outline" className="gap-1 border-border bg-muted text-muted-foreground font-normal">
-                        <HugeiconsIcon icon={Briefcase01Icon} className="size-3" strokeWidth={1.5} />
+                        <Briefcase className="size-3" strokeWidth={1.5} />
                         {detailedAnnouncement.building_name || "Всі гуртожитки"}
                       </Badge>
                       {detailedAnnouncement.created_by_name && (
                         <Badge variant="outline" className="gap-1 border-border bg-muted text-muted-foreground font-normal">
-                          <HugeiconsIcon icon={UserIcon} className="size-3" strokeWidth={1.5} />
+                          <User className="size-3" strokeWidth={1.5} />
                           {detailedAnnouncement.created_by_name}
                         </Badge>
                       )}
                     </div>
 
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <HugeiconsIcon icon={Clock01Icon} className="size-3" strokeWidth={1.5} />
+                      <Clock className="size-3" strokeWidth={1.5} />
                       {formatDate(detailedAnnouncement.created_at)}
                     </span>
                   </div>
@@ -187,7 +175,7 @@ const AnnouncementsModal = ({
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                       >
-                        <HugeiconsIcon icon={Link01Icon} className="size-4" strokeWidth={2} />
+                        <Link className="size-4" strokeWidth={2} />
                         Перейти за посиланням
                       </a>
                     </div>
@@ -209,18 +197,18 @@ const AnnouncementsModal = ({
                       <div className="flex flex-wrap items-center gap-2">
                         {item.is_pinned && (
                           <Badge variant="outline" className={`gap-1 ${ACCENT_BORDER_LIGHT} ${ACCENT_SUBTLE} ${ACCENT} font-semibold`}>
-                            <HugeiconsIcon icon={PinIcon} className="size-3" strokeWidth={2} />
+                            <Pin className="size-3" strokeWidth={2} />
                             Закріплено
                           </Badge>
                         )}
                         <Badge variant="outline" className="gap-1 border-border bg-muted text-muted-foreground font-normal">
-                          <HugeiconsIcon icon={Briefcase01Icon} className="size-3" strokeWidth={1.5} />
+                          <Briefcase className="size-3" strokeWidth={1.5} />
                           {item.building_name || "Всі гуртожитки"}
                         </Badge>
                       </div>
 
                       <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                        <HugeiconsIcon icon={Clock01Icon} className="size-3" strokeWidth={1.5} />
+                        <Clock className="size-3" strokeWidth={1.5} />
                         {formatDate(item.created_at)}
                       </span>
                     </div>
@@ -241,7 +229,7 @@ const AnnouncementsModal = ({
                         className="text-xs font-semibold cursor-pointer"
                       >
                         Детальніше
-                        <HugeiconsIcon icon={ArrowRight01Icon} className="size-3 ml-1" strokeWidth={2} />
+                        <ChevronRight className="size-3 ml-1" strokeWidth={2} />
                       </Button>
 
                       {detectedUrl && (
@@ -251,7 +239,7 @@ const AnnouncementsModal = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                         >
-                          <HugeiconsIcon icon={Link01Icon} className="size-3.5" strokeWidth={2} />
+                          <Link className="size-3.5" strokeWidth={2} />
                           Посилання
                         </a>
                       )}
@@ -276,7 +264,7 @@ const AnnouncementsModal = ({
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 className="cursor-pointer"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3 mr-1" strokeWidth={2} />
+                <ChevronLeft className="size-3 mr-1" strokeWidth={2} />
                 Попередня
               </Button>
               <Button
@@ -287,7 +275,7 @@ const AnnouncementsModal = ({
                 className="cursor-pointer"
               >
                 Наступна
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3 ml-1" strokeWidth={2} />
+                <ChevronRight className="size-3 ml-1" strokeWidth={2} />
               </Button>
             </div>
           </div>

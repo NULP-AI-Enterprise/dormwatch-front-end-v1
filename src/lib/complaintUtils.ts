@@ -28,7 +28,7 @@ export const STATUS_LABELS: Record<string, string> = {
 
 // One color row per state, shared by every surface that paints a state.
 // Design system §4: status color is a hard ceiling of four hues, each earned
-// by a distinct meaning — amber = awaiting action, blue = in work, green =
+// by a distinct meaning — amber = awaiting action, sky = in work, green =
 // resolved/success, red = rejected/error/urgent/overdue. States that resolve
 // to the same meaning share a hue; everything else is neutral.
 const NEUTRAL_COLOR = {
@@ -44,19 +44,19 @@ const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string 
     fill: "bg-amber-500",
   },
   approved: {
-    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
-    text: "text-blue-600 dark:text-blue-400",
-    fill: "bg-blue-500",
+    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
+    text: "text-sky-600 dark:text-sky-400",
+    fill: "bg-sky-500",
   },
   in_progress: {
-    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
-    text: "text-blue-600 dark:text-blue-400",
-    fill: "bg-blue-500",
+    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
+    text: "text-sky-600 dark:text-sky-400",
+    fill: "bg-sky-500",
   },
   review: {
-    badge: "text-blue-500 bg-blue-500/10 border-blue-700/50",
-    text: "text-blue-600 dark:text-blue-400",
-    fill: "bg-blue-500",
+    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
+    text: "text-sky-600 dark:text-sky-400",
+    fill: "bg-sky-500",
   },
   resolved: {
     badge: "text-green-500 bg-green-500/10 border-green-700/50",

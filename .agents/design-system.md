@@ -118,8 +118,8 @@ Colors are OKLCH custom properties in `src/index.css` under `:root` and
 app background) · `--foreground: oklch(0.985 0.001 106.423)` (Stone 50) ·
 `--card: oklch(0.216 0.006 56.043)` (Stone 800, surfaces) ·
 `--muted: oklch(0.268 0.007 34.298)` · `--muted-foreground: oklch(0.709 0.01 56.259)`
-(Stone 400) · `--primary: oklch(0.424 0.199 265.638)` (blue 800, brand accent)
-· `--primary-foreground: oklch(0.97 0.014 254.604)` ·
+(Stone 400) · `--primary: oklch(0.443 0.11 240.79)` (sky-800, brand accent)
+· `--primary-foreground: oklch(0.977 0.013 236.62)` ·
 `--destructive: oklch(0.704 0.191 22.216)` · `--border: oklch(1 0 0 / 10%)`.
 
 **Light mode tokens:** `--background: oklch(1 0 0)` (white) ·
@@ -155,7 +155,7 @@ lists. The palette is a hard ceiling of four hues, owned by
 status to a Tailwind class:
 
 - `amber` — awaiting action (pending)
-- `blue` — in work / approved
+- `sky` — in work / approved
 - `green` — resolved / success
 - `red` — rejected / error / urgent / overdue
 - everything else is neutral (`text-muted-foreground`, no fill)
@@ -247,11 +247,11 @@ edges (and any divider) must land on the same pixel.
   force `h-8` — use `h-auto` plus content-scaled vertical padding. Scale the
   padding and affordance to what the trigger wraps:
   - **Header account trigger** (`StudentLayout`): compact — `sm` avatar +
-    trailing `ChevronDownIcon`, no label, `gap-2 py-1.5`. The chevron reads as a
+    trailing `ChevronDown`, no label, `gap-2 py-1.5`. The chevron reads as a
     menu that drops *below*.
   - **Sidebar account trigger** (`AdminLayout`): full-width list row — `md`
-    avatar + two-line name/place + trailing `ArrowRight01Icon` (`ml-auto`),
-    `gap-3 px-4 py-3`. The arrow reads as navigation.
+    avatar + two-line name/place + trailing `ChevronRight` (`ml-auto`),
+    `gap-3 px-4 py-3`. The chevron reads as navigation.
   - The difference is intentional and content-driven: a chevron for an in-place
     menu, an arrow for a navigational row.
 - Destructive: `bg-destructive/10 text-destructive hover:bg-destructive/20`.
@@ -322,29 +322,28 @@ Do not leave dead space when there is no data.
 
 ## 6. Iconography
 
-**Hugeicons only** (`@hugeicons/react` + `@hugeicons/core-free-icons`).
+**Lucide only** (`lucide-react`).
 
-- **Style:** outline, 1.5–2px stroke width.
-- **Rendering:** `<HugeiconsIcon icon={IconName} strokeWidth={2} className="size-X" />`
-  (see `src/components/Logo.tsx` for the canonical pattern).
+- **Style:** outline, 1.5–2px stroke width. Lucide's default is `2`; pass
+  `strokeWidth={1.5}` where the weight should stay light.
+- **Rendering:** `<IconName className="size-X" />` (optionally with
+  `strokeWidth={1.5}`; see `src/components/Logo.tsx` for the canonical pattern).
 - **Sizing:** `size-*` utilities, never `w-* h-*` pairs. Primary
   navigation/actions `size-6`; secondary/list items `size-4`–`size-5`; micro
   actions `size-3`–`size-3.5`; inline with button text `size-3`/`size-4`.
-- **Common icons:** `Building03Icon` (brand), `ArrowRight01Icon` (CTAs),
-  `SearchIcon`, `Delete01Icon`, `Message01Icon`, `BellIcon`, `SettingsIcon`,
-  `Logout01Icon`, `MapPinIcon`, `ChevronUpIcon`, `AddIcon`, `Cancel01Icon`,
-  `SaveIcon`, `CheckmarkCircleIcon`, `CancelCircleIcon`.
+- **Common icons:** `Building2` (brand), `ChevronRight`/`ArrowRight` (CTAs),
+  `Search`, `Trash2`, `MessageSquare`, `Bell`, `Settings`, `LogOut`, `Pin`,
+  `ChevronUp`, `Plus`, `X`, `CircleCheck`, `CircleX`.
 - **Import pattern:**
 
   ```tsx
-  import { HugeiconsIcon } from "@hugeicons/react";
-  import { IconName01, IconName02 } from "@hugeicons/core-free-icons";
+  import { Search, ChevronDown } from "lucide-react";
   ```
 
 ## 7. shadcn conventions
 
 - `components.json` is the source of truth for shadcn config: style
-  `radix-lyra`, stone base, icon library `hugeicons`, radius none.
+  `radix-lyra`, stone base, icon library `lucide`, radius none.
 - Key primitives already carry the house style — use them, don't restyle:
   `Button` (base `text-xs font-semibold` + `rounded-none`), `Card`
   (`--card-spacing`, `rounded-none`), `Separator` (`dashed` prop),

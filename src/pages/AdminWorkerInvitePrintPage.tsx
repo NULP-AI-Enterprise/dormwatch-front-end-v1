@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PrinterIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Printer, ChevronLeft } from "lucide-react";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -66,11 +65,11 @@ const AdminWorkerInvitePrintPage = () => {
       {/* Control bar for screen rendering */}
       <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
         <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+          <ChevronLeft className="size-4" strokeWidth={1.5} />
           Назад
         </Button>
         <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
-          <HugeiconsIcon icon={PrinterIcon} className="size-4" />
+          <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>

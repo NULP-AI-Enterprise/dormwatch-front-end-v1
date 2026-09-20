@@ -1,12 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { CallIcon, ShieldIcon } from "@hugeicons/core-free-icons";
+import { Phone, Shield } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 // Phone numbers widget showing the dorm manager's number and emergency services.
 // Uses custom design-system patterns: sharp borders, named typography scale,
-// Ukrainian only copy, and Hugeicons.
+// Ukrainian only copy, and Lucide.
 const PhoneNumbersWidget = () => {
   const { user } = useUser();
   const building = user?.place?.building ?? user?.building;
@@ -24,7 +23,7 @@ const PhoneNumbersWidget = () => {
             {building ? (
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center border border-border bg-card text-primary shrink-0">
-                  <HugeiconsIcon icon={CallIcon} className="size-4" strokeWidth={1.5} />
+                  <Phone className="size-4" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-normal text-muted-foreground truncate">
@@ -60,7 +59,7 @@ const PhoneNumbersWidget = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center border border-border bg-card text-destructive shrink-0">
-                  <HugeiconsIcon icon={ShieldIcon} className="size-4" strokeWidth={1.5} />
+                  <Shield className="size-4" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-normal text-muted-foreground">
@@ -77,7 +76,7 @@ const PhoneNumbersWidget = () => {
 
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center border border-border bg-card text-destructive shrink-0">
-                  <HugeiconsIcon icon={ShieldIcon} className="size-4" strokeWidth={1.5} />
+                  <Shield className="size-4" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-normal text-muted-foreground">

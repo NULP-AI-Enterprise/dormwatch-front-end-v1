@@ -31,7 +31,7 @@ import { useCommentToggle } from "@/hooks/useCommentToggle";
 import { useMyComplaints } from "@/hooks/useMyComplaints";
 import { useUser } from "@/context/UserContext";
 import type { CategoryOption } from "@/lib/types";
-import { CheckmarkCircle02Icon, Search01Icon } from "@hugeicons/core-free-icons";
+import { CircleCheck, Search } from "lucide-react";
 
 const MyComplaintsPage = () => {
   const location = useLocation();
@@ -170,7 +170,7 @@ const MyComplaintsPage = () => {
       <div className="space-y-4">
         {problems.length === 0 ? (
           <EmptyState
-            icon={CheckmarkCircle02Icon}
+            icon={CircleCheck}
             title="Тут поки порожньо"
             subtitle="Створіть перше звернення. Комендант побачить його одразу."
             action={
@@ -181,7 +181,7 @@ const MyComplaintsPage = () => {
           />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={Search01Icon}
+            icon={Search}
             title="Нічого не знайшли за цими фільтрами."
             action={
               <button

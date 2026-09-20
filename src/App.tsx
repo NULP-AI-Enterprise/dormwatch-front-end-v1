@@ -1,7 +1,6 @@
 import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Home01Icon } from "@hugeicons/core-free-icons";
+import { House } from "lucide-react";
 import HomePage from "@/pages/HomePage";
 import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
@@ -160,7 +159,7 @@ function App() {
               to="/"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-border bg-background hover:bg-muted transition-colors text-foreground"
             >
-              <HugeiconsIcon icon={Home01Icon} className="size-4" strokeWidth={2} />
+              <House className="size-4" strokeWidth={2} />
               На головну
             </Link>
           </div>

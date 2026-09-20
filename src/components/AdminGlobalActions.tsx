@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Download01Icon } from "@hugeicons/core-free-icons";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ExportTicketsModal } from "@/components/ExportTicketsModal";
@@ -31,7 +30,7 @@ export function AdminGlobalActions() {
         className="gap-2"
         onClick={() => setIsExportOpen(true)}
       >
-        <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+        <Download className="size-4" strokeWidth={2} />
         Експорт даних
       </Button>
       <NotificationBell

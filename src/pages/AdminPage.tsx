@@ -16,8 +16,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ClockIcon, HammerIcon, CheckmarkCircleIcon, TimeIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { Clock, Hammer, CircleCheck, Timer, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
 import { LINK, LINK_HOVER } from "@/lib/theme";
@@ -89,7 +88,7 @@ const AdminPage = () => {
                 {/* Triage shortcuts: the counts that need action link straight
                     into the filtered management queue — one click per item. */}
                 <StatCard
-                icon={<HugeiconsIcon icon={ClockIcon} className="size-4" strokeWidth={1.5} />}
+                icon={<Clock className="size-4" strokeWidth={1.5} />}
                 label="Очікує"
                 value={pendingCount}
                 to="/admin/complaints"
@@ -97,7 +96,7 @@ const AdminPage = () => {
                 state={{ selectedStatus: "pending" }}
               />
               <StatCard
-                icon={<HugeiconsIcon icon={TimeIcon} className="size-4" strokeWidth={1.5} />}
+                icon={<Timer className="size-4" strokeWidth={1.5} />}
                 label="Прострочені"
                 value={overdueCount}
                 to="/admin/complaints"
@@ -105,12 +104,12 @@ const AdminPage = () => {
                 state={{ overdueOnly: true }}
               />
               <StatCard
-                icon={<HugeiconsIcon icon={HammerIcon} className="size-4" strokeWidth={1.5} />}
+                icon={<Hammer className="size-4" strokeWidth={1.5} />}
                 label="В роботі"
                 value={inProgressCount}
               />
               <StatCard
-                icon={<HugeiconsIcon icon={CheckmarkCircleIcon} className="size-4" strokeWidth={1.5} />}
+                icon={<CircleCheck className="size-4" strokeWidth={1.5} />}
                 label="Вирішено"
                 value={resolvedCount}
               />
@@ -191,7 +190,7 @@ const AdminPage = () => {
                         <TableCell className="px-4 py-4 text-right">
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
                             Деталі
-                            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+                            <ChevronRight className="size-3" strokeWidth={2} />
                           </span>
                         </TableCell>
                       </TableRow>

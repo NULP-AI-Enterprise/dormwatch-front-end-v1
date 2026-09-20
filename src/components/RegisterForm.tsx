@@ -16,8 +16,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ChevronRight } from "lucide-react";
 import {
   Form,
   FormField,
@@ -336,7 +335,7 @@ function RegisterForm() {
             className="inline-flex items-center gap-1 mt-2 text-primary hover:text-primary/80 font-bold transition-colors group"
           >
             Увійти до системи
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight strokeWidth={2} className="size-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </CardContent>
       </Card>

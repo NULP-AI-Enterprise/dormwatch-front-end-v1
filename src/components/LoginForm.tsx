@@ -8,8 +8,7 @@ import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ChevronRight } from "lucide-react";
 import {
   Form,
   FormField,
@@ -120,7 +119,7 @@ function LoginForm() {
             className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-primary hover:text-primary/80 hover:underline transition-colors"
           >
             Створити обліковий запис
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" />
+            <ChevronRight strokeWidth={2} className="size-4" />
           </Link>
         </CardContent>
       </Card>
