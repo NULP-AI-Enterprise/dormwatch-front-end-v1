@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ArrowLinkButtonProps {
@@ -26,12 +25,10 @@ export default function ArrowLinkButton({
     <Button asChild size={size} className={className}>
       <Link to={to}>
         {children}
-        <HugeiconsIcon
-          icon={ArrowRight02Icon}
+        <ArrowRight 
           data-icon="inline-end"
           strokeWidth={2}
-          className="group-hover/button:translate-x-1 transition-transform"
-        />
+          className="group-hover/button:translate-x-1 transition-transform" />
       </Link>
     </Button>
   );

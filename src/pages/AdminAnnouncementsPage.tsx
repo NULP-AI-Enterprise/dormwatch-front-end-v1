@@ -25,8 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { AddIcon, Delete02Icon, Megaphone01Icon, PinIcon } from "@hugeicons/core-free-icons";
+import { Plus, Trash2, Megaphone, Pin } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import type { Announcement } from "@/lib/types";
 
@@ -54,7 +53,7 @@ const AdminAnnouncementsPage = () => {
   const headerAction = useMemo(
     () => (
       <Button onClick={() => setCreating(true)}>
-        <HugeiconsIcon icon={AddIcon} data-icon="inline-start" strokeWidth={2} />
+        <Plus data-icon="inline-start" strokeWidth={2} />
         Нове оголошення
       </Button>
     ),
@@ -89,7 +88,7 @@ const AdminAnnouncementsPage = () => {
 
         {!loading && announcements.length === 0 && (
           <EmptyState
-            icon={Megaphone01Icon}
+            icon={Megaphone}
             title="Оголошень ще немає"
             subtitle="Створіть перше оголошення для мешканців."
           />
@@ -124,7 +123,7 @@ const AdminAnnouncementsPage = () => {
                       <div className="flex flex-wrap items-center gap-2">
                         {a.is_pinned && (
                           <Badge>
-                            <HugeiconsIcon icon={PinIcon} data-icon="inline-start" strokeWidth={2} />
+                            <Pin data-icon="inline-start" strokeWidth={2} />
                             Закріплено
                           </Badge>
                         )}
@@ -149,7 +148,7 @@ const AdminAnnouncementsPage = () => {
                           setPending(a);
                         }}
                       >
-                        <HugeiconsIcon icon={Delete02Icon} className="size-4" strokeWidth={2} />
+                        <Trash2 className="size-4" strokeWidth={2} />
                       </Button>
                     </TableCell>
                   </TableRow>

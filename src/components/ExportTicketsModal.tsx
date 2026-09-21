@@ -28,13 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { fetchWorkers } from "@/services/problemsApi";
 import type { Worker } from "@/lib/types";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ClipboardIcon,
-  Cancel01Icon,
-  Download01Icon,
-  Calendar01Icon,
-} from "@hugeicons/core-free-icons";
+import { Clipboard, X, Download, Calendar as CalendarIcon } from "lucide-react";
 
 interface ExportTicketsModalProps {
   open: boolean;
@@ -77,6 +71,11 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
     onOpenChange(false);
   };
 
+  const handleWorkerReportExport = () => {
+    window.open("/admin/reports/workers/print", "_blank");
+    onOpenChange(false);
+  };
+
   // Worker combobox operates over worker-id strings, with "all" as the first item.
   // The label map lets the input search worker names and render id → name.
   const workerItems = ["all", ...workers.map((w) => String(w.worker_id))];
@@ -98,7 +97,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
       <DialogContent className="max-w-md border-border">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
-            <HugeiconsIcon icon={ClipboardIcon} className="size-5" />
+            <Clipboard className="size-5" strokeWidth={1.5} />
             <DialogTitle>Експорт даних</DialogTitle>
           </div>
           <DialogDescription>
@@ -110,14 +109,15 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
           <TabsList className="w-full">
             <TabsTrigger value="tickets">Наряди</TabsTrigger>
             <TabsTrigger value="completed">Виконані</TabsTrigger>
+            <TabsTrigger value="workers">Працівники</TabsTrigger>
           </TabsList>
 
-          {/* Tab 1 — per-worker ticket export (existing behavior). */}
+          {/* Tab 1 — per-worker work-order export (existing behavior). */}
           <TabsContent value="tickets" className="mt-4">
             <div className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                Оберіть працівника, для якого згенерувати звіт по нарядах. Тікети
-                сортуються за дедлайном.
+                Оберіть працівника, для якого згенерувати звіт по нарядах.
+                Наряди сортуються за дедлайном.
               </p>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-foreground">Виберіть працівника</label>
@@ -146,23 +146,23 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
               </div>
               <div className="flex justify-end gap-3 mt-2">
                 <Button variant="outline" className="gap-2" onClick={() => onOpenChange(false)}>
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+                  <X className="size-4" strokeWidth={1.5} />
                   Скасувати
                 </Button>
                 <Button className="gap-2" onClick={handleExport} disabled={loading}>
-                  <HugeiconsIcon icon={Download01Icon} className="size-4" />
+                  <Download className="size-4" strokeWidth={1.5} />
                   Згенерувати звіт
                 </Button>
               </div>
             </div>
           </TabsContent>
 
-          {/* Tab 2 — completed-tickets report over a resolution date range. */}
+          {/* Tab 2 — completed-work report over a resolution date range. */}
           <TabsContent value="completed" className="mt-4">
             <div className="flex flex-col gap-4">
               <p className="text-sm text-muted-foreground">
-                Звіт про виконані звернення (вирішені та з призначеним нарядом) за
-                обраний період вирішення.
+                Звіт про виконані звернення (вирішені з призначеним працівником)
+                за обраний період вирішення.
               </p>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold text-foreground">Діапазон дат</label>
@@ -175,7 +175,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
                         "w-full justify-start text-left data-[empty=true]:text-muted-foreground",
                       )}
                     >
-                      <HugeiconsIcon icon={Calendar01Icon} className="mr-2 size-4" strokeWidth={2} />
+                      <CalendarIcon className="mr-2 size-4" strokeWidth={2} />
                       {rangeLabel}
                     </Button>
                   </PopoverTrigger>
@@ -192,7 +192,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
               </div>
               <div className="flex justify-end gap-3 mt-2">
                 <Button variant="outline" className="gap-2" onClick={() => onOpenChange(false)}>
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-4" />
+                  <X className="size-4" strokeWidth={1.5} />
                   Скасувати
                 </Button>
                 <Button
@@ -200,7 +200,28 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
                   onClick={handleCompletedExport}
                   disabled={!range?.from || !range?.to}
                 >
-                  <HugeiconsIcon icon={Download01Icon} className="size-4" />
+                  <Download className="size-4" strokeWidth={1.5} />
+                  Згенерувати звіт
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab 3 — per-worker resource-tracking report (step 09). */}
+          <TabsContent value="workers" className="mt-4">
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-muted-foreground">
+                Звіт по працівниках: кількість завдань, тривалість за кожне
+                завдання (без сумування), середній час вирішення, вчасно /
+                прострочено, відсоток відхилення.
+              </p>
+              <div className="flex justify-end gap-3 mt-2">
+                <Button variant="outline" className="gap-2" onClick={() => onOpenChange(false)}>
+                  <X className="size-4" strokeWidth={1.5} />
+                  Скасувати
+                </Button>
+                <Button className="gap-2" onClick={handleWorkerReportExport}>
+                  <Download className="size-4" strokeWidth={1.5} />
                   Згенерувати звіт
                 </Button>
               </div>

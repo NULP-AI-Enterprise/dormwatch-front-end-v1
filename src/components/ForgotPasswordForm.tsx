@@ -17,11 +17,10 @@ import {
 } from "@/components/ui/form";
 import { AuthLayout, ErrorBanner } from "@/components/AuthLayout";
 
+// No domain restriction here: provisioned workers own the mailbox they
+// redeemed their invite with — any domain — and reset through this same flow.
 const forgotSchema = z.object({
-  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").refine(
-    (v) => v.endsWith("@lpnu.ua"),
-    "Дозволені тільки домени @lpnu.ua"
-  ),
+  email: z.string().min(1, "Email обов'язковий").email("Невірний формат email"),
 });
 
 type ForgotData = z.infer<typeof forgotSchema>;

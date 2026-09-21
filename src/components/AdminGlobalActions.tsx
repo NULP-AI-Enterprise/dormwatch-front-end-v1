@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Download01Icon } from "@hugeicons/core-free-icons";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ExportTicketsModal } from "@/components/ExportTicketsModal";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
+import { fetchComplaintDetail } from "@/services/problemsApi";
 import { useUser } from "@/context/UserContext";
 import type { Complaint } from "@/lib/types";
 
@@ -30,7 +30,7 @@ export function AdminGlobalActions() {
         className="gap-2"
         onClick={() => setIsExportOpen(true)}
       >
-        <HugeiconsIcon icon={Download01Icon} className="size-4" strokeWidth={2} />
+        <Download className="size-4" strokeWidth={2} />
         Експорт даних
       </Button>
       <NotificationBell
@@ -48,7 +48,19 @@ export function AdminGlobalActions() {
             setSheetOpen(open);
             if (!open) setSelectedComplaint(null);
           }}
-          onStatusChange={() => window.dispatchEvent(new Event("adminComplaintUpdated"))}
+          onStatusChange={() => {
+            window.dispatchEvent(new Event("adminComplaintUpdated"));
+            if (selectedComplaint) {
+              fetchComplaintDetail(selectedComplaint.id)
+                .then((fresh) => {
+                  if (fresh) setSelectedComplaint(fresh);
+                })
+                .catch(() => {
+                  setSelectedComplaint(null);
+                  setSheetOpen(false);
+                });
+            }
+          }}
           currentUserId={currentUser?.user}
           isAdmin={true}
         />

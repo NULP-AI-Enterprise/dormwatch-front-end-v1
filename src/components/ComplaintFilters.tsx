@@ -10,10 +10,9 @@ import {
   ComboboxValue,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { PRIORITY_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
+import { PRIORITY_OPTIONS, STATUS_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
 import type { Building, CategoryOption } from "@/lib/types";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon } from "@hugeicons/core-free-icons";
+import { Search } from "lucide-react";
 
 // Filter primitives shared by the dashboard, user, and admin sidebars. These
 // were copy-pasted (with per-page state names) across UserPage, AdminPage,
@@ -33,11 +32,9 @@ export function FilterSearchInput({
 }: FilterSearchInputProps) {
   return (
     <div className="relative">
-      <HugeiconsIcon
-        icon={SearchIcon}
+      <Search 
         className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground"
-        strokeWidth={2}
-      />
+        strokeWidth={2} />
       <Input
         placeholder={placeholder}
         value={value}
@@ -103,12 +100,12 @@ function MultiFilterCombobox({
   );
 }
 
-const STATUS_CODES = ["pending", "approved", "rejected", "resolved"];
+const STATUS_CODES = [...STATUS_OPTIONS];
 
 // `codes` lets a page restrict the option set to statuses it can actually
 // return — the public dashboard only surfaces approved/resolved, so offering
-// pending/rejected there would just yield empty results. Defaults to all four
-// for the admin panel.
+// the rest there would just yield empty results. Defaults to all eight
+// canonical slugs for the admin panel and resident lists.
 export function StatusFilterSelect({
   value,
   onChange,
@@ -120,7 +117,7 @@ export function StatusFilterSelect({
       onChange={onChange}
       items={codes}
       itemLabel={statusLabel}
-      placeholder="Статус..."
+      placeholder="Усі статуси"
     />
   );
 }
@@ -132,7 +129,28 @@ export function PriorityFilterSelect({ value, onChange }: MultiFilterProps) {
       onChange={onChange}
       items={[...PRIORITY_OPTIONS]}
       itemLabel={priorityLabel}
-      placeholder="Пріоритети..."
+      placeholder="Усі пріоритети"
+    />
+  );
+}
+
+type WorkerFilterSelectProps = {
+  value: string[];
+  onChange: (value: string[]) => void;
+  workers: { worker_id: number; full_name: string }[];
+};
+
+// Admin complaints list filter over assigned contractors — parity with what
+// the resident's list had. Operates over full_name so the predicate stays
+// `selected.includes(p.worker.full_name)`.
+export function WorkerFilterSelect({ value, onChange, workers }: WorkerFilterSelectProps) {
+  const names = workers.map((w) => w.full_name);
+  return (
+    <MultiFilterCombobox
+      value={value}
+      onChange={onChange}
+      items={names}
+      placeholder="Усі виконавці"
     />
   );
 }
@@ -151,7 +169,7 @@ export function BuildingFilterSelect({
       value={value}
       onChange={onChange}
       items={buildings.map((b) => b.name)}
-      placeholder="Гуртожитки..."
+      placeholder="Усі гуртожитки"
     />
   );
 }
@@ -188,7 +206,7 @@ export function CategoryFilterCombobox({
             ))
           }
         </ComboboxValue>
-        <ComboboxChipsInput placeholder={value.length ? "" : "Категорії..."} />
+        <ComboboxChipsInput placeholder={value.length ? "" : "Усі категорії"} />
       </ComboboxChips>
       <ComboboxContent>
         <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>

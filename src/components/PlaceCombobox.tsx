@@ -7,8 +7,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { AddCircleIcon } from "@hugeicons/core-free-icons";
+import { CirclePlus } from "lucide-react";
 import { fetchPlaces, createPlace } from "@/services/problemsApi";
 import type { Place } from "@/lib/types";
 
@@ -120,7 +119,7 @@ export function PlaceCombobox({
           {(item: Place | CreateSentinel) =>
             (item as CreateSentinel).__create ? (
               <ComboboxItem key="__create" value={item}>
-                <HugeiconsIcon icon={AddCircleIcon} className="size-4" strokeWidth={2} />
+                <CirclePlus className="size-4" strokeWidth={2} />
                 Створити «{item.place_name}»
               </ComboboxItem>
             ) : (
