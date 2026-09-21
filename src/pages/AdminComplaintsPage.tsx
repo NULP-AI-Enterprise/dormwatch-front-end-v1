@@ -19,7 +19,7 @@ import {
   CategoryFilterCombobox,
   WorkerFilterSelect,
 } from "@/components/ComplaintFilters";
-import { FilterToolbar } from "@/components/FilterToolbar";
+import { FilterSheet, FilterField } from "@/components/FilterSheet";
 import EmptyState from "@/components/EmptyState";
 import { complaintIsOverdue } from "@/lib/complaintUtils";
 import { ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, ERROR, ERROR_TEXT } from "@/lib/theme";
@@ -182,6 +182,16 @@ const AdminComplaintsPage = () => {
     setSearchQuery("");
   };
 
+  const activeFilterCount =
+    selectedStatus.length +
+    selectedCategories.length +
+    selectedBuilding.length +
+    selectedPriority.length +
+    selectedWorkers.length +
+    (selectedDeadline ? 1 : 0) +
+    (selectedDate ? 1 : 0) +
+    (overdueOnly ? 1 : 0);
+
   return (
     <>
       <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
@@ -202,68 +212,73 @@ const AdminComplaintsPage = () => {
 
       <div className="flex-1 flex flex-col min-h-screen">
         <div className="flex-1 p-6 space-y-6">
-          {/* Compact filter toolbar — same paradigm as DashboardPage.
-              Status, building, priority, worker, overdue-only,
-              category, two date pickers (deadline + filing) all sit in one
-              row above the data. */}
-          <FilterToolbar onReset={resetFilters}>
-            <div className="w-full sm:w-64">
+          {/* Search stays in the open; the facet filters sit behind one trigger
+              that opens a sheet at every breakpoint, so the queue starts near
+              the top on desktop as well. */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="sm:flex-1">
               <FilterSearchInput
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Пошук звернень..."
               />
             </div>
-            <div className="w-full sm:w-48">
-              <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
-            </div>
-            <div className="w-full sm:w-48">
-              <BuildingFilterSelect
-                value={selectedBuilding}
-                onChange={setSelectedBuilding}
-                buildings={buildings}
-              />
-            </div>
-            <div className="w-full sm:w-48">
-              <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
-            </div>
-            <div className="w-full sm:w-48">
-              <WorkerFilterSelect
-                value={selectedWorkers}
-                onChange={setSelectedWorkers}
-                workers={workers}
-              />
-            </div>
-            <div className="w-full sm:w-44">
-              <DatePicker
-                date={selectedDeadline}
-                setDate={setSelectedDeadline}
-                placeholder="Дедлайн"
-              />
-            </div>
-            <div className="w-full sm:w-56">
-              <CategoryFilterCombobox
-                value={selectedCategories}
-                onChange={setSelectedCategories}
-                categories={categories}
-              />
-            </div>
-            <div className="w-full sm:w-44">
-              <DatePicker
-                date={selectedDate}
-                setDate={setSelectedDate}
-                placeholder="Дата подання"
-              />
-            </div>
-            <label className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap cursor-pointer">
-              <Checkbox
-                id="overdue-only"
-                checked={overdueOnly}
-                onCheckedChange={(v) => setOverdueOnly(v === true)}
-              />
-              <span>Лише прострочені</span>
-            </label>
-          </FilterToolbar>
+            <FilterSheet
+              onReset={resetFilters}
+              activeCount={activeFilterCount}
+              resultCount={filteredComplaints.length}
+            >
+              <FilterField label="Статус">
+                <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
+              </FilterField>
+              <FilterField label="Пріоритет">
+                <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
+              </FilterField>
+              <FilterField label="Категорія">
+                <CategoryFilterCombobox
+                  value={selectedCategories}
+                  onChange={setSelectedCategories}
+                  categories={categories}
+                />
+              </FilterField>
+              <FilterField label="Гуртожиток">
+                <BuildingFilterSelect
+                  value={selectedBuilding}
+                  onChange={setSelectedBuilding}
+                  buildings={buildings}
+                />
+              </FilterField>
+              <FilterField label="Виконавець">
+                <WorkerFilterSelect
+                  value={selectedWorkers}
+                  onChange={setSelectedWorkers}
+                  workers={workers}
+                />
+              </FilterField>
+              <FilterField label="Дедлайн">
+                <DatePicker
+                  date={selectedDeadline}
+                  setDate={setSelectedDeadline}
+                  placeholder="Будь-який"
+                />
+              </FilterField>
+              <FilterField label="Дата подання">
+                <DatePicker
+                  date={selectedDate}
+                  setDate={setSelectedDate}
+                  placeholder="Будь-яка"
+                />
+              </FilterField>
+              <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                <Checkbox
+                  id="overdue-only"
+                  checked={overdueOnly}
+                  onCheckedChange={(v) => setOverdueOnly(v === true)}
+                />
+                <span>Лише прострочені</span>
+              </label>
+            </FilterSheet>
+          </div>
 
           <div className="space-y-4">
             {loading && (

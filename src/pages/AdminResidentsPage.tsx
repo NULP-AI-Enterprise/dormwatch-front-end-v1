@@ -8,7 +8,7 @@ import {
   PlaceFilterSelect,
   RoleFilterSelect,
 } from "@/components/ResidentFilters";
-import { FilterToolbar } from "@/components/FilterToolbar";
+import { FilterSheet, FilterField } from "@/components/FilterSheet";
 import { roleLabel } from "@/lib/complaintUtils";
 import { PlaceCombobox } from "@/components/PlaceCombobox";
 import UserAvatar from "@/components/UserAvatar";
@@ -165,44 +165,51 @@ const AdminResidentsPage = () => {
     setSelectedRoles([]);
   };
 
+  const activeFilterCount =
+    (selectedBuilding ? 1 : 0) + selectedPlaces.length + selectedRoles.length;
+
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="p-6 space-y-6">
-        {/* Compact filter toolbar — same paradigm as the other list pages.
-            Building is a plain Select (fixed handful of dorms), rooms are a
-            searchable list with checkmarks (dozens of options), roles are
-            multi-select chips (small fixed set). */}
-        <FilterToolbar onReset={resetFilters}>
-          <div className="w-full sm:w-64">
+        {/* Search stays in the open; the facet filters sit behind one trigger
+            that opens a sheet at every breakpoint. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="sm:flex-1">
             <FilterSearchInput
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Пошук мешканців..."
             />
           </div>
-          <div className="w-full sm:w-48">
-            <BuildingSingleFilter
-              value={selectedBuilding}
-              onChange={handleBuildingChange}
-              buildings={buildings}
-            />
-          </div>
-          <div className="w-full sm:w-56">
-            <PlaceFilterSelect
-              value={selectedPlaces}
-              onChange={setSelectedPlaces}
-              places={placeOptions}
-              disabled={!selectedBuilding}
-            />
-          </div>
-          <div className="w-full sm:w-48">
-            <RoleFilterSelect
-              value={selectedRoles}
-              onChange={setSelectedRoles}
-              roles={roles}
-            />
-          </div>
-        </FilterToolbar>
+          <FilterSheet
+            onReset={resetFilters}
+            activeCount={activeFilterCount}
+            resultCount={filteredUsers.length}
+          >
+            <FilterField label="Гуртожиток">
+              <BuildingSingleFilter
+                value={selectedBuilding}
+                onChange={handleBuildingChange}
+                buildings={buildings}
+              />
+            </FilterField>
+            <FilterField label="Кімната">
+              <PlaceFilterSelect
+                value={selectedPlaces}
+                onChange={setSelectedPlaces}
+                places={placeOptions}
+                disabled={!selectedBuilding}
+              />
+            </FilterField>
+            <FilterField label="Роль">
+              <RoleFilterSelect
+                value={selectedRoles}
+                onChange={setSelectedRoles}
+                roles={roles}
+              />
+            </FilterField>
+          </FilterSheet>
+        </div>
 
         <div className="space-y-4">
           {loading && (

@@ -117,7 +117,7 @@ export function StatusFilterSelect({
       onChange={onChange}
       items={codes}
       itemLabel={statusLabel}
-      placeholder="Статус..."
+      placeholder="Усі статуси"
     />
   );
 }
@@ -129,7 +129,7 @@ export function PriorityFilterSelect({ value, onChange }: MultiFilterProps) {
       onChange={onChange}
       items={[...PRIORITY_OPTIONS]}
       itemLabel={priorityLabel}
-      placeholder="Пріоритети..."
+      placeholder="Усі пріоритети"
     />
   );
 }
@@ -150,7 +150,7 @@ export function WorkerFilterSelect({ value, onChange, workers }: WorkerFilterSel
       value={value}
       onChange={onChange}
       items={names}
-      placeholder="Виконавці..."
+      placeholder="Усі виконавці"
     />
   );
 }
@@ -169,7 +169,7 @@ export function BuildingFilterSelect({
       value={value}
       onChange={onChange}
       items={buildings.map((b) => b.name)}
-      placeholder="Гуртожитки..."
+      placeholder="Усі гуртожитки"
     />
   );
 }
@@ -206,7 +206,7 @@ export function CategoryFilterCombobox({
             ))
           }
         </ComboboxValue>
-        <ComboboxChipsInput placeholder={value.length ? "" : "Категорії..."} />
+        <ComboboxChipsInput placeholder={value.length ? "" : "Усі категорії"} />
       </ComboboxChips>
       <ComboboxContent>
         <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>

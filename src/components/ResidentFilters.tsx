@@ -61,7 +61,7 @@ export function BuildingSingleFilter({
       }}
     >
       <SelectTrigger className="w-full h-8 text-xs">
-        <SelectValue placeholder="Гуртожиток" />
+        <SelectValue placeholder="Усі гуртожитки" />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">Усі гуртожитки</SelectItem>
@@ -213,7 +213,7 @@ export function RoleFilterSelect({ value, onChange, roles }: RoleFilterSelectPro
             ))
           }
         </ComboboxValue>
-        <ComboboxChipsInput placeholder={value.length ? "" : "Ролі..."} />
+        <ComboboxChipsInput placeholder={value.length ? "" : "Усі ролі"} />
       </ComboboxChips>
       <ComboboxContent>
         <ComboboxEmpty>Нічого не знайдено</ComboboxEmpty>

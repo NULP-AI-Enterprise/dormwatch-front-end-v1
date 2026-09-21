@@ -5,7 +5,7 @@ import {
   deleteProblem,
   fetchCategories,
 } from "@/services/problemsApi";
-import { X, Search, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ArrowLinkButton from "@/components/ArrowLinkButton";
 import {
@@ -15,7 +15,7 @@ import {
   CategoryFilterCombobox,
   StatusFilterSelect,
 } from "@/components/ComplaintFilters";
-import { FilterToolbar } from "@/components/FilterToolbar";
+import { FilterSheet, FilterField } from "@/components/FilterSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +57,6 @@ const DashboardPage = () => {
   // offered — pending/rejected are never in the feed.
   const [activeStatus, setActiveStatus] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -172,8 +171,7 @@ const DashboardPage = () => {
     activeCategories.length +
     activeCorps.length +
     activePriority.length +
-    activeStatus.length +
-    (searchQuery.trim() ? 1 : 0);
+    activeStatus.length;
 
   const canManage = (problem: Complaint) =>
     admin || currentUser?.user === problem.user_id;
@@ -225,68 +223,45 @@ const DashboardPage = () => {
           </ArrowLinkButton>
         </div>
 
-        {/* Compact filter toolbar — same paradigm as the other list pages:
-            one row with search, status, priority, building (admin), category;
-            reset on the right. On phones it collapses behind a toggle so the
-            feed starts near the top; sm: and up keep it inline. */}
-        <div className="mb-6">
-          <Button
-            variant="outline"
-            onClick={() => setFiltersOpen((open) => !open)}
-            className="w-full justify-between sm:hidden"
-            aria-expanded={filtersOpen}
-          >
-            <span className="flex items-center gap-2">
-              <SlidersHorizontal className="size-3.5" strokeWidth={2} />
-              Фільтри
-            </span>
-            <span className="flex items-center gap-2">
-              {activeFilterCount > 0 && (
-                <span className="min-w-4 h-4 px-1 flex items-center justify-center bg-primary text-primary-foreground text-xs leading-none font-bold">
-                  {activeFilterCount}
-                </span>
-              )}
-              {filtersOpen ? (
-                <ChevronUp className="size-3.5" strokeWidth={2} />
-              ) : (
-                <ChevronDown className="size-3.5" strokeWidth={2} />
-              )}
-            </span>
-          </Button>
-
-          <div className={`${filtersOpen ? "block" : "hidden"} mt-3 sm:mt-0 sm:block`}>
-            <FilterToolbar onReset={resetDashboardFilters}>
-              <div className="w-full sm:w-64">
-                <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
-              </div>
-              <div className="w-full sm:w-48">
-                <StatusFilterSelect
-                  value={activeStatus}
-                  onChange={setActiveStatus}
-                  codes={["approved", "resolved"]}
-                />
-              </div>
-              <div className="w-full sm:w-48">
-                <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
-              </div>
-              {admin && (
-                <div className="w-full sm:w-48">
-                  <BuildingFilterSelect
-                    value={activeCorps}
-                    onChange={setActiveCorps}
-                    buildings={buildings}
-                  />
-                </div>
-              )}
-              <div className="w-full sm:w-56">
-                <CategoryFilterCombobox
-                  value={activeCategories}
-                  onChange={setActiveCategories}
-                  categories={categories}
-                />
-              </div>
-            </FilterToolbar>
+        {/* Search stays in the open; the facet filters sit behind one trigger
+            that opens a sheet at every breakpoint, so the feed starts near the
+            top on desktop as well as phones. */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="sm:flex-1">
+            <FilterSearchInput value={searchQuery} onChange={setSearchQuery} />
           </div>
+          <FilterSheet
+            onReset={resetDashboardFilters}
+            activeCount={activeFilterCount}
+            resultCount={filteredProblems.length}
+          >
+            <FilterField label="Статус">
+              <StatusFilterSelect
+                value={activeStatus}
+                onChange={setActiveStatus}
+                codes={["approved", "resolved"]}
+              />
+            </FilterField>
+            <FilterField label="Пріоритет">
+              <PriorityFilterSelect value={activePriority} onChange={setActivePriority} />
+            </FilterField>
+            {admin && (
+              <FilterField label="Гуртожиток">
+                <BuildingFilterSelect
+                  value={activeCorps}
+                  onChange={setActiveCorps}
+                  buildings={buildings}
+                />
+              </FilterField>
+            )}
+            <FilterField label="Категорія">
+              <CategoryFilterCombobox
+                value={activeCategories}
+                onChange={setActiveCategories}
+                categories={categories}
+              />
+            </FilterField>
+          </FilterSheet>
         </div>
 
         <div className="space-y-4">
