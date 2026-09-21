@@ -183,7 +183,7 @@ const CreateReportPage = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
+    <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-10">
         <Button asChild variant="outline" size="icon">
           <Link to="/user">

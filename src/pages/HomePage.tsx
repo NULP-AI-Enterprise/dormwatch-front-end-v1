@@ -66,7 +66,7 @@ const HomePage = () => {
       <section className="relative pt-24 pb-16 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative z-10">
-            <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6 tracking-tight">
               Зламаний кран? Холодна кімната? <span className={ACCENT}>Ми допоможемо.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">

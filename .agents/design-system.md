@@ -69,7 +69,7 @@ Auth-form inputs use a custom focus treatment: a `3px` solid left border in
    for truly non-standard layout edge cases (e.g. `top-[calc(50%-20px)]`).
 3. **No positive letter-spacing.** `tracking-wider`/`tracking-widest` and
    positive `letter-spacing` are banned.
-4. **`tracking-tight` only on display sizes** — Hero (`text-5xl+`) and H1
+4. **`tracking-tight` only on display sizes** — Hero (`text-4xl+`) and H1
    (`text-2xl+`).
 5. **No arbitrary pixel font sizes.** `text-[Npx]` is forbidden; minimum
    `text-xs` (12px); named scale only.
@@ -85,7 +85,7 @@ Auth-form inputs use a custom focus treatment: a `3px` solid left border in
 
 | Token | Size | Weight | Tracking | Where |
 |---|---|---|---|---|
-| Hero (H0) | `text-5xl` / `md:text-6xl` | `font-bold` | `tracking-tight` | Landing hero only |
+| Hero (H0) | `text-4xl` / `sm:text-5xl` / `lg:text-6xl` | `font-bold` | `tracking-tight` | Landing hero only |
 | Page title (H1) | `text-2xl` / `md:text-3xl` | `font-bold` | `tracking-tight` | Top of every page/section |
 | Section title (H2) | `text-lg` / `md:text-xl` | `font-semibold` | none | Group headings |
 | Card title (H3) | `text-sm` | `font-semibold` | none | Complaint / ticket card titles |

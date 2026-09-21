@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, LogOut, User } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Menu, User } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { isAdminUser } from "@/lib/complaintUtils";
 import { SELECTED } from "@/lib/theme";
@@ -12,6 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +46,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
 const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const admin = isAdminUser(user);
   const handleLogout = async () => {
@@ -89,33 +98,121 @@ const [isProfileOpen, setIsProfileOpen] = useState(false);
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Desktop-only account controls. On phones these live in the
+                drawer below so the bar fits without sideways scroll. */}
+            <div className="hidden md:flex items-center gap-4">
+              <ThemeToggle />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-auto gap-2 py-1.5 cursor-pointer">
+                    <UserAvatar user={user} size="sm" fallback="Г" />
+                    <ChevronDown className="size-4 text-muted-foreground" strokeWidth={1.5} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
+                    <User className="size-4" strokeWidth={1.5} />
+                    <span>Профіль</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setLogoutConfirmOpen(true)}
+                    variant="destructive"
+                    className="cursor-pointer"
+                  >
+                    <LogOut className="size-4" strokeWidth={1.5} />
+                    <span>Вийти</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-auto gap-2 py-1.5 cursor-pointer">
-                  <UserAvatar user={user} size="sm" fallback="Г" />
-                  <ChevronDown className="size-4 text-muted-foreground" strokeWidth={1.5} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
-                  <User className="size-4" strokeWidth={1.5} />
-                  <span>Профіль</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setLogoutConfirmOpen(true)}
-                  variant="destructive"
-                  className="cursor-pointer"
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden text-muted-foreground hover:text-foreground"
+                  aria-label="Меню"
                 >
-                  <LogOut className="size-4" strokeWidth={1.5} />
-                  <span>Вийти</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <Menu className="size-5" strokeWidth={1.5} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <div className="flex min-h-full flex-col">
+                  <SheetHeader>
+                    <SheetTitle>Меню</SheetTitle>
+                  </SheetHeader>
+
+                  <div className="flex flex-col">
+                    {navItems.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center justify-between px-4 py-3 text-sm font-semibold transition-colors border-l-2 ${
+                          currentPath === item.to
+                            ? SELECTED
+                            : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        {item.label}
+                        <ChevronRight className="size-4 text-muted-foreground" strokeWidth={1.5} />
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Account controls sit at the bottom, clear of the nav. */}
+                  <div className="mt-auto">
+                    <Separator />
+
+                    <div className="px-4 py-4">
+                      <ThemeToggle />
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setIsProfileOpen(true);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-left w-full hover:bg-muted/50 transition-colors cursor-pointer"
+                      >
+                        <UserAvatar user={user} size="md" fallback="Г" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-foreground truncate">
+                            {user ? `${user.first_name} ${user.last_name}` : "Профіль"}
+                          </span>
+                          {user?.email && (
+                            <span className="block text-xs text-muted-foreground truncate">{user.email}</span>
+                          )}
+                        </span>
+                        <ChevronRight className="size-4 text-muted-foreground" strokeWidth={1.5} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          setLogoutConfirmOpen(true);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 text-left w-full text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="size-4" strokeWidth={1.5} />
+                        <span className="text-sm font-semibold">Вийти</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </nav>

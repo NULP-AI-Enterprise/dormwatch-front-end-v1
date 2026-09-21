@@ -48,7 +48,15 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
 
   return (
     <div className="w-full">
-      <div className="flex justify-between mb-1.5">
+      {/* Phones can't fit five labels — show the current step and a counter.
+          sm: and up keep the full pipeline row. */}
+      <div className="flex items-center justify-between mb-1.5 sm:hidden">
+        <span className="text-xs font-semibold text-foreground">{STATUS_LABELS[s]}</span>
+        <span className="text-xs font-normal text-muted-foreground">
+          Крок {currentIdx + 1} з {PIPELINE.length}
+        </span>
+      </div>
+      <div className="hidden sm:flex justify-between mb-1.5">
         {PIPELINE.map((key, i) => (
           <span
             key={key}
