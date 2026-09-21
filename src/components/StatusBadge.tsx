@@ -26,12 +26,9 @@ export const StatusBadge = ({
 
 export const PriorityBadge = ({
   priority,
-  prefix = false,
   className,
 }: {
   priority: string | null | undefined;
-  /** When true, prepends the "Пріоритет: " label. */
-  prefix?: boolean;
   className?: string;
 }) => {
   // No badge for an unset priority — the neutral fallback would otherwise paint
@@ -39,7 +36,7 @@ export const PriorityBadge = ({
   if (!priority) return null;
   return (
     <Badge variant="outline" className={cn(priorityBadgeClass(priority), className)}>
-      {prefix ? `Пріоритет: ${priorityLabel(priority)}` : priorityLabel(priority)}
+      {priorityLabel(priority)}
     </Badge>
   );
 };

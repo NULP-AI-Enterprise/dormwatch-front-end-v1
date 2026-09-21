@@ -248,7 +248,7 @@ const ComplaintCard = ({
 
         {showPriority && (
           <div className="flex flex-wrap gap-2 mb-3">
-            <PriorityBadge priority={p.priority} prefix />
+            <PriorityBadge priority={p.priority} />
             {p.createdAt && (
               <span className="text-xs text-muted-foreground font-normal">
                 {formatDate(p.createdAt)}

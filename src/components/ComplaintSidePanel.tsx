@@ -45,6 +45,7 @@ import {
   TERMINAL_STATUSES,
 } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
+import { cn } from "@/lib/utils";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
@@ -346,7 +347,18 @@ const ComplaintSidePanel = ({
                     <SelectContent>
                       {PRIORITY_OPTIONS.map((p) => (
                         <SelectItem key={p} value={p}>
-                          <span className={`px-1.5 py-0.5 text-xs font-semibold border ${priorityBadgeClass(p)}`}>
+                          {/* `bg-transparent` enforces the design system: the
+                              neutral priority badge paints `bg-card`, and the
+                              select item's `focus:**:text-accent-foreground`
+                              turns the label near-white on hover — an opaque
+                              badge background would render it invisible. */}
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 text-xs font-semibold border",
+                              priorityBadgeClass(p),
+                              "bg-transparent"
+                            )}
+                          >
                             {priorityLabel(p)}
                           </span>
                         </SelectItem>
@@ -354,7 +366,7 @@ const ComplaintSidePanel = ({
                     </SelectContent>
                   </Select>
                 ) : (
-                  <PriorityBadge priority={complaint.priority} prefix />
+                  <PriorityBadge priority={complaint.priority} />
                 )}
                 {complaint.createdAt && (
                   <span className="text-xs text-muted-foreground font-normal">
