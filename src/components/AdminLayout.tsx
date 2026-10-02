@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FileText, ChevronDown, Settings, Megaphone, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, ChevronDown, Settings, Megaphone, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,7 +49,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <LayoutDashboard className="size-5" strokeWidth={1.5} /> },
     { name: "Мешканці", path: "/admin/residents", icon: <Users className="size-5" strokeWidth={1.5} /> },
-    { name: "Звернення", path: "/admin/complaints", icon: <FileText className="size-5" strokeWidth={1.5} /> },
+    { name: "Звернення", path: "/admin/complaints", icon: <ClipboardList className="size-5" strokeWidth={1.5} /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <Megaphone className="size-5" strokeWidth={1.5} /> },
     { name: "Налаштування", path: "/admin/settings", icon: <Settings className="size-5" strokeWidth={1.5} /> },
   ];

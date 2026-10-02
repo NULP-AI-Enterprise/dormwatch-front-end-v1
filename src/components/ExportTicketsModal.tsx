@@ -28,7 +28,7 @@ import {
 import { cn } from "@/lib/utils";
 import { fetchWorkers } from "@/services/problemsApi";
 import type { Worker } from "@/lib/types";
-import { Clipboard, X, Download, Calendar as CalendarIcon } from "lucide-react";
+import { Printer, X, Download, Calendar as CalendarIcon } from "lucide-react";
 
 interface ExportTicketsModalProps {
   open: boolean;
@@ -97,7 +97,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
       <DialogContent className="max-w-md border-border">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
-            <Clipboard className="size-5" strokeWidth={1.5} />
+            <Printer className="size-5" strokeWidth={1.5} />
             <DialogTitle>Експорт даних</DialogTitle>
           </div>
           <DialogDescription>

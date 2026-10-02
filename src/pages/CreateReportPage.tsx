@@ -4,7 +4,7 @@ import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlace
 import PlaceCombobox from "@/components/PlaceCombobox";
 import ComplaintCard from "@/components/ComplaintCard";
 import { toast } from "sonner";
-import { ChevronLeft, X, SkipForward, ThumbsUp } from "lucide-react";
+import { ChevronLeft, X, Send, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -366,7 +366,7 @@ const CreateReportPage = () => {
           disabled={submitting}
           className="w-full"
         >
-          <SkipForward className="size-4 mr-2" strokeWidth={2} />
+          <Send className="size-4 mr-2" strokeWidth={2} />
           {submitting ? "Надсилаємо…" : "Надіслати звернення"}
         </Button>
       </form>

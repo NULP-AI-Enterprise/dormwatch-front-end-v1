@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Phone, Shield } from "lucide-react";
+import { Phone, Siren } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 // Phone numbers widget showing the dorm manager's number and emergency services.
@@ -59,7 +59,7 @@ const PhoneNumbersWidget = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center border border-border bg-card text-destructive shrink-0">
-                  <Shield className="size-4" strokeWidth={1.5} />
+                  <Siren className="size-4" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-normal text-muted-foreground">
@@ -76,7 +76,7 @@ const PhoneNumbersWidget = () => {
 
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center border border-border bg-card text-destructive shrink-0">
-                  <Shield className="size-4" strokeWidth={1.5} />
+                  <Siren className="size-4" strokeWidth={1.5} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-normal text-muted-foreground">

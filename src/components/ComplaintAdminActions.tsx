@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Trash2, CircleCheck, CircleX, ChevronRight } from "lucide-react";
+import { Trash2, CircleCheck, CircleX, UserCheck, Play } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { fetchWorkers, apiErrorText } from "@/services/problemsApi";
 import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
@@ -187,7 +187,7 @@ const ComplaintAdminActions = ({
             setAssignOpen(true);
           }}
         >
-          <ChevronRight className="size-3 mr-1" strokeWidth={2} />
+          <UserCheck className="size-3 mr-1" strokeWidth={2} />
           Схвалити і призначити
         </Button>
 
@@ -364,7 +364,7 @@ const ComplaintAdminActions = ({
     return (
       <>
         <ActionButton
-          icon={ChevronRight}
+          icon={Play}
           onClick={() => onPatch({ status: "in_progress" })}
         >
           Взято в роботу

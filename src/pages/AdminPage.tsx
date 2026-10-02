@@ -16,7 +16,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { Clock, Hammer, CircleCheck, Timer, ChevronRight } from "lucide-react";
+import { Clock, Wrench, CircleCheck, Timer, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel, complaintIsOverdue } from "@/lib/complaintUtils";
 import { LINK, LINK_HOVER } from "@/lib/theme";
@@ -104,7 +104,7 @@ const AdminPage = () => {
                 state={{ overdueOnly: true }}
               />
               <StatCard
-                icon={<Hammer className="size-4" strokeWidth={1.5} />}
+                icon={<Wrench className="size-4" strokeWidth={1.5} />}
                 label="В роботі"
                 value={inProgressCount}
               />

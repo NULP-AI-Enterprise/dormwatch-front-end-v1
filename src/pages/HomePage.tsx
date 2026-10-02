@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { fetchUserProfile } from "@/services/problemsApi";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Camera, Activity, Shield } from "lucide-react";
+import { ChevronRight, Camera, Eye, Inbox } from "lucide-react";
 import PageSpinner from "@/components/PageSpinner";
 import Logo from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -133,12 +133,12 @@ const HomePage = () => {
             description="Не намагайтеся пояснити, де протікає. Просто зробіть фото, вкажіть номер кімнати, і наша система автоматично направить звернення до потрібного відділу."
           />
           <FeatureCard
-            icon={Activity}
+            icon={Eye}
             title="Прозоре відстеження"
             description="Припиніть гадати, чи бачив хтось ваше звернення. Отримуйте оновлення статусу в реальному часі, коли ваше звернення переглядається, призначається майстру та вирішується."
           />
           <FeatureCard
-            icon={Shield}
+            icon={Inbox}
             title="Без загублених звернень"
             description="Кожне звернення отримує унікальний номер і закріплюється за відповідальним. Комендант бачить усе, що надійшло, і вирішує, хто працює над кожним."
           />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Pin, Link, Clock, Briefcase, ChevronRight, ChevronLeft, User } from "lucide-react";
+import { Megaphone, Pin, Link, Clock, Building2, ChevronRight, ChevronLeft, User } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 import { sortAnnouncements } from "@/lib/announcementUtils";
 import { fetchAnnouncements } from "@/services/problemsApi";
@@ -138,7 +138,7 @@ const AnnouncementsModal = ({
                         </Badge>
                       )}
                       <Badge variant="outline" className="gap-1 border-border bg-muted text-muted-foreground font-normal">
-                        <Briefcase className="size-3" strokeWidth={1.5} />
+                        <Building2 className="size-3" strokeWidth={1.5} />
                         {detailedAnnouncement.building_name || "Всі гуртожитки"}
                       </Badge>
                       {detailedAnnouncement.created_by_name && (
@@ -202,7 +202,7 @@ const AnnouncementsModal = ({
                           </Badge>
                         )}
                         <Badge variant="outline" className="gap-1 border-border bg-muted text-muted-foreground font-normal">
-                          <Briefcase className="size-3" strokeWidth={1.5} />
+                          <Building2 className="size-3" strokeWidth={1.5} />
                           {item.building_name || "Всі гуртожитки"}
                         </Badge>
                       </div>
