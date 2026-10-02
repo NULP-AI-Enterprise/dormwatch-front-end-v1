@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp } from "lucide-react";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
@@ -121,9 +121,9 @@ const ComplaintCard = ({
                 {p.category}
               </Badge>
             )}
-            {(p as any).supporters_count > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent">
-                👍 {(p as any).supporters_count}
+            {p.supportersCount > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
+                <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
               </Badge>
             )}
             <span className="text-xs text-muted-foreground">
@@ -223,9 +223,9 @@ const ComplaintCard = ({
             <div className="flex flex-wrap gap-2 items-center">
               {statusBadge}
               <OverdueBadge complaint={p} />
-              {(p as any).supporters_count > 0 && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent">
-                  👍 {(p as any).supporters_count}
+              {p.supportersCount > 0 && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
+                  <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
                 </Badge>
               )}
             </div>

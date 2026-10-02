@@ -562,7 +562,7 @@ function normalizeComplaint(raw) {
     followUpOf: raw.follow_up_of ?? null,
     root: raw.root ?? null,
     isOverdue: !!raw.is_overdue,
-    supporters_count: raw.supporters_count ?? 0,
+    supportersCount: raw.supporters_count ?? 0,
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,

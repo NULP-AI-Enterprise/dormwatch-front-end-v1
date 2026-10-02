@@ -4,7 +4,7 @@ import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlace
 import PlaceCombobox from "@/components/PlaceCombobox";
 import ComplaintCard from "@/components/ComplaintCard";
 import { toast } from "sonner";
-import { ChevronLeft, X, SkipForward } from "lucide-react";
+import { ChevronLeft, X, SkipForward, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -325,13 +325,9 @@ const CreateReportPage = () => {
         </div>
 
         {similarComplaints.length > 0 && (
-          <div className="bg-muted/30 border border-border p-5 rounded-lg space-y-4">
+          <div className="bg-muted/30 border border-border p-5 space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                </span>
+              <h3 className="text-sm font-semibold text-foreground">
                 Знайдено схожі відкриті проблеми
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
@@ -346,13 +342,16 @@ const CreateReportPage = () => {
                   <div className="mt-2 flex justify-end">
                     <Button
                       type="button"
-                      variant="secondary"
                       size="sm"
                       onClick={() => handleUpvote(sc.id)}
                       disabled={upvotingId === sc.id || submitting}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                      {upvotingId === sc.id ? "Приєднуємось..." : "👍 У мене така ж проблема"}
+                      {upvotingId === sc.id ? "Приєднуємось..." : (
+                        <>
+                          <ThumbsUp className="size-4" strokeWidth={2} />
+                          У мене така ж проблема
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

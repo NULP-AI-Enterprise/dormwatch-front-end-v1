@@ -69,6 +69,9 @@ export interface Complaint {
   // Derived server-side (never stored): "В роботі" past its deadline. Drives
   // the red Прострочено badge and the admin overdue filter.
   isOverdue: boolean;
+  // Real count of residents who joined this complaint (PublicComplaintSerializer
+  // `supporters_count`), rendered as a read-only badge.
+  supportersCount: number;
 }
 
 export interface Comment {
