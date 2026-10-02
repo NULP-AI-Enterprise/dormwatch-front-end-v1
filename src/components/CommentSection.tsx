@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { MailSend01Icon, Cancel01Icon, Message01Icon } from "@hugeicons/core-free-icons";
+import { Send, X, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +11,7 @@ import {
 } from "@/services/problemsApi";
 import { formatDate } from "@/lib/dateUtils";
 import type { Comment } from "@/lib/types";
+import { ACCENT_BG, ACCENT_BG_HOVER_DARK, ERROR_TEXT } from "@/lib/theme";
 
 interface CommentSectionProps {
   complaintId: number;
@@ -77,7 +77,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
     <div>
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1">
-          <HugeiconsIcon icon={Message01Icon} className="size-3" strokeWidth={2} /> Коментарі ({comments.length})
+          <MessageSquare className="size-3" strokeWidth={2} /> Коментарі ({comments.length})
         </span>
       </div>
 
@@ -98,11 +98,11 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-foreground">{c.author}</span>
                   {c.authorIsAdmin ? (
-                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500 text-white hover:bg-blue-600">Адміністратор</Badge>
+                    <Badge variant="default" className={`text-xs px-1.5 py-0 h-4 ${ACCENT_BG} text-white ${ACCENT_BG_HOVER_DARK}`}>Адміністратор</Badge>
                   ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-green-600 border-green-600">Автор звернення</Badge>
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Автор звернення</Badge>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-stone-500 border-stone-300">Студент</Badge>
+                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Студент</Badge>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -111,8 +111,8 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
               </div>
               <p className="text-sm text-muted-foreground">{c.text}</p>
               {(currentUserId === c.author_id || isAdmin) && (
-                <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(c.id)} className="absolute top-1 right-1 text-red-400 opacity-0 group-hover/comment:opacity-100 transition-opacity">
-                  <HugeiconsIcon icon={Cancel01Icon} className="size-3" strokeWidth={2} />
+                <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(c.id)} className={`absolute top-1 right-1 ${ERROR_TEXT} opacity-0 group-hover/comment:opacity-100 transition-opacity`}>
+                  <X className="size-3" strokeWidth={2} />
                 </Button>
               )}
             </div>
@@ -129,7 +129,7 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
         <Button onClick={handleSend}>
-          <HugeiconsIcon icon={MailSend01Icon} className="size-3 mr-1" strokeWidth={2} />
+          <Send className="size-3 mr-1" strokeWidth={2} />
           Надіслати
         </Button>
       </div>

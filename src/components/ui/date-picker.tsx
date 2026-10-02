@@ -1,7 +1,6 @@
 import { format } from "date-fns"
 import { uk } from "date-fns/locale"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Calendar01Icon } from "@hugeicons/core-free-icons"
+import { Calendar as CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,7 +30,7 @@ export function DatePicker({ date, setDate, placeholder = "Оберіть дат
             className
           )}
         >
-          <HugeiconsIcon icon={Calendar01Icon} className="mr-2 size-4" strokeWidth={2} />
+          <CalendarIcon className="mr-2 size-4" strokeWidth={2} />
           {date ? format(date, "PPP", { locale: uk }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>

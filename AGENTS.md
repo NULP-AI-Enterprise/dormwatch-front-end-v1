@@ -2,7 +2,7 @@
 
 Vite + React 19 + TypeScript frontend for DormWatch — a dormitory issue
 tracking system at LPNU. Tailwind CSS v4 with shadcn/ui (style `radix-lyra`,
-stone base, Hugeicons icons), React Router v7, data served by the sibling repo
+stone base, Lucide icons), React Router v7, data served by the sibling repo
 `dormwatch-server` (Django + DRF REST API under `/api/`). Workspace-level
 conventions live in the root `CLAUDE.md`.
 
@@ -28,9 +28,10 @@ conventions live in the root `CLAUDE.md`.
   class exists, no positive `tracking-*`, no `font-medium`, no text below
   `text-xs`. Three weights only: `font-bold`, `font-semibold`, `font-normal`.
 - **Semantic color tokens only.** Status colors come from
-  `src/lib/complaintUtils.ts`; never raw hex or `bg-blue-500`.
-- **Hugeicons only**, rendered via `<HugeiconsIcon icon={...} className="size-*" />`
-  (see `src/components/Logo.tsx`). Never another icon set.
+  `src/lib/complaintUtils.ts`; never raw hex or `bg-sky-500`.
+- **Lucide only**, rendered directly at call sites via
+  `<IconName className="size-*" />` (see `src/components/Logo.tsx`). Never
+  another icon set.
 - **Compose shadcn primitives** in `src/components/ui` before hand-rolling
   markup; add missing ones with `npx shadcn@latest add <component>`.
 - **Per-feature priority/status/category labels** must read from the shared

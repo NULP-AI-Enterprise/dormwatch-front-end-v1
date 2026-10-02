@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import type { IconSvgElement } from "@hugeicons/react";
+import type { LucideIcon } from "lucide-react";
 import {
   Empty,
   EmptyHeader,
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/empty";
 
 interface EmptyStateProps {
-  icon: IconSvgElement;
+  icon: LucideIcon;
   title: string;
   subtitle?: string;
   action?: ReactNode;
@@ -22,11 +21,11 @@ interface EmptyStateProps {
 // `icon` media variant renders the `w-12 h-12 border border-border bg-card`
 // box and the title uses `text-sm font-semibold` — so this only supplies the
 // content (icon, copy, action) around it.
-const EmptyState = ({ icon, title, subtitle, action }: EmptyStateProps) => (
+const EmptyState = ({ icon: Icon, title, subtitle, action }: EmptyStateProps) => (
   <Empty>
     <EmptyHeader>
       <EmptyMedia variant="icon" className="mb-4">
-        <HugeiconsIcon icon={icon} className="size-5" strokeWidth={1.5} />
+        <Icon className="size-5" strokeWidth={1.5} />
       </EmptyMedia>
       <EmptyTitle>{title}</EmptyTitle>
       {subtitle && (

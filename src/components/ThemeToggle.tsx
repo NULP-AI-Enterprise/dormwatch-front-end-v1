@@ -1,12 +1,11 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Sun01Icon, Moon01Icon, ComputerIcon } from "@hugeicons/core-free-icons";
+import { Sun, Moon, Monitor } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useTheme } from "@/components/theme-provider";
 
 const THEME_OPTIONS = [
-  { key: "light", label: "Світла", icon: Sun01Icon },
-  { key: "dark", label: "Темна", icon: Moon01Icon },
-  { key: "system", label: "Системна", icon: ComputerIcon },
+  { key: "light", label: "Світла", icon: Sun },
+  { key: "dark", label: "Темна", icon: Moon },
+  { key: "system", label: "Системна", icon: Monitor },
 ] as const;
 
 export function ThemeToggle() {
@@ -26,16 +25,16 @@ export function ThemeToggle() {
       }}
       aria-label="Тема оформлення"
     >
-      {THEME_OPTIONS.map((option) => (
+      {THEME_OPTIONS.map(({ key, label, icon: Icon }) => (
         <ToggleGroupItem
-          key={option.key}
-          value={option.key}
-          aria-label={option.label}
+          key={key}
+          value={key}
+          aria-label={label}
           // design-system.md §7: ToggleGroup on-states carry the primary fill,
           // not the muted on-state shadcn ships by default.
           className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
         >
-          <HugeiconsIcon icon={option.icon} strokeWidth={2} />
+          <Icon strokeWidth={2} />
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

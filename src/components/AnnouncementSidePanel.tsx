@@ -24,8 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PinIcon } from "@hugeicons/core-free-icons";
+import { Pin } from "lucide-react";
 import { createAnnouncement, updateAnnouncement } from "@/services/problemsApi";
 import { formatDate } from "@/lib/dateUtils";
 import { format } from "date-fns";
@@ -169,7 +168,7 @@ const AnnouncementSidePanel = ({
               <Badge variant="secondary">{areaLabel}</Badge>
               {announcement?.is_pinned && (
                 <Badge>
-                  <HugeiconsIcon icon={PinIcon} data-icon="inline-start" strokeWidth={2} />
+                  <Pin data-icon="inline-start" strokeWidth={2} />
                   Закріплено
                 </Badge>
               )}

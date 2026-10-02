@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchCompletedReport } from "@/services/problemsApi";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PrinterIcon, ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { Printer, ChevronLeft } from "lucide-react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
-interface CompletedReportTicket {
-  ticket_id: number;
-  worker: string | null;
-  worker_company: string | null;
-  worker_phone: string | null;
-  deadline: string | null;
+interface CompletedReportWorker {
+  worker_id: number;
+  full_name: string;
+  company: string;
+  phone: string;
 }
 
 interface CompletedReportRow {
@@ -21,9 +19,11 @@ interface CompletedReportRow {
   resolved_at: string | null;
   building: string | null;
   room: string | null;
+  is_shared: boolean;
   category: string | null;
   priority: string | null;
-  tickets: CompletedReportTicket[];
+  worker: CompletedReportWorker | null;
+  deadline: string | null;
 }
 
 const formatDate = (value: string | null) =>
@@ -60,21 +60,12 @@ const AdminCompletedReportPrintPage = () => {
     }
   };
 
-  // Render a worker cell: join the worker names of a complaint's tickets, with
-  // company/phone in parentheses when present. "Не призначено" if all unassigned.
-  const workersLabel = (tickets: CompletedReportTicket[]) => {
-    const named = tickets
-      .filter((t) => t.worker)
-      .map((t) => {
-        const extra = [t.worker_company, t.worker_phone].filter(Boolean).join(", ");
-        return extra ? `${t.worker} (${extra})` : t.worker;
-      });
-    return named.length ? named.join("; ") : "Не призначено";
-  };
-
-  const deadlinesLabel = (tickets: CompletedReportTicket[]) => {
-    const dls = tickets.filter((t) => t.deadline).map((t) => formatDate(t.deadline));
-    return dls.length ? dls.join("; ") : "Не визначено";
+  // Worker cell: name with company/phone in parentheses when present.
+  const workerLabel = (row: CompletedReportRow) => {
+    const w = row.worker;
+    if (!w) return "Не призначено";
+    const extra = [w.company, w.phone].filter(Boolean).join(", ");
+    return extra ? `${w.full_name} (${extra})` : w.full_name;
   };
 
   if (loading) {
@@ -142,13 +133,13 @@ const AdminCompletedReportPrintPage = () => {
       <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
         <div className="flex items-center gap-4">
           <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
+            <ChevronLeft className="size-4" strokeWidth={1.5} />
             Назад
           </Button>
           <span className="text-sm font-medium text-gray-600">Звіт про виконані: {rangeLabel}</span>
         </div>
         <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
-          <HugeiconsIcon icon={PrinterIcon} className="size-4" />
+          <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>
@@ -197,15 +188,15 @@ const AdminCompletedReportPrintPage = () => {
                   <td className="border border-gray-300 p-2 text-center text-xs">
                     {row.category || "Не вказано"}
                   </td>
+                   <td className="border border-gray-300 p-2 text-center text-xs">
+                     <div className="font-semibold">{row.building || "Не вказано"}</div>
+                     <div className="text-gray-600">{row.room || "—"}{row.is_shared && " (спільна)"}</div>
+                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs">
-                    <div className="font-semibold">{row.building || "Не вказано"}</div>
-                    <div className="text-gray-600">{row.room || "—"}</div>
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs">
-                    {workersLabel(row.tickets)}
+                    {workerLabel(row)}
                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs font-semibold text-red-600">
-                    {deadlinesLabel(row.tickets)}
+                    {row.deadline ? formatDate(row.deadline) : "Не визначено"}
                   </td>
                   <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
                     {formatDate(row.resolved_at)}

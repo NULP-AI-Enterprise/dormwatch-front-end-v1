@@ -1,5 +1,4 @@
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Camera01Icon } from "@hugeicons/core-free-icons";
+import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ACCEPTED_TYPES = "image/png, image/jpeg, image/jpg, image/webp";
@@ -29,11 +28,9 @@ const PhotoUploadField = ({
       className
     )}
   >
-    <HugeiconsIcon
-      icon={Camera01Icon}
+    <Camera 
       className={cn("text-muted-foreground", aspectSquare ? "size-8 mb-3" : "size-6 mb-2")}
-      strokeWidth={2}
-    />
+      strokeWidth={2} />
     <p className="text-xs font-normal text-muted-foreground">{label}</p>
     <input
       type="file"
