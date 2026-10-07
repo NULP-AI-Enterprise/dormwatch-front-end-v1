@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { logoutUser } from "@/services/problemsApi";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  AiPhone01Icon,
   ShieldIcon,
   Briefcase01Icon,
   Logout01Icon,

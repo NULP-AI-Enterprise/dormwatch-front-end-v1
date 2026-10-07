@@ -45,6 +45,7 @@ import { StatusBadge, PriorityBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import TicketInfo from "@/components/TicketInfo";
+import ComplaintResourcesSection from "@/components/ComplaintResourcesSection";
 import { formatDate } from "@/lib/dateUtils";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Ticket01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
@@ -462,6 +463,10 @@ const ComplaintSidePanel = ({
               unusable list + input. */}
           {(isOwner || isAdmin) && (
             <>
+              <Separator />
+
+              <ComplaintResourcesSection complaintId={complaint.id} isAdmin={isAdmin} />
+
               <Separator dashed />
 
               <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />

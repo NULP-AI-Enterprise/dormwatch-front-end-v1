@@ -8,29 +8,23 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlaceCombobox } from "@/components/PlaceCombobox";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link01Icon, Copy01Icon, CheckmarkCircle01Icon } from "@hugeicons/core-free-icons";
 import { generateInviteLink } from "@/services/problemsApi";
-import { roleLabel } from "@/lib/complaintUtils";
-import type { Building, Place, Role } from "@/lib/types";
+import type { Building, Role } from "@/lib/types";
 
 interface InviteLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  buildings: Building[];
+  buildings?: Building[];
   roles: Role[];
 }
 
 export function InviteLinkDialog({
   open,
   onOpenChange,
-  buildings,
   roles,
 }: InviteLinkDialogProps) {
-  const [roleId, setRoleId] = useState<number | null>(null);
-  const [buildingId, setBuildingId] = useState<number | null>(null);
-  const [place, setPlace] = useState<Place | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,9 +36,6 @@ export function InviteLinkDialog({
     if (!open && inviteUrl) {
       const timer = setTimeout(() => {
         setInviteUrl(null);
-        setRoleId(null);
-        setBuildingId(null);
-        setPlace(null);
         setError("");
         setCopied(false);
       }, 300);

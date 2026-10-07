@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  fetchAllComplaints,
-  fetchCategories,
-} from "@/services/problemsApi";
+import { fetchAllComplaints } from "@/services/problemsApi";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import { StatCard, StatCardSkeleton } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -23,7 +19,7 @@ import { ClockIcon, HammerIcon, CheckmarkCircleIcon } from "@hugeicons/core-free
 import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
-import type { Complaint, CategoryOption } from "@/lib/types";
+import type { Complaint } from "@/lib/types";
 
 const AdminPage = () => {
   const { user: currentUser } = useUser();
@@ -158,8 +154,8 @@ const AdminPage = () => {
                           {formatDate(c.createdAt)}
                         </TableCell>
                         <TableCell className="px-6 py-4">
-                          <Badge variant="outline" className={priorityBadgeClass(c.priority)}>
-                            {priorityLabel(c.priority)}
+                          <Badge variant="outline" className={priorityBadgeClass(c.priority ?? "")}>
+                            {priorityLabel(c.priority ?? "")}
                           </Badge>
                         </TableCell>
                         <TableCell className="px-6 py-4">
