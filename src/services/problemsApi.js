@@ -1088,3 +1088,68 @@ export async function fetchSimilarComplaints(text, categoryId = null, buildingId
   }
   return [];
 }
+
+// ------------------ RESOURCE MANAGEMENT API ------------------
+
+export async function fetchResources() {
+  try {
+    const data = await fetchJson("/resources/");
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.warn("Failed to fetch resources", e);
+    return [];
+  }
+}
+
+export async function createResource(resourceData) {
+  return await fetchJson("/resources/", {
+    method: "POST",
+    body: resourceData,
+  });
+}
+
+export async function updateResource(resourceId, fields) {
+  return await fetchJson(`/resources/${resourceId}/`, {
+    method: "PATCH",
+    body: fields,
+  });
+}
+
+export async function deleteResource(resourceId) {
+  return await fetchJson(`/resources/${resourceId}/`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchComplaintResources(complaintId) {
+  try {
+    return await fetchJson(`/complaints/${complaintId}/resources/`);
+  } catch (e) {
+    console.warn(`Failed to fetch resources for complaint ${complaintId}`, e);
+    return { complaint_id: complaintId, total_cost: 0, resources: [] };
+  }
+}
+
+export async function addComplaintResource(complaintId, payload) {
+  return await fetchJson(`/complaints/${complaintId}/resources/`, {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function deleteComplaintResource(complaintId, resourceLogId) {
+  return await fetchJson(`/complaints/${complaintId}/resources/${resourceLogId}/`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchResourceReport(filters = {}) {
+  try {
+    const q = buildQueryParams(filters, ["period", "building_id", "category_id", "date_from", "date_to"]);
+    return await fetchJson(`/admin/reports/resources/${q}`);
+  } catch (e) {
+    console.warn("Failed to fetch resource expenditure report", e);
+    return { total_cost: 0, total_items_logged: 0, resource_summary: [], recent_logs: [] };
+  }
+}
+

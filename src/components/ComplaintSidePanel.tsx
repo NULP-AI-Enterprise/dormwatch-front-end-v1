@@ -40,6 +40,7 @@ import { useUser } from "@/context/UserContext";
 import ProgressStepper from "@/components/ProgressStepper";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
+import ComplaintResourcesSection from "@/components/ComplaintResourcesSection";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
 import { Home, Users, ZoomIn, Pencil } from "lucide-react";
@@ -458,6 +459,10 @@ const ComplaintSidePanel = ({
               unusable list + input. */}
           {(isOwner || isAdmin) && (
             <>
+              <Separator />
+
+              <ComplaintResourcesSection complaintId={complaint.id} isAdmin={isAdmin} />
+
               <Separator dashed />
 
               <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />
