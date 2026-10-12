@@ -301,8 +301,8 @@ const ComplaintCard = ({
     <Card className={cn("py-0 border-border shadow-none bg-card overflow-hidden", cardClassName)}>
       <div className={bodyPadding}>
         {/* Mobile top row: badges left, details button right */}
-        <div className="flex items-center justify-between gap-2 mb-2 sm:hidden">
-          <div className="flex flex-wrap gap-1.5 items-center">
+        <div className="flex items-start justify-between gap-2 mb-2 sm:hidden">
+          <div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
             {statusBadge}
             <OverdueBadge complaint={p} />
             {reworkBadge}

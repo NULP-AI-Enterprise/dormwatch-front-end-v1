@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Wrench,
-  Search,
   MessageSquare,
   ChevronDown,
   ChevronUp,
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -45,25 +43,23 @@ import {
   apiErrorText,
 } from "@/services/problemsApi";
 import type { Complaint } from "@/lib/types";
+import {
+  WorkerFiltersPopover,
+  WorkerActiveFilterChips,
+  FilterSearchInput,
+  type WorkerStatusFilter,
+} from "@/components/ComplaintFilters";
 
-// Undo window on "Виконано" — mirrors the server's TRANSITION_UNDO_WINDOW:
-// the resident-facing notice materializes only after this passes.
 const UNDO_WINDOW_MS = 30_000;
-
-type WorkerStatusFilter = "all" | "in_progress" | "review" | "not_accepted" | "resolved";
-
-const WORKER_STATUS_OPTIONS: { id: WorkerStatusFilter; label: string }[] = [
-  { id: "all", label: "Усі" },
-  { id: "in_progress", label: "У роботі" },
-  { id: "review", label: "На перевірці" },
-  { id: "not_accepted", label: "Не прийнято" },
-  { id: "resolved", label: "Вирішено" },
-];
 
 const WorkerHomePage = () => {
   const { user: currentUser } = useUser();
   const [jobs, setJobs] = useState<Complaint[] | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<WorkerStatusFilter>("all");
+  const [selectedPriority, setSelectedPriority] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [reworkOnly, setReworkOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -224,6 +220,22 @@ const WorkerHomePage = () => {
     return map;
   }, [jobs]);
 
+  const activeFilterCount =
+    (selectedStatus !== "all" ? 1 : 0) +
+    selectedPriority.length +
+    (selectedDate ? 1 : 0) +
+    (overdueOnly ? 1 : 0) +
+    (reworkOnly ? 1 : 0);
+
+  const resetFilters = () => {
+    setSelectedStatus("all");
+    setSelectedPriority([]);
+    setSelectedDate(undefined);
+    setOverdueOnly(false);
+    setReworkOnly(false);
+    setSearchQuery("");
+  };
+
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
     return jobs.filter((job) => {
@@ -232,6 +244,33 @@ const WorkerHomePage = () => {
         if (job.status !== "in_progress" && job.status !== "approved") return false;
       } else if (selectedStatus !== "all") {
         if (job.status !== selectedStatus) return false;
+      }
+
+      // Priority filter
+      if (selectedPriority.length > 0 && (!job.priority || !selectedPriority.includes(job.priority))) {
+        return false;
+      }
+
+      // Overdue filter
+      if (overdueOnly && !job.isOverdue) {
+        return false;
+      }
+
+      // Rework filter
+      if (reworkOnly && !job.isRework) {
+        return false;
+      }
+
+      // Date filter
+      if (selectedDate && job.createdAt) {
+        const pDate = new Date(job.createdAt);
+        if (
+          pDate.getFullYear() !== selectedDate.getFullYear() ||
+          pDate.getMonth() !== selectedDate.getMonth() ||
+          pDate.getDate() !== selectedDate.getDate()
+        ) {
+          return false;
+        }
       }
 
       // Search query filter
@@ -249,7 +288,7 @@ const WorkerHomePage = () => {
 
       return true;
     });
-  }, [jobs, selectedStatus, searchQuery]);
+  }, [jobs, selectedStatus, selectedPriority, overdueOnly, reworkOnly, selectedDate, searchQuery]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -287,55 +326,59 @@ const WorkerHomePage = () => {
           </div>
         )}
 
-        {/* Top Controls: Search + Status Filters */}
-        <div className="space-y-3 mb-6">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" strokeWidth={2} />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Пошук за назвою, описом або місцем..."
-              className="pl-8 text-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
+        {/* Top Controls: Search + Popover Filter matching UserPage / DashboardPage style */}
+        <div className="space-y-2.5 mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="flex-1 min-w-0">
+              <FilterSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Пошук за назвою, описом або місцем..."
+              />
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <WorkerFiltersPopover
+                selectedStatus={selectedStatus}
+                onStatusChange={setSelectedStatus}
+                statusCounts={counts}
+                selectedPriority={selectedPriority}
+                onPriorityChange={setSelectedPriority}
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+                overdueOnly={overdueOnly}
+                onOverdueOnlyChange={setOverdueOnly}
+                reworkOnly={reworkOnly}
+                onReworkOnlyChange={setReworkOnly}
+                onReset={resetFilters}
+                activeCount={activeFilterCount}
+              />
+              {(activeFilterCount > 0 || searchQuery.trim()) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-xs text-muted-foreground hover:text-foreground h-9 px-2.5 cursor-pointer shrink-0"
+                >
+                  <X className="size-3.5 mr-1" strokeWidth={2} />
+                  Скинути
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-            {WORKER_STATUS_OPTIONS.map((opt) => {
-              const active = selectedStatus === opt.id;
-              const count = counts[opt.id] ?? 0;
-              return (
-                <Button
-                  key={opt.id}
-                  variant={active ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedStatus(opt.id)}
-                  className={`h-8 text-xs font-medium cursor-pointer transition-all shrink-0 ${
-                    active ? "font-semibold shadow-xs" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>{opt.label}</span>
-                  <span
-                    className={`ml-1.5 px-1.5 py-0.2 text-[10px] font-bold border ${
-                      active
-                        ? "bg-background text-foreground border-border"
-                        : "bg-muted/60 text-muted-foreground border-border"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
+          <WorkerActiveFilterChips
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            selectedPriority={selectedPriority}
+            onPriorityChange={setSelectedPriority}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            overdueOnly={overdueOnly}
+            onOverdueOnlyChange={setOverdueOnly}
+            reworkOnly={reworkOnly}
+            onReworkOnlyChange={setReworkOnly}
+            onResetAll={resetFilters}
+          />
         </div>
 
         {jobs === null ? (

@@ -49,8 +49,11 @@ export function StudentMobileMenu({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-card border-l border-border">
-          <SheetHeader className="p-4 pr-12 flex flex-row items-center justify-between">
+        <SheetContent
+          side="right"
+          className="w-full sm:w-[360px] max-w-full sm:max-w-sm p-0 flex flex-col bg-card border-l border-border"
+        >
+          <SheetHeader className="p-4 pr-12 flex flex-row items-center justify-between border-b border-border/50">
             <SheetTitle className="sr-only">Меню навігації</SheetTitle>
             <Logo to={admin ? "/admin" : "/user"} onClick={() => onOpenChange(false)} />
           </SheetHeader>

@@ -19,6 +19,7 @@ import { PRIORITY_OPTIONS, STATUS_OPTIONS, priorityLabel, statusLabel } from "@/
 import { formatDate } from "@/lib/dateUtils";
 import type { Building, CategoryOption, Worker } from "@/lib/types";
 import { Search, SlidersHorizontal, RotateCcw, Check, X, ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Filter primitives shared by the dashboard, user, and admin sidebars. These
 // were copy-pasted (with per-page state names) across UserPage, AdminPage,
@@ -331,7 +332,7 @@ export function ComplaintFiltersPopover({
       </Button>
 
       {open && (
-        <div className="absolute left-0 sm:left-auto right-auto top-full mt-2 z-50 w-[min(calc(100vw-2.5rem),540px)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),540px)] max-w-[calc(100vw-2rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
@@ -660,6 +661,369 @@ export function ComplaintActiveFilterChips({
           <button
             type="button"
             onClick={() => onDeadlineChange(undefined)}
+            className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      )}
+
+      {overdueOnly && onOverdueOnlyChange && (
+        <Badge
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20"
+        >
+          <span>Лише прострочені</span>
+          <button
+            type="button"
+            onClick={() => onOverdueOnlyChange(false)}
+            className="hover:text-foreground text-red-400 ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      )}
+
+      {reworkOnly && onReworkOnlyChange && (
+        <Badge
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
+        >
+          <span>Повторне опрацювання</span>
+          <button
+            type="button"
+            onClick={() => onReworkOnlyChange(false)}
+            className="hover:text-foreground text-red-600 dark:text-red-400 ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      )}
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onResetAll}
+        className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        Скинути всі
+      </Button>
+    </div>
+  );
+}
+
+export type WorkerStatusFilter = "all" | "in_progress" | "review" | "not_accepted" | "resolved";
+
+export const WORKER_STATUS_OPTIONS: { id: WorkerStatusFilter; label: string }[] = [
+  { id: "all", label: "Усі" },
+  { id: "in_progress", label: "У роботі" },
+  { id: "review", label: "На перевірці" },
+  { id: "not_accepted", label: "Не прийнято" },
+  { id: "resolved", label: "Вирішено" },
+];
+
+export type WorkerFiltersPopoverProps = {
+  selectedStatus: WorkerStatusFilter;
+  onStatusChange: (status: WorkerStatusFilter) => void;
+  statusCounts: Record<string, number>;
+  selectedPriority: string[];
+  onPriorityChange: (value: string[]) => void;
+  selectedDate?: Date | undefined;
+  onDateChange?: (date: Date | undefined) => void;
+  overdueOnly?: boolean;
+  onOverdueOnlyChange?: (value: boolean) => void;
+  reworkOnly?: boolean;
+  onReworkOnlyChange?: (value: boolean) => void;
+  onReset: () => void;
+  activeCount: number;
+};
+
+export function WorkerFiltersPopover({
+  selectedStatus,
+  onStatusChange,
+  statusCounts,
+  selectedPriority,
+  onPriorityChange,
+  selectedDate,
+  onDateChange,
+  overdueOnly,
+  onOverdueOnlyChange,
+  reworkOnly,
+  onReworkOnlyChange,
+  onReset,
+  activeCount,
+}: WorkerFiltersPopoverProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (containerRef.current?.contains(target)) return;
+      if (
+        target.closest(
+          '[data-slot="combobox-content"], [data-slot="popover-content"], [role="listbox"], [role="dialog"], [role="presentation"], [data-slot="select-content"], .rdp, .react-day-picker'
+        )
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <Button
+        variant={activeCount > 0 ? "default" : "outline"}
+        size="sm"
+        onClick={() => setOpen((prev) => !prev)}
+        className="h-9 gap-2 text-xs font-semibold shrink-0 cursor-pointer"
+      >
+        <SlidersHorizontal className="size-4" strokeWidth={2} />
+        <span>Фільтри</span>
+        {activeCount > 0 && (
+          <span className="ml-0.5 px-1.5 py-0.2 bg-background text-foreground text-[11px] font-bold border border-border">
+            {activeCount}
+          </span>
+        )}
+        {open ? (
+          <ChevronUp className="size-3.5 opacity-70" strokeWidth={2} />
+        ) : (
+          <ChevronDown className="size-3.5 opacity-70" strokeWidth={2} />
+        )}
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),460px)] max-w-[calc(100vw-2rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
+              <span className="text-xs font-semibold text-foreground">
+                Фільтри завдань
+              </span>
+              {activeCount > 0 && (
+                <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal">
+                  Активно: {activeCount}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setOpen(false)}
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
+              title="Згорнути"
+            >
+              <X className="size-4" strokeWidth={2} />
+            </Button>
+          </div>
+
+          <div className="space-y-3.5 text-xs">
+            {/* Статус */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-2">
+                Статус завдання
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {WORKER_STATUS_OPTIONS.map((opt) => {
+                  const active = selectedStatus === opt.id;
+                  const count = statusCounts[opt.id] ?? 0;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => onStatusChange(opt.id)}
+                      className={cn(
+                        "flex items-center justify-between px-2.5 py-2 text-xs border rounded-none text-left cursor-pointer transition-colors",
+                        active
+                          ? "bg-primary text-primary-foreground font-semibold border-primary shadow-xs"
+                          : "bg-muted/20 hover:bg-muted/50 text-foreground border-border/80"
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      <span
+                        className={cn(
+                          "ml-1 text-[10px] px-1 py-0 font-bold border",
+                          active
+                            ? "bg-primary-foreground/20 text-primary-foreground border-transparent"
+                            : "bg-card text-muted-foreground border-border"
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Пріоритет */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Пріоритет
+              </label>
+              <PriorityFilterSelect value={selectedPriority} onChange={onPriorityChange} />
+            </div>
+
+            {/* Дата */}
+            {onDateChange && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Дата створення
+                </label>
+                <DatePicker
+                  date={selectedDate}
+                  setDate={onDateChange}
+                  placeholder="Оберіть дату"
+                />
+              </div>
+            )}
+
+            {/* Додаткові прапорці */}
+            <div className="space-y-2 pt-1 border-t border-border/50">
+              {onOverdueOnlyChange && (
+                <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                  <Checkbox
+                    id="worker-popover-overdue"
+                    checked={overdueOnly}
+                    onCheckedChange={(v) => onOverdueOnlyChange(v === true)}
+                  />
+                  <span>Лише прострочені</span>
+                </label>
+              )}
+
+              {onReworkOnlyChange && (
+                <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+                  <Checkbox
+                    id="worker-popover-rework"
+                    checked={reworkOnly}
+                    onCheckedChange={(v) => onReworkOnlyChange(v === true)}
+                  />
+                  <span>Повторне опрацювання</span>
+                </label>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-border pt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              disabled={activeCount === 0}
+              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 cursor-pointer"
+            >
+              <RotateCcw className="size-3.5 mr-1" strokeWidth={2} />
+              Скинути все
+            </Button>
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="text-xs font-semibold h-8 px-4 cursor-pointer"
+            >
+              <Check className="size-3.5 mr-1" strokeWidth={2} />
+              Згорнути
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export type WorkerActiveFilterChipsProps = {
+  selectedStatus: WorkerStatusFilter;
+  onStatusChange: (status: WorkerStatusFilter) => void;
+  selectedPriority: string[];
+  onPriorityChange: (value: string[]) => void;
+  selectedDate?: Date | undefined;
+  onDateChange?: (date: Date | undefined) => void;
+  overdueOnly?: boolean;
+  onOverdueOnlyChange?: (value: boolean) => void;
+  reworkOnly?: boolean;
+  onReworkOnlyChange?: (value: boolean) => void;
+  onResetAll: () => void;
+};
+
+export function WorkerActiveFilterChips({
+  selectedStatus,
+  onStatusChange,
+  selectedPriority,
+  onPriorityChange,
+  selectedDate,
+  onDateChange,
+  overdueOnly,
+  onOverdueOnlyChange,
+  reworkOnly,
+  onReworkOnlyChange,
+  onResetAll,
+}: WorkerActiveFilterChipsProps) {
+  const hasActive =
+    selectedStatus !== "all" ||
+    selectedPriority.length > 0 ||
+    !!selectedDate ||
+    !!overdueOnly ||
+    !!reworkOnly;
+
+  if (!hasActive) return null;
+
+  const currentStatusOption = WORKER_STATUS_OPTIONS.find((o) => o.id === selectedStatus);
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+      {selectedStatus !== "all" && currentStatusOption && (
+        <Badge
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+        >
+          <span className="text-muted-foreground">Статус:</span> {currentStatusOption.label}
+          <button
+            type="button"
+            onClick={() => onStatusChange("all")}
+            className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      )}
+
+      {selectedPriority.map((p) => (
+        <Badge
+          key={p}
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+        >
+          <span className="text-muted-foreground">Пріоритет:</span> {priorityLabel(p)}
+          <button
+            type="button"
+            onClick={() => onPriorityChange(selectedPriority.filter((x) => x !== p))}
+            className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      ))}
+
+      {selectedDate && onDateChange && (
+        <Badge
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+        >
+          <span className="text-muted-foreground">Дата:</span> {formatDate(selectedDate.toISOString())}
+          <button
+            type="button"
+            onClick={() => onDateChange(undefined)}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
