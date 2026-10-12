@@ -226,7 +226,7 @@ const DashboardPage = () => {
         onClose={() => setPreviewImage(null)}
       />
 
-      <div>
+      <div className="min-w-0">
         {/* header + front-and-center CTA (residents create; admins jump to panel) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
@@ -296,20 +296,18 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {paginatedProblems.map((problem) => {
             return (
               <ComplaintCard
                 key={problem.id}
                 complaint={problem}
                 showOwnerBadge={true}
-                footerClassName="flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-2"
                 onCardClick={() => { setSelectedProblem(problem); setSheetOpen(true); }}
                 showPhoto
                 photoZoom
                 photoHeight="h-44"
                 onPhotoPreview={setPreviewImage}
-                footerLeft="added-date"
                 commentsMode="hidden"
                 showDelete={admin}
                 onDelete={handleDelete}

@@ -144,8 +144,8 @@ const UserPage = () => {
       )}
 
       {/* two columns: the full complaint list + sticky contact sidebar */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid lg:grid-cols-3 gap-8 min-w-0">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           {/* Section title styled elegantly */}
           <div className="flex items-center justify-between pb-1.5 border-b border-border h-8">
             <div className="flex items-center gap-2.5">
@@ -231,13 +231,11 @@ const UserPage = () => {
                 key={p.id}
                 complaint={p}
                 showOwnerBadge={false}
-                footerClassName="flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-2"
                 onCardClick={() => openSheet(p.id)}
                 showPhoto
                 photoZoom
                 photoHeight="h-44"
                 onPhotoPreview={setPreviewImage}
-                footerLeft="added-date"
                 commentsMode="hidden"
               />
             ))

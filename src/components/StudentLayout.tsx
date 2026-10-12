@@ -94,7 +94,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
         admin={admin}
       />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10 min-w-0">
         {children}
       </main>
 

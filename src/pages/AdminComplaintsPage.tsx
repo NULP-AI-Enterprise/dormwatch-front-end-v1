@@ -245,55 +245,57 @@ const AdminComplaintsPage = () => {
         onClose={() => setPreviewImage(null)}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen">
-        <div className="flex-1 p-6 space-y-4">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <div className="flex-1 p-6 space-y-4 min-w-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex flex-1 items-center gap-3">
-              <div className="w-full sm:max-w-md">
+            <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3 min-w-0">
+              <div className="w-full sm:max-w-md min-w-0">
                 <FilterSearchInput
                   value={searchQuery}
                   onChange={setSearchQuery}
                   placeholder="Пошук звернень..."
                 />
               </div>
-              <ComplaintFiltersPopover
-                selectedStatus={selectedStatus}
-                onStatusChange={setSelectedStatus}
-                selectedBuilding={selectedBuilding}
-                onBuildingChange={setSelectedBuilding}
-                buildings={buildings}
-                selectedPriority={selectedPriority}
-                onPriorityChange={setSelectedPriority}
-                selectedCategories={selectedCategories}
-                onCategoriesChange={setSelectedCategories}
-                categories={categories}
-                selectedWorkers={selectedWorkers}
-                onWorkersChange={setSelectedWorkers}
-                workers={workers}
-                selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
-                selectedDeadline={selectedDeadline}
-                onDeadlineChange={setSelectedDeadline}
-                overdueOnly={overdueOnly}
-                onOverdueOnlyChange={setOverdueOnly}
-                reworkOnly={reworkOnly}
-                onReworkOnlyChange={setReworkOnly}
-                onReset={resetFilters}
-                activeCount={activeFilterCount}
-              />
-              {activeFilterCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetFilters}
-                  className="text-xs text-muted-foreground hover:text-foreground h-9 px-2.5 hidden sm:inline-flex cursor-pointer"
-                >
-                  <X className="size-3.5 mr-1" strokeWidth={2} />
-                  Скинути
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <ComplaintFiltersPopover
+                  selectedStatus={selectedStatus}
+                  onStatusChange={setSelectedStatus}
+                  selectedBuilding={selectedBuilding}
+                  onBuildingChange={setSelectedBuilding}
+                  buildings={buildings}
+                  selectedPriority={selectedPriority}
+                  onPriorityChange={setSelectedPriority}
+                  selectedCategories={selectedCategories}
+                  onCategoriesChange={setSelectedCategories}
+                  categories={categories}
+                  selectedWorkers={selectedWorkers}
+                  onWorkersChange={setSelectedWorkers}
+                  workers={workers}
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  selectedDeadline={selectedDeadline}
+                  onDeadlineChange={setSelectedDeadline}
+                  overdueOnly={overdueOnly}
+                  onOverdueOnlyChange={setOverdueOnly}
+                  reworkOnly={reworkOnly}
+                  onReworkOnlyChange={setReworkOnly}
+                  onReset={resetFilters}
+                  activeCount={activeFilterCount}
+                />
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground h-9 px-2.5 cursor-pointer"
+                  >
+                    <X className="size-3.5 mr-1" strokeWidth={2} />
+                    Скинути
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-muted-foreground self-center sm:self-auto shrink-0">
+            <div className="text-xs text-muted-foreground self-start sm:self-auto shrink-0">
               Знайдено: <span className="font-semibold text-foreground">{filteredComplaints.length}</span>
               {totalPages > 1 && (
                 <span className="ml-1 text-muted-foreground">
@@ -325,7 +327,7 @@ const AdminComplaintsPage = () => {
             onResetAll={resetFilters}
           />
 
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <LoadingSpinner size="md" />

@@ -52,6 +52,13 @@ import {
 
 const UNDO_WINDOW_MS = 30_000;
 
+const PRIORITY_WEIGHT: Record<string, number> = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
 const WorkerHomePage = () => {
   const { user: currentUser } = useUser();
   const [jobs, setJobs] = useState<Complaint[] | null>(null);
@@ -60,11 +67,50 @@ const WorkerHomePage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [reworkOnly, setReworkOnly] = useState(false);
+  const [sortByUrgency, setSortByUrgency] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [openComments, setOpenComments] = useState<Record<number, boolean>>({});
+  const [liveCommentCounts, setLiveCommentCounts] = useState<Record<number, number>>({});
+  const [liveForeignIds, setLiveForeignIds] = useState<Record<number, number | null>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const seenStorageKey = `dormwatch_worker_seen_comments_${currentUser?.user ?? "default"}`;
+  const [seenForeignCommentIds, setSeenForeignCommentIds] = useState<Record<number, number>>(() => {
+    try {
+      const raw = localStorage.getItem(`dormwatch_worker_seen_comments_${currentUser?.user ?? "default"}`);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(seenStorageKey);
+      if (raw) setSeenForeignCommentIds(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, [seenStorageKey]);
+
+  const markCommentsSeen = useCallback(
+    (jobId: number, latestForeignId: number | null | undefined) => {
+      if (latestForeignId == null) return;
+      setSeenForeignCommentIds((prev) => {
+        if ((prev[jobId] ?? 0) >= latestForeignId) return prev;
+        const next = { ...prev, [jobId]: latestForeignId };
+        try {
+          localStorage.setItem(seenStorageKey, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
+    },
+    [seenStorageKey]
+  );
 
   // Single-slot undo: the latest "Виконано" can be reverted for 30 s.
   const [undo, setUndo] = useState<{ id: number; title: string; until: number } | null>(null);
@@ -99,11 +145,17 @@ const WorkerHomePage = () => {
     return () => clearInterval(timer);
   }, [undo]);
 
-  const toggleComments = (id: number) => {
+  const toggleComments = (job: Complaint) => {
+    const id = job.id;
+    const willOpen = !openComments[id];
     setOpenComments((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: willOpen,
     }));
+    if (willOpen) {
+      const latestForeign = liveForeignIds[id] !== undefined ? liveForeignIds[id] : job.latestForeignCommentId;
+      markCommentsSeen(id, latestForeign);
+    }
   };
 
   const handleStartWork = async (complaint: Complaint) => {
@@ -225,7 +277,8 @@ const WorkerHomePage = () => {
     selectedPriority.length +
     (selectedDate ? 1 : 0) +
     (overdueOnly ? 1 : 0) +
-    (reworkOnly ? 1 : 0);
+    (reworkOnly ? 1 : 0) +
+    (sortByUrgency ? 1 : 0);
 
   const resetFilters = () => {
     setSelectedStatus("all");
@@ -233,12 +286,13 @@ const WorkerHomePage = () => {
     setSelectedDate(undefined);
     setOverdueOnly(false);
     setReworkOnly(false);
+    setSortByUrgency(false);
     setSearchQuery("");
   };
 
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
-    return jobs.filter((job) => {
+    const list = jobs.filter((job) => {
       // Status filter
       if (selectedStatus === "in_progress") {
         if (job.status !== "in_progress" && job.status !== "approved") return false;
@@ -261,9 +315,10 @@ const WorkerHomePage = () => {
         return false;
       }
 
-      // Date filter
-      if (selectedDate && job.createdAt) {
-        const pDate = new Date(job.createdAt);
+      // Assigned date filter
+      const assignedDateRaw = job.assignedAt || job.startedAt || job.createdAt;
+      if (selectedDate && assignedDateRaw) {
+        const pDate = new Date(assignedDateRaw);
         if (
           pDate.getFullYear() !== selectedDate.getFullYear() ||
           pDate.getMonth() !== selectedDate.getMonth() ||
@@ -288,7 +343,38 @@ const WorkerHomePage = () => {
 
       return true;
     });
-  }, [jobs, selectedStatus, selectedPriority, overdueOnly, reworkOnly, selectedDate, searchQuery]);
+
+    if (!sortByUrgency) return list;
+
+    return [...list].sort((a, b) => {
+      // 1. Actionable tasks (approved, in_progress, not_accepted) before review/resolved
+      const aActionable = a.status === "approved" || a.status === "in_progress" || a.status === "not_accepted" ? 1 : 0;
+      const bActionable = b.status === "approved" || b.status === "in_progress" || b.status === "not_accepted" ? 1 : 0;
+      if (aActionable !== bActionable) return bActionable - aActionable;
+
+      // 2. Overdue tasks first
+      const aOverdue = a.isOverdue ? 1 : 0;
+      const bOverdue = b.isOverdue ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+
+      // 3. Priority weight descending (critical > high > medium > low)
+      const aPrio = PRIORITY_WEIGHT[a.priority || ""] ?? 0;
+      const bPrio = PRIORITY_WEIGHT[b.priority || ""] ?? 0;
+      if (aPrio !== bPrio) return bPrio - aPrio;
+
+      // 4. Rework tasks prioritized
+      const aRework = a.isRework ? 1 : 0;
+      const bRework = b.isRework ? 1 : 0;
+      if (aRework !== bRework) return bRework - aRework;
+
+      // 5. Earliest deadline first
+      const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY;
+      const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY;
+      if (aDeadline !== bDeadline) return aDeadline - bDeadline;
+
+      return 0;
+    });
+  }, [jobs, selectedStatus, selectedPriority, overdueOnly, reworkOnly, selectedDate, searchQuery, sortByUrgency]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -306,7 +392,7 @@ const WorkerHomePage = () => {
         </div>
       </nav>
 
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 pb-32">
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 pb-32 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -349,6 +435,8 @@ const WorkerHomePage = () => {
                 onOverdueOnlyChange={setOverdueOnly}
                 reworkOnly={reworkOnly}
                 onReworkOnlyChange={setReworkOnly}
+                sortByUrgency={sortByUrgency}
+                onSortByUrgencyChange={setSortByUrgency}
                 onReset={resetFilters}
                 activeCount={activeFilterCount}
               />
@@ -377,6 +465,8 @@ const WorkerHomePage = () => {
             onOverdueOnlyChange={setOverdueOnly}
             reworkOnly={reworkOnly}
             onReworkOnlyChange={setReworkOnly}
+            sortByUrgency={sortByUrgency}
+            onSortByUrgencyChange={setSortByUrgency}
             onResetAll={resetFilters}
           />
         </div>
@@ -394,63 +484,56 @@ const WorkerHomePage = () => {
             }
           />
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 min-w-0">
             {filteredJobs.map((job) => {
               const hasBlock = isBlockComplaint(job.description);
               const cleanDescription = cleanComplaintDescription(job.description);
               const canAct = job.status === "approved" || job.status === "in_progress";
               const isNotAccepted = job.status === "not_accepted";
+              const commentCount = liveCommentCounts[job.id] ?? job.commentsCount ?? 0;
+              const latestForeignId =
+                liveForeignIds[job.id] !== undefined ? liveForeignIds[job.id] : job.latestForeignCommentId;
+              const hasUnreadComments =
+                !openComments[job.id] &&
+                latestForeignId != null &&
+                latestForeignId > (seenForeignCommentIds[job.id] ?? 0);
+              const assignedDateDisplay = job.assignedAt || job.startedAt || job.createdAt;
 
               return (
-                <Card key={job.id} className="py-0 border-border shadow-none bg-card overflow-hidden">
-                  <CardContent className="p-5 sm:p-6 space-y-3">
-                    {/* Header: Badges & Location */}
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <StatusBadge status={job.status} />
-                        <OverdueBadge complaint={job} />
-                        {job.priority && <PriorityBadge priority={job.priority} />}
-                        {job.isRework && (
-                          <Badge
-                            variant="outline"
-                            className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
-                          >
-                            Повторне опрацювання
-                          </Badge>
-                        )}
-                        {job.studentPhone && (
-                          <Badge
-                            variant="outline"
-                            className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 gap-1 text-[11px] font-semibold px-2 py-0.5"
-                          >
-                            <Phone className="size-3" strokeWidth={2} />
-                            {job.studentPhone}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="text-xs text-muted-foreground shrink-0">
-                        {job.category && (
-                          <>
-                            <span>{job.category}</span>
-                            <span className="mx-1">·</span>
-                          </>
-                        )}
-                        <span>
-                          {job.building || "?"}
-                          {job.placeName && ` · ${job.placeName}`}
-                        </span>
-                      </div>
+                <Card key={job.id} className="py-0 border-border shadow-none bg-card overflow-hidden w-full max-w-full min-w-0">
+                  <CardContent className="p-5 sm:p-6 space-y-3 min-w-0">
+                    {/* Header: Badges */}
+                    <div className="flex flex-wrap gap-2 items-center min-w-0">
+                      <StatusBadge status={job.status} />
+                      <OverdueBadge complaint={job} />
+                      {job.priority && <PriorityBadge priority={job.priority} />}
+                      {job.isRework && (
+                        <Badge
+                          variant="outline"
+                          className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+                        >
+                          Повторне опрацювання
+                        </Badge>
+                      )}
+                      {job.studentPhone && (
+                        <Badge
+                          variant="outline"
+                          className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 gap-1 text-[11px] font-semibold px-2 py-0.5"
+                        >
+                          <Phone className="size-3" strokeWidth={2} />
+                          {job.studentPhone}
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-base font-semibold text-foreground leading-snug">
+                    <h3 className="text-base font-semibold text-foreground leading-snug break-words [overflow-wrap:anywhere]">
                       {job.title}
                     </h3>
 
                     {/* Description */}
                     {cleanDescription && (
-                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
+                      <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">
                         {cleanDescription}
                       </p>
                     )}
@@ -479,7 +562,7 @@ const WorkerHomePage = () => {
                         <button
                           type="button"
                           onClick={() => setPreviewImage(resolveImageUrl(job.photoUrl as string))}
-                          className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none"
+                          className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none max-w-full"
                           title="Натисніть для перегляду фото у повному розмірі"
                         >
                           <div className="relative size-7 shrink-0 overflow-hidden border border-border bg-card">
@@ -489,7 +572,7 @@ const WorkerHomePage = () => {
                               className="w-full h-full object-cover group-hover/attachment:scale-110 transition-transform duration-300"
                             />
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <ImageIcon className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0" strokeWidth={2} />
                             <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
                               Фото проблеми
@@ -509,9 +592,9 @@ const WorkerHomePage = () => {
                         {job.reworkReason && (
                           <div className="p-3 bg-red-500/10 border border-red-500/25 text-xs">
                             <span className="font-bold text-red-600 dark:text-red-400 block mb-1">
-                              Причина повернення на доопрацювання від мешканця:
+                              Причина повернення:
                             </span>
-                            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{job.reworkReason}</p>
+                            <p className="text-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{job.reworkReason}</p>
                           </div>
                         )}
                         {job.reworkPhoto && (
@@ -519,7 +602,7 @@ const WorkerHomePage = () => {
                             <button
                               type="button"
                               onClick={() => setPreviewImage(resolveImageUrl(job.reworkPhoto as string))}
-                              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-700 dark:text-red-300 transition-colors cursor-pointer select-none"
+                              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-700 dark:text-red-300 transition-colors cursor-pointer select-none max-w-full"
                             >
                               <div className="relative size-6 shrink-0 overflow-hidden border border-red-500/40 bg-card">
                                 <img
@@ -528,9 +611,9 @@ const WorkerHomePage = () => {
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <ImageIcon className="size-3.5 text-red-600 dark:text-red-400" />
+                              <ImageIcon className="size-3.5 text-red-600 dark:text-red-400 shrink-0" />
                               <span className="font-semibold">Фото дефекту від мешканця</span>
-                              <Eye className="size-3 ml-0.5 text-red-500" />
+                              <Eye className="size-3 ml-0.5 text-red-500 shrink-0" />
                             </button>
                           </div>
                         )}
@@ -539,6 +622,14 @@ const WorkerHomePage = () => {
 
                     {/* Metadata & Timestamps */}
                     <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border/60">
+                      {assignedDateDisplay && (
+                        <p>
+                          Дата призначення:{" "}
+                          <span className="font-medium text-foreground">
+                            {formatDateTime(assignedDateDisplay)}
+                          </span>
+                        </p>
+                      )}
                       {job.deadline && (
                         <p>
                           Дедлайн:{" "}
@@ -559,7 +650,7 @@ const WorkerHomePage = () => {
                         </p>
                       )}
                       {job.workNote && (
-                        <p className="whitespace-pre-wrap break-all">
+                        <p className="whitespace-pre-wrap break-all [overflow-wrap:anywhere]">
                           <span className="font-semibold text-foreground">Нотатка про виконання:</span>{" "}
                           {job.workNote}
                         </p>
@@ -605,26 +696,45 @@ const WorkerHomePage = () => {
                       </div>
                     )}
 
-                    {/* Comments toggle & inline comment section */}
-                    <div className="pt-2 border-t border-border flex items-center justify-between">
+                    {/* Comments toggle & bottom-right location metadata */}
+                    <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-2">
                       <Button
                         variant="ghost"
                         size="xs"
-                        onClick={() => toggleComments(job.id)}
-                        className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1.5 p-0 h-auto cursor-pointer"
+                        onClick={() => toggleComments(job)}
+                        className={`text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1.5 h-auto cursor-pointer transition-all ${
+                          hasUnreadComments
+                            ? "animate-pulse bg-primary/10 px-2.5 py-1 border border-primary/30 rounded-none"
+                            : "p-0"
+                        }`}
                       >
-                        <MessageSquare className="size-3.5" />
-                        Коментарі
+                        <MessageSquare className="size-3.5 shrink-0" />
+                        <span>Коментарі ({commentCount})</span>
+                        {hasUnreadComments && (
+                          <span className="relative flex size-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                            <span className="relative inline-flex rounded-full size-2 bg-primary" />
+                          </span>
+                        )}
                         {openComments[job.id] ? (
-                          <ChevronUp className="size-3.5" />
+                          <ChevronUp className="size-3.5 shrink-0" />
                         ) : (
-                          <ChevronDown className="size-3.5" />
+                          <ChevronDown className="size-3.5 shrink-0" />
                         )}
                       </Button>
 
-                      <span className="text-[11px] text-muted-foreground font-normal">
-                        №{job.id}
-                      </span>
+                      <div className="text-xs text-muted-foreground ml-auto text-right">
+                        {job.category && (
+                          <>
+                            <span>{job.category}</span>
+                            <span className="mx-1">·</span>
+                          </>
+                        )}
+                        <span>
+                          {job.building || "?"}
+                          {job.placeName && ` · ${job.placeName}`}
+                        </span>
+                      </div>
                     </div>
 
                     {openComments[job.id] && (
@@ -633,6 +743,12 @@ const WorkerHomePage = () => {
                           complaintId={job.id}
                           currentUserId={currentUser?.user}
                           complaintAuthorId={job.user_id}
+                          hideHeader
+                          onCommentsChange={(count, foreignId) => {
+                            setLiveCommentCounts((prev) => ({ ...prev, [job.id]: count }));
+                            setLiveForeignIds((prev) => ({ ...prev, [job.id]: foreignId }));
+                            markCommentsSeen(job.id, foreignId);
+                          }}
                         />
                       </div>
                     )}

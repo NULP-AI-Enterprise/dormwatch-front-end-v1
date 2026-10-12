@@ -9,7 +9,6 @@ import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBad
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
-import { formatDate } from "@/lib/dateUtils";
 import { isBlockComplaint, cleanComplaintDescription } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
 import { ERROR_TEXT, ERROR_BORDER, ERROR_BG_HOVER } from "@/lib/theme";
@@ -82,8 +81,8 @@ const ComplaintCard = ({
   showOwnerBadge = false,
   bodyPadding = "p-4 sm:p-6",
   cardClassName,
-  footerClassName = "flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4",
-  metaVariant = "location",
+  footerClassName,
+  metaVariant: _metaVariant = "location",
   descriptionFallback = "",
   onCardClick,
   showPhoto = true,
@@ -92,7 +91,7 @@ const ComplaintCard = ({
   onPhotoPreview,
   showPriority = false,
   showProgress = false,
-  footerLeft = "none",
+  footerLeft: _footerLeft = "none",
   commentsMode = "hidden",
   commentsSide = "right",
   commentsOpen = false,
@@ -263,21 +262,14 @@ const ComplaintCard = ({
     </Badge>
   );
 
-  const metaLine =
-    metaVariant === "date" ? (
-      <>
-        {p.category || ""}
-        <Dot className="mx-1.5" />
-        {formatDate(p.createdAt)}
-      </>
-    ) : (
-      <>
-        {p.category}
-        <Dot />
-        {p.building || "?"}
-        {p.placeName && <><Dot />{p.placeName}</>}
-      </>
-    );
+  const metaLine = (
+    <>
+      {p.category}
+      {p.category && <Dot />}
+      {p.building || "?"}
+      {p.placeName && <><Dot />{p.placeName}</>}
+    </>
+  );
 
   const statusBadge = <StatusBadge status={p.status} />;
   const commentButton = commentsMode === "inline" && (
@@ -297,9 +289,15 @@ const ComplaintCard = ({
     </Button>
   );
 
+  const hasFooterActions =
+    (commentsMode === "inline" && !!commentButton) ||
+    showResidentActions ||
+    (showDelete && isAdmin) ||
+    showAdminActions;
+
   return (
-    <Card className={cn("py-0 border-border shadow-none bg-card overflow-hidden", cardClassName)}>
-      <div className={bodyPadding}>
+    <Card className={cn("py-0 border-border shadow-none bg-card overflow-hidden w-full max-w-full min-w-0", cardClassName)}>
+      <div className={cn("min-w-0", bodyPadding)}>
         {/* Mobile top row: badges left, details button right */}
         <div className="flex items-start justify-between gap-2 mb-2 sm:hidden">
           <div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
@@ -335,10 +333,10 @@ const ComplaintCard = ({
           )}
         </div>
 
-        {/* Desktop top row: badges left, meta line + details button right */}
+        {/* Desktop top row: badges left, details button right */}
         <div className="hidden sm:flex sm:justify-between sm:items-start mb-3 gap-2">
           {!showProgress && (
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center min-w-0">
               {statusBadge}
               <OverdueBadge complaint={p} />
               {reworkBadge}
@@ -357,7 +355,7 @@ const ComplaintCard = ({
             </div>
           )}
           {showProgress && (
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center min-w-0">
               {reworkBadge}
               {showOwnerBadge && isMyComplaint && (
                 <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
@@ -368,10 +366,7 @@ const ComplaintCard = ({
               {phoneBadge}
             </div>
           )}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-normal text-muted-foreground shrink-0">
-              {metaLine}
-            </span>
+          <div className="flex items-center gap-3 shrink-0">
             {onCardClick && (
               <button
                 type="button"
@@ -388,29 +383,24 @@ const ComplaintCard = ({
             )}
           </div>
         </div>
-        <h3 className="text-sm font-semibold text-foreground mb-2">
+        <h3 className="text-sm font-semibold text-foreground mb-2 break-words [overflow-wrap:anywhere]">
           {p.title || "Без назви"}
         </h3>
 
         {showPriority && (
           <div className="flex flex-wrap gap-2 mb-3">
             <PriorityBadge priority={p.priority} />
-            {p.createdAt && (
-              <span className="text-xs text-muted-foreground font-normal">
-                {formatDate(p.createdAt)}
-              </span>
-            )}
           </div>
         )}
 
         {cleanDescription && (
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-words line-clamp-2">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all [overflow-wrap:anywhere] line-clamp-2">
             {cleanDescription}
           </p>
         )}
 
         {!cleanDescription && !hasBlock && !p.isShared && descriptionFallback && (
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-words line-clamp-2">
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all [overflow-wrap:anywhere] line-clamp-2">
             {descriptionFallback}
           </p>
         )}
@@ -435,7 +425,7 @@ const ComplaintCard = ({
         {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
           <div className="mb-4 p-3 bg-sky-500/10 border border-sky-500/25 rounded-none text-xs">
             <span className="font-bold text-sky-600 dark:text-sky-400 block mb-1">Причина відхилення:</span>
-            <p className="text-foreground leading-relaxed whitespace-pre-wrap">{p.rejectionReason}</p>
+            <p className="text-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{p.rejectionReason}</p>
           </div>
         )}
 
@@ -454,7 +444,7 @@ const ComplaintCard = ({
                   }
                 }
               }}
-              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none"
+              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none max-w-full"
               title="Натисніть для перегляду фото у повному розмірі"
             >
               <div className="relative size-7 shrink-0 overflow-hidden border border-border bg-card">
@@ -464,7 +454,7 @@ const ComplaintCard = ({
                   className="w-full h-full object-cover group-hover/attachment:scale-110 transition-transform duration-300"
                 />
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <ImageIcon
                   className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0"
                   strokeWidth={2}
@@ -488,49 +478,41 @@ const ComplaintCard = ({
           </div>
         )}
 
-        <div className={footerClassName}>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {footerLeft === "added-date" && (
-              <span className="text-xs font-normal text-muted-foreground">
-                Додано {formatDate(p.createdAt)}
-              </span>
-            )}
-            {footerLeft === "id" && (
-              <span className="text-xs text-muted-foreground font-normal">ID: {p.id}</span>
-            )}
-            <span className="text-xs font-normal text-muted-foreground sm:hidden">
-              {metaLine}
-            </span>
-            {commentsSide === "left" && commentButton}
-          </div>
+        <div className={cn("flex flex-wrap items-center justify-between pt-3 gap-2", footerClassName)}>
+          {hasFooterActions && (
+            <div className="flex flex-wrap gap-2 items-center">
+              {commentsSide === "left" && commentButton}
+              {commentsSide === "right" && commentButton}
+              {showResidentActions && (
+                <ComplaintResidentActions
+                  complaint={p}
+                  onChanged={() => onResidentChange?.()}
+                  size="xs"
+                />
+              )}
+              {showDelete && isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => onDelete?.(p.id)}
+                  className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
+                >
+                  <Trash2 className="size-3.5" strokeWidth={2} />
+                </Button>
+              )}
+              {showAdminActions && (
+                <ComplaintAdminActions
+                  complaint={p}
+                  onPatch={(body) => onAdminPatch?.(p.id, body)}
+                  onDelete={() => onAdminDelete?.(p.id)}
+                />
+              )}
+            </div>
+          )}
 
-          <div className="flex flex-wrap gap-2 items-center">
-            {commentsSide === "right" && commentButton}
-            {showResidentActions && (
-              <ComplaintResidentActions
-                complaint={p}
-                onChanged={() => onResidentChange?.()}
-                size="xs"
-              />
-            )}
-            {showDelete && isAdmin && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => onDelete?.(p.id)}
-                className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
-              >
-                <Trash2 className="size-3.5" strokeWidth={2} />
-              </Button>
-            )}
-            {showAdminActions && (
-              <ComplaintAdminActions
-                complaint={p}
-                onPatch={(body) => onAdminPatch?.(p.id, body)}
-                onDelete={() => onAdminDelete?.(p.id)}
-              />
-            )}
-          </div>
+          <span className="text-xs font-normal text-muted-foreground ml-auto text-right">
+            {metaLine}
+          </span>
         </div>
       </div>
 

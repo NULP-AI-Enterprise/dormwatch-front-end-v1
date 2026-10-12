@@ -79,6 +79,9 @@ export interface Complaint {
   completionPhoto?: string | null;
   userName?: string | null;
   studentPhone?: string | null;
+  assignedAt?: string | null;
+  commentsCount?: number;
+  latestForeignCommentId?: number | null;
 }
 
 export interface Comment {

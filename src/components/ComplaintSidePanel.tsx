@@ -201,9 +201,6 @@ const ComplaintSidePanel = ({
                   </Badge>
                 )}
               </div>
-              <span className="text-xs font-normal text-muted-foreground">
-                {String(complaint.id) !== "new" && `#${complaint.id}`}
-              </span>
             </div>
             {isEditing ? (
               <Input
@@ -212,7 +209,7 @@ const ComplaintSidePanel = ({
                 placeholder="Назва звернення"
               />
             ) : (
-              <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
+              <h3 className="text-base font-bold text-foreground mb-1 break-words [overflow-wrap:anywhere]">{complaint.title || "Без назви"}</h3>
             )}
             <p className="text-xs font-normal text-muted-foreground flex flex-wrap items-center">
               <span>{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}</span>
@@ -283,7 +280,7 @@ const ComplaintSidePanel = ({
           ) : (
             <div className="space-y-3">
               {cleanComplaintDescription(complaint.description) && (
-                <p className="text-sm text-foreground leading-relaxed break-words whitespace-pre-wrap">
+                <p className="text-sm text-foreground leading-relaxed break-all [overflow-wrap:anywhere] whitespace-pre-wrap">
                   {cleanComplaintDescription(complaint.description)}
                 </p>
               )}

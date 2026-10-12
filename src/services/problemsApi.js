@@ -563,6 +563,9 @@ function normalizeComplaint(raw) {
     user_id: raw.user?.id || raw.user?.user || raw.user || raw.user_id || null,
     isMine: !!raw.is_mine,
     studentPhone: raw.student_phone ?? raw.studentPhone ?? null,
+    assignedAt: raw.assigned_at ?? raw.assignedAt ?? raw.started_at ?? null,
+    commentsCount: raw.comments_count ?? raw.commentsCount ?? 0,
+    latestForeignCommentId: raw.latest_foreign_comment_id ?? raw.latestForeignCommentId ?? null,
   };
 }
 

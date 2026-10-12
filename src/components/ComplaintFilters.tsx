@@ -332,7 +332,7 @@ export function ComplaintFiltersPopover({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),540px)] max-w-[calc(100vw-2rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className="absolute left-0 right-auto sm:left-auto sm:right-0 top-full mt-2 z-50 w-[calc(100vw-1.5rem)] sm:w-[540px] max-w-[calc(100vw-1.5rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
@@ -734,6 +734,8 @@ export type WorkerFiltersPopoverProps = {
   onOverdueOnlyChange?: (value: boolean) => void;
   reworkOnly?: boolean;
   onReworkOnlyChange?: (value: boolean) => void;
+  sortByUrgency?: boolean;
+  onSortByUrgencyChange?: (value: boolean) => void;
   onReset: () => void;
   activeCount: number;
 };
@@ -750,6 +752,8 @@ export function WorkerFiltersPopover({
   onOverdueOnlyChange,
   reworkOnly,
   onReworkOnlyChange,
+  sortByUrgency,
+  onSortByUrgencyChange,
   onReset,
   activeCount,
 }: WorkerFiltersPopoverProps) {
@@ -803,7 +807,7 @@ export function WorkerFiltersPopover({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),460px)] max-w-[calc(100vw-2rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
+        <div className="absolute left-0 right-auto sm:left-auto sm:right-0 top-full mt-2 z-50 w-[calc(100vw-1.5rem)] sm:w-[460px] max-w-[calc(100vw-1.5rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
@@ -874,17 +878,54 @@ export function WorkerFiltersPopover({
               <PriorityFilterSelect value={selectedPriority} onChange={onPriorityChange} />
             </div>
 
-            {/* Дата */}
+            {/* Дата призначення */}
             {onDateChange && (
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                  Дата створення
+                  Дата призначення
                 </label>
                 <DatePicker
                   date={selectedDate}
                   setDate={onDateChange}
-                  placeholder="Оберіть дату"
+                  placeholder="Оберіть дату призначення"
                 />
+              </div>
+            )}
+
+            {/* Тумблер сортування за терміновістю */}
+            {onSortByUrgencyChange && (
+              <div
+                onClick={() => onSortByUrgencyChange(!sortByUrgency)}
+                className="flex items-center justify-between gap-3 py-2 px-3 bg-muted/30 border border-border/80 hover:border-primary/40 transition-colors cursor-pointer select-none"
+              >
+                <div>
+                  <span className="text-xs font-semibold text-foreground block">
+                    Сортувати термінові
+                  </span>
+                  <span className="text-[11px] text-muted-foreground block">
+                    Найтерміновіші до вирішення завдання зверху
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!!sortByUrgency}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSortByUrgencyChange(!sortByUrgency);
+                  }}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none",
+                    sortByUrgency ? "bg-primary" : "bg-muted-foreground/30"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none block size-4 rounded-full bg-background shadow-sm transition-transform",
+                      sortByUrgency ? "translate-x-4" : "translate-x-0"
+                    )}
+                  />
+                </button>
               </div>
             )}
 
@@ -953,6 +994,8 @@ export type WorkerActiveFilterChipsProps = {
   onOverdueOnlyChange?: (value: boolean) => void;
   reworkOnly?: boolean;
   onReworkOnlyChange?: (value: boolean) => void;
+  sortByUrgency?: boolean;
+  onSortByUrgencyChange?: (value: boolean) => void;
   onResetAll: () => void;
 };
 
@@ -967,6 +1010,8 @@ export function WorkerActiveFilterChips({
   onOverdueOnlyChange,
   reworkOnly,
   onReworkOnlyChange,
+  sortByUrgency,
+  onSortByUrgencyChange,
   onResetAll,
 }: WorkerActiveFilterChipsProps) {
   const hasActive =
@@ -974,7 +1019,8 @@ export function WorkerActiveFilterChips({
     selectedPriority.length > 0 ||
     !!selectedDate ||
     !!overdueOnly ||
-    !!reworkOnly;
+    !!reworkOnly ||
+    !!sortByUrgency;
 
   if (!hasActive) return null;
 
@@ -1020,11 +1066,27 @@ export function WorkerActiveFilterChips({
           variant="secondary"
           className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
-          <span className="text-muted-foreground">Дата:</span> {formatDate(selectedDate.toISOString())}
+          <span className="text-muted-foreground">Дата призначення:</span> {formatDate(selectedDate.toISOString())}
           <button
             type="button"
             onClick={() => onDateChange(undefined)}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
+          >
+            <X className="size-3" />
+          </button>
+        </Badge>
+      )}
+
+      {sortByUrgency && onSortByUrgencyChange && (
+        <Badge
+          variant="secondary"
+          className="text-[11px] gap-1 px-2 py-0.5 bg-primary/10 text-primary border border-primary/25"
+        >
+          <span>Сортувати термінові</span>
+          <button
+            type="button"
+            onClick={() => onSortByUrgencyChange(false)}
+            className="hover:text-foreground text-primary ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
           </button>
