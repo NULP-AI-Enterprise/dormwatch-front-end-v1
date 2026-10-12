@@ -50,7 +50,7 @@ export function StudentMobileMenu({
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-card border-l border-border">
-          <SheetHeader className="p-4 border-b border-border flex flex-row items-center justify-between">
+          <SheetHeader className="p-4 pr-12 flex flex-row items-center justify-between">
             <SheetTitle className="sr-only">Меню навігації</SheetTitle>
             <Logo to={admin ? "/admin" : "/user"} onClick={() => onOpenChange(false)} />
           </SheetHeader>

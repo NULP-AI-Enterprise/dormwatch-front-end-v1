@@ -562,6 +562,7 @@ function normalizeComplaint(raw) {
     createdAt: raw.created_at ?? raw.createdAt ?? null,
     user_id: raw.user?.id || raw.user?.user || raw.user || raw.user_id || null,
     isMine: !!raw.is_mine,
+    studentPhone: raw.student_phone ?? raw.studentPhone ?? null,
   };
 }
 

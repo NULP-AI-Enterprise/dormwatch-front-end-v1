@@ -12,6 +12,7 @@ import {
   Upload,
   X,
   CheckCircle2,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -255,7 +256,11 @@ const WorkerHomePage = () => {
       <nav className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Logo to="/worker" />
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-3">
+            <UserNavProfile />
+            <NotificationBell />
+          </div>
+          <div className="flex sm:hidden items-center gap-1.5">
             <NotificationBell />
             <UserNavProfile />
           </div>
@@ -268,9 +273,6 @@ const WorkerHomePage = () => {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Мої завдання
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              Керування призначеними завданнями та звітування про виконання
-            </p>
           </div>
           {jobs && (
             <div className="text-xs text-muted-foreground shrink-0">
@@ -371,6 +373,15 @@ const WorkerHomePage = () => {
                             className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
                           >
                             Повторне опрацювання
+                          </Badge>
+                        )}
+                        {job.studentPhone && (
+                          <Badge
+                            variant="outline"
+                            className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 gap-1 text-[11px] font-semibold px-2 py-0.5"
+                          >
+                            <Phone className="size-3" strokeWidth={2} />
+                            {job.studentPhone}
                           </Badge>
                         )}
                       </div>

@@ -231,7 +231,7 @@ const UserPage = () => {
                 key={p.id}
                 complaint={p}
                 showOwnerBadge={false}
-                footerClassName="flex items-center justify-between pt-4"
+                footerClassName="flex flex-col sm:flex-row sm:items-center justify-between pt-4 gap-2"
                 onCardClick={() => openSheet(p.id)}
                 showPhoto
                 photoZoom

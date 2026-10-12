@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp, Home, Image as ImageIcon, Eye, User, Users } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp, Home, Image as ImageIcon, Eye, User, Users, Phone } from "lucide-react";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
@@ -23,7 +23,7 @@ interface ComplaintCardProps {
   showOwnerBadge?: boolean;
 
   // Layout
-  bodyPadding?: "p-5" | "p-6";
+  bodyPadding?: string;
   cardClassName?: string;
   footerClassName?: string;
 
@@ -80,7 +80,7 @@ const ComplaintCard = ({
   complaint,
   variant = "default",
   showOwnerBadge = false,
-  bodyPadding = "p-6",
+  bodyPadding = "p-4 sm:p-6",
   cardClassName,
   footerClassName = "flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4",
   metaVariant = "location",
@@ -143,6 +143,15 @@ const ComplaintCard = ({
               >
                 <User className="size-3" strokeWidth={2.5} />
                 Ваше звернення
+              </Badge>
+            )}
+            {p.studentPhone && !isAdmin && (
+              <Badge
+                variant="outline"
+                className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+              >
+                <Phone className="size-3" strokeWidth={2} />
+                {p.studentPhone}
               </Badge>
             )}
             {p.category && (
@@ -244,6 +253,16 @@ const ComplaintCard = ({
     </Badge>
   );
 
+  const phoneBadge = p.studentPhone && !isAdmin && (
+    <Badge
+      variant="outline"
+      className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+    >
+      <Phone className="size-3" strokeWidth={2} />
+      {p.studentPhone}
+    </Badge>
+  );
+
   const metaLine =
     metaVariant === "date" ? (
       <>
@@ -279,10 +298,45 @@ const ComplaintCard = ({
   );
 
   return (
-    <Card className={cn("py-0 border-border shadow-none bg-card", cardClassName)}>
+    <Card className={cn("py-0 border-border shadow-none bg-card overflow-hidden", cardClassName)}>
       <div className={bodyPadding}>
-        {/* Unified header: status badge left, meta line right, bold title below. */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+        {/* Mobile top row: badges left, details button right */}
+        <div className="flex items-center justify-between gap-2 mb-2 sm:hidden">
+          <div className="flex flex-wrap gap-1.5 items-center">
+            {statusBadge}
+            <OverdueBadge complaint={p} />
+            {reworkBadge}
+            {showOwnerBadge && isMyComplaint && (
+              <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                <User className="size-3" strokeWidth={2.5} />
+                Ваше звернення
+              </Badge>
+            )}
+            {phoneBadge}
+            {p.supportersCount > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1 text-[11px]">
+                <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
+              </Badge>
+            )}
+          </div>
+          {onCardClick && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCardClick();
+              }}
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
+              title="Переглянути деталі звернення"
+            >
+              <span>Деталі</span>
+              <ChevronRight className="size-3 text-primary/70" strokeWidth={2} />
+            </button>
+          )}
+        </div>
+
+        {/* Desktop top row: badges left, meta line + details button right */}
+        <div className="hidden sm:flex sm:justify-between sm:items-start mb-3 gap-2">
           {!showProgress && (
             <div className="flex flex-wrap gap-2 items-center">
               {statusBadge}
@@ -294,6 +348,7 @@ const ComplaintCard = ({
                   Ваше звернення
                 </Badge>
               )}
+              {phoneBadge}
               {p.supportersCount > 0 && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
                   <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
@@ -310,6 +365,7 @@ const ComplaintCard = ({
                   Ваше звернення
                 </Badge>
               )}
+              {phoneBadge}
             </div>
           )}
           <div className="flex items-center gap-3">
@@ -433,7 +489,7 @@ const ComplaintCard = ({
         )}
 
         <div className={footerClassName}>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {footerLeft === "added-date" && (
               <span className="text-xs font-normal text-muted-foreground">
                 Додано {formatDate(p.createdAt)}
@@ -442,6 +498,9 @@ const ComplaintCard = ({
             {footerLeft === "id" && (
               <span className="text-xs text-muted-foreground font-normal">ID: {p.id}</span>
             )}
+            <span className="text-xs font-normal text-muted-foreground sm:hidden">
+              {metaLine}
+            </span>
             {commentsSide === "left" && commentButton}
           </div>
 

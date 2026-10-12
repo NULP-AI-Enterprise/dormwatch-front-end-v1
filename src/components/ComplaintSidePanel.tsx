@@ -43,7 +43,7 @@ import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ComplaintResourcesSection from "@/components/ComplaintResourcesSection";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
-import { Home, Users, ZoomIn, Pencil } from "lucide-react";
+import { Home, Users, ZoomIn, Pencil, Phone } from "lucide-react";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
@@ -177,7 +177,7 @@ const ComplaintSidePanel = ({
       />
 
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
+      <SheetContent className="overflow-x-hidden w-full max-w-full sm:max-w-md md:max-w-xl">
         <SheetHeader>
           <SheetTitle>Деталі звернення</SheetTitle>
           <SheetDescription>Інформація про звернення та керування статусом</SheetDescription>
@@ -194,6 +194,12 @@ const ComplaintSidePanel = ({
                     Повторне опрацювання
                   </Badge>
                 )}
+                {complaint.studentPhone && !isAdmin && (
+                  <Badge variant="outline" className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                    <Phone className="size-3" strokeWidth={2} />
+                    {complaint.studentPhone}
+                  </Badge>
+                )}
               </div>
               <span className="text-xs font-normal text-muted-foreground">
                 {String(complaint.id) !== "new" && `#${complaint.id}`}
@@ -208,11 +214,11 @@ const ComplaintSidePanel = ({
             ) : (
               <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
             )}
-             <p className="text-xs font-normal text-muted-foreground">
-               {complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}
-               <span className="w-1 h-1 bg-border inline-block mx-1.5" />
-               {isOwner ? "Ви (автор)" : isAdmin ? (complaint.userName || "Автор звернення") : "Автор звернення"}
-             </p>
+            <p className="text-xs font-normal text-muted-foreground flex flex-wrap items-center">
+              <span>{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}</span>
+              <span className="w-1 h-1 bg-border inline-block mx-1.5" />
+              <span>{isOwner ? "Ви (автор)" : isAdmin ? (complaint.userName || "Автор звернення") : "Автор звернення"}</span>
+            </p>
           </div>
 
           <div className="py-2.5 border-y border-border/50">

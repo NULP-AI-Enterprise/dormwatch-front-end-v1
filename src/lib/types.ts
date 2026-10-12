@@ -78,6 +78,7 @@ export interface Complaint {
   reworkPhoto?: string | null;
   completionPhoto?: string | null;
   userName?: string | null;
+  studentPhone?: string | null;
 }
 
 export interface Comment {

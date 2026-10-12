@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ClipboardList, Settings, Megaphone } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Settings, Megaphone, Coins } from "lucide-react";
 import React, { type ReactNode, useState } from "react";
 import { SELECTED } from "@/lib/theme";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
@@ -11,6 +11,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
   "/admin/complaints": "Всі звернення",
   "/admin/announcements": "Оголошення",
+  "/admin/resources": "Ресурси",
   "/admin/settings": "Налаштування",
 };
 
@@ -27,6 +28,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     { name: "Загальний огляд", path: "/admin", icon: <LayoutDashboard className="size-5" strokeWidth={1.5} /> },
     { name: "Всі звернення", path: "/admin/complaints", icon: <ClipboardList className="size-5" strokeWidth={1.5} /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <Megaphone className="size-5" strokeWidth={1.5} /> },
+    { name: "Ресурси", path: "/admin/resources", icon: <Coins className="size-5" strokeWidth={1.5} /> },
     { name: "Налаштування", path: "/admin/settings", icon: <Settings className="size-5" strokeWidth={1.5} /> },
   ];
 

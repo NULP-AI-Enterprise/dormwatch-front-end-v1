@@ -47,7 +47,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
                 admins landing here via /dashboard → /admin (avoid a bounce). */}
             <Logo to={admin ? "/admin" : "/user"} />
 
-            <div className="hidden sm:flex items-center">
+            <div className="hidden lg:flex items-center">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
@@ -64,14 +64,21 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          {/* Desktop right controls: [UserNavProfile] [NotificationBell] */}
+          <div className="hidden lg:flex items-center gap-3">
+            <UserNavProfile />
+            <NotificationBell onSelectComplaint={setSelectedComplaint} />
+          </div>
+
+          {/* Mobile & Tablet right controls: [NotificationBell] [UserNavProfile] [MenuButton] */}
+          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
             <UserNavProfile />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(true)}
-              className="sm:hidden size-9 text-foreground hover:bg-muted/60 cursor-pointer"
+              className="size-9 text-foreground hover:bg-muted/60 cursor-pointer"
               title="Меню навігації"
             >
               <Menu className="size-5" strokeWidth={1.75} />
