@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,15 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CircleCheck, CircleX, RefreshCw } from "lucide-react";
+import { CircleCheck, CircleX, ImagePlus, Trash2 } from "lucide-react";
 import {
   acceptComplaint,
   rejectComplaint,
   withdrawComplaint,
-  refileComplaint,
   apiErrorText,
 } from "@/services/problemsApi";
-import { TERMINAL_STATUSES, statusLabel } from "@/lib/complaintUtils";
 import type { Complaint } from "@/lib/types";
 
 interface ComplaintResidentActionsProps {
@@ -40,9 +39,8 @@ interface ComplaintResidentActionsProps {
 }
 
 // The owner's lifecycle cluster over the single status machine:
-// На перевірці → Прийняти / Не прийняти (reason required, with one-tap
-// re-file), Очікує → Скасувати, terminal → Подати повторно. Mirrors
-// ComplaintAdminActions so both role clusters behave the same way.
+// На перевірці → Прийняти / Не прийняти і подати повторно (reason required, photo optional)
+// Очікує → Скасувати
 const ComplaintResidentActions = ({
   complaint,
   onChanged,
@@ -50,11 +48,15 @@ const ComplaintResidentActions = ({
 }: ComplaintResidentActionsProps) => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reset = () => {
     setReason("");
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setError(null);
     setRejectOpen(false);
     setBusy(false);
@@ -66,8 +68,6 @@ const ComplaintResidentActions = ({
     try {
       await action();
       reset();
-      // onChanged() is the page's reload — no extra "complaintUpdated" event
-      // here, or hook + page would each fetch (two requests per tap).
       onChanged();
     } catch (err) {
       setBusy(false);
@@ -76,23 +76,26 @@ const ComplaintResidentActions = ({
     }
   };
 
-  // Reject then — for the re-file path — create the linked follow-up in one
-  // tap. The typed reason is required either way; the server rejects an
-  // empty one and caps each complaint at one open follow-up.
-  const handleReject = async (refile: boolean) =>
-    run(async () => {
-      await rejectComplaint(complaint.id, reason.trim());
-      if (refile) await refileComplaint(complaint.id);
-    }, "Не вдалося надіслати відповідь. Спробуйте ще раз.");
-
-  const handleRefile = () =>
-    run(() => refileComplaint(complaint.id), "Не вдалося створити повторне звернення. Спробуйте ще раз.");
+  const handleReject = () =>
+    run(
+      async () => {
+        await rejectComplaint(complaint.id, reason.trim(), photoFile);
+        toast.success("Ви успішно подали звернення на повторне опрацювання. Очікуйте відповідь адміністратора.");
+      },
+      "Не вдалося надіслати відповідь. Спробуйте ще раз."
+    );
 
   const handleWithdraw = () =>
-    run(() => withdrawComplaint(complaint.id), "Не вдалося скасувати звернення. Спробуйте ще раз.");
+    run(
+      () => withdrawComplaint(complaint.id),
+      "Не вдалося скасувати звернення. Спробуйте ще раз."
+    );
 
   const handleAccept = () =>
-    run(() => acceptComplaint(complaint.id), "Не вдалося прийняти роботу. Спробуйте ще раз.");
+    run(
+      () => acceptComplaint(complaint.id),
+      "Не вдалося прийняти роботу. Спробуйте ще раз."
+    );
 
   if (complaint.status === "review") {
     return (
@@ -113,27 +116,44 @@ const ComplaintResidentActions = ({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Скасувати</AlertDialogCancel>
-              <AlertDialogAction onClick={handleAccept}>Прийняти</AlertDialogAction>
+              <AlertDialogAction
+                className="bg-sky-500 hover:bg-sky-600 text-white"
+                onClick={handleAccept}
+              >
+                Прийняти
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
-        <Button variant="destructive" size={size} onClick={() => { setError(null); setRejectOpen(true); }}>
+        <Button
+          variant="outline"
+          size={size}
+          className="text-red-500 hover:text-red-600 border-red-500/20"
+          onClick={() => {
+            setError(null);
+            setRejectOpen(true);
+          }}
+        >
           <CircleX className="size-3 mr-1" strokeWidth={2} />
-          Не прийняти
+          Повторно
         </Button>
 
         {error && !rejectOpen && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
         )}
 
-        <Dialog open={rejectOpen} onOpenChange={(open) => { if (!open) reset(); }}>
+        <Dialog
+          open={rejectOpen}
+          onOpenChange={(open) => {
+            if (!open) reset();
+          }}
+        >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Що саме не прийнято?</DialogTitle>
+              <DialogTitle>Подати на повторне опрацювання</DialogTitle>
               <DialogDescription>
-                Опишіть недоліки — причина збережеться у зверненні. Роботу буде відхилено,
-                адміністратор отримає повідомлення.
+                Опишіть, що саме не влаштовує або не виконано. Звернення перейде до адміністратора.
               </DialogDescription>
             </DialogHeader>
             <Textarea
@@ -142,16 +162,55 @@ const ComplaintResidentActions = ({
               placeholder="Наприклад: кран продовжує текти після ремонту"
               aria-invalid={!reason.trim() ? true : undefined}
             />
+
+            {photoPreview ? (
+              <div className="relative border border-border p-2 bg-muted/20 flex items-center justify-between">
+                <img src={photoPreview} alt="Попередній перегляд" className="h-20 w-auto object-contain rounded" />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPhotoFile(null);
+                    setPhotoPreview(null);
+                  }}
+                  className="text-red-500 hover:text-red-600 gap-1 text-xs"
+                >
+                  <Trash2 className="size-3.5" /> Видалити фото
+                </Button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center gap-2 border border-dashed border-border py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors text-xs text-muted-foreground">
+                <ImagePlus className="size-4 text-muted-foreground" />
+                <span>Прикріпити фото (опціонально)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setPhotoFile(file);
+                      setPhotoPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+              </label>
+            )}
+
             {error && (
-              <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
             )}
             <DialogFooter>
-              <Button variant="outline" disabled={!reason.trim() || busy} onClick={() => handleReject(true)}>
-                <RefreshCw className="size-3 mr-1" strokeWidth={2} />
-                Подати повторно
+              <Button variant="outline" onClick={reset} disabled={busy}>
+                Скасувати
               </Button>
-              <Button variant="destructive" disabled={!reason.trim() || busy} onClick={() => handleReject(false)}>
-                Не прийняти
+              <Button
+                className="bg-sky-500 hover:bg-sky-600 text-white"
+                disabled={!reason.trim() || busy}
+                onClick={handleReject}
+              >
+                Подати повторно
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -180,46 +239,17 @@ const ComplaintResidentActions = ({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Назад</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleWithdraw}>
+              <AlertDialogAction
+                className="bg-sky-500 hover:bg-sky-600 text-white"
+                onClick={handleWithdraw}
+              >
                 Скасувати звернення
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
         {error && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
-        )}
-      </>
-    );
-  }
-
-  if (TERMINAL_STATUSES.includes(complaint.status)) {
-    return (
-      <>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size={size}>
-              <RefreshCw className="size-3 mr-1" strokeWidth={2} />
-              Подати повторно
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Створити повторне звернення?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Нове звернення у статусі «Очікує» отримає назву, опис, категорію, кімнату та фото
-                цього звернення ({statusLabel(complaint.status)}, №{complaint.id}) й одразу
-                потрапить на розгляд.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Скасувати</AlertDialogCancel>
-              <AlertDialogAction onClick={handleRefile}>Подати повторно</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        {error && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
         )}
       </>
     );

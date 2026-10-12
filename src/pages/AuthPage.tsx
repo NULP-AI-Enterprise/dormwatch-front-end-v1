@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import LoginForm from "@/components/LoginForm";
 import RegisterForm from "@/components/RegisterForm";
-import VerifyEmailForm from "@/components/VerifyEmailForm";
 import ForgotPasswordForm from "@/components/ForgotPasswordForm";
 import ResetPasswordForm from "@/components/ResetPasswordForm";
 
@@ -9,10 +8,6 @@ const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get("tab");
   const email = searchParams.get("email");
-
-  if (tab === "verify" && email) {
-    return <VerifyEmailForm email={email} />;
-  }
   if (tab === "forgot") {
     return <ForgotPasswordForm />;
   }

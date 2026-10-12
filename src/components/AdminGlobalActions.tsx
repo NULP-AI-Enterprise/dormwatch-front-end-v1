@@ -16,11 +16,8 @@ import type { Complaint } from "@/lib/types";
  * them. Opening a complaint from the bell and changing its status broadcasts
  * `adminComplaintUpdated`, which the admin pages already listen for to refresh.
  */
-export function AdminGlobalActions() {
-  const { user: currentUser } = useUser();
+export function AdminExportButton() {
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
     <>
@@ -33,6 +30,18 @@ export function AdminGlobalActions() {
         <Download className="size-4" strokeWidth={2} />
         Експорт даних
       </Button>
+      <ExportTicketsModal open={isExportOpen} onOpenChange={setIsExportOpen} />
+    </>
+  );
+}
+
+export function AdminNotificationBell() {
+  const { user: currentUser } = useUser();
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  return (
+    <>
       <NotificationBell
         onSelectComplaint={(c) => {
           setSelectedComplaint(c);
@@ -65,8 +74,16 @@ export function AdminGlobalActions() {
           isAdmin={true}
         />
       )}
-
-      <ExportTicketsModal open={isExportOpen} onOpenChange={setIsExportOpen} />
     </>
   );
 }
+
+export function AdminGlobalActions() {
+  return (
+    <>
+      <AdminExportButton />
+      <AdminNotificationBell />
+    </>
+  );
+}
+

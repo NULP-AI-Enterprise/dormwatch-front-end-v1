@@ -14,7 +14,7 @@ const PIPELINE = ["pending", "approved", "in_progress", "review", "resolved"] as
 // Terminal label tones — same four-hue status set as badges (§4). "rejected"
 // is the alert outcome that colors the bar; the other terminals stay neutral.
 const TERMINAL_TEXT: Record<string, string> = {
-  rejected: "text-red-500",
+  rejected: "text-sky-500 dark:text-sky-400",
 };
 
 interface ProgressStepperProps {
@@ -36,7 +36,7 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
           <div
             className={cn(
               "flex-1 h-full",
-              s === "rejected" ? "bg-red-500" : "bg-foreground"
+              s === "rejected" ? "bg-sky-500/40" : "bg-primary"
             )}
           />
         </div>
@@ -45,6 +45,7 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
   }
 
   const currentIdx = PIPELINE.indexOf(s as (typeof PIPELINE)[number]);
+  const isResolved = s === "resolved";
 
   return (
     <div className="w-full">
@@ -56,12 +57,12 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
           Крок {currentIdx + 1} з {PIPELINE.length}
         </span>
       </div>
-      <div className="hidden sm:flex justify-between mb-1.5">
+      <div className="hidden sm:grid sm:grid-cols-5 gap-0.5 mb-1.5 text-center">
         {PIPELINE.map((key, i) => (
           <span
             key={key}
             className={cn(
-              "text-xs font-semibold",
+              "text-xs font-semibold text-center truncate",
               i <= currentIdx ? "text-foreground" : "text-muted-foreground"
             )}
           >
@@ -69,7 +70,7 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
           </span>
         ))}
       </div>
-      <div className="flex h-1.5 gap-0.5">
+      <div className="grid grid-cols-5 h-1.5 gap-0.5">
         {PIPELINE.map((key, i) => {
           const isReached = i <= currentIdx;
           const isCurrent = i === currentIdx;
@@ -77,9 +78,9 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
             <div
               key={key}
               className={cn(
-                "flex-1 h-full transition-all duration-500",
-                isReached ? "bg-foreground" : "bg-muted",
-                isCurrent && key === "in_progress" && "animate-pulse"
+                "h-full transition-all duration-500",
+                isReached ? "bg-primary" : "bg-muted",
+                isCurrent && !isResolved && "animate-pulse"
               )}
             />
           );

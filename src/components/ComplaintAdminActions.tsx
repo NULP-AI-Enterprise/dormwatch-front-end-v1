@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -49,6 +48,7 @@ interface ComplaintAdminActionsProps {
 
 const destructiveActionClass =
   "bg-destructive text-destructive-foreground hover:bg-destructive/90";
+const skyActionClass = "bg-sky-500 hover:bg-sky-600 text-white";
 
 // One confirmation dialog + trigger button for the actions that need no input.
 const ConfirmAction = ({
@@ -56,7 +56,7 @@ const ConfirmAction = ({
   title,
   description,
   confirmLabel,
-  confirmClassName,
+  confirmClassName = skyActionClass,
   onConfirm,
 }: {
   trigger: React.ReactNode;
@@ -100,12 +100,22 @@ const ActionButton = forwardRef<
 ));
 ActionButton.displayName = "ActionButton";
 
+const isDateInPast = (date?: Date) => {
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() < today.getTime();
+};
+
 // The triage cluster used both on admin complaint cards (AdminComplaintsPage)
-// and in the ComplaintSidePanel — one place per flow:
-//   Очікує → plain approve, approve+assign fast path (worker + deadline +
-//   priority in one PATCH), reject with a required reason.
-//   На перевірці → Вирішити (admin finalizes on the resident's behalf — the
-//   auto-accept timer stays out of scope).
+// and in the ComplaintSidePanel:
+//   Очікує → plain approve, approve+assign (automatically moves to «В роботі»),
+//            reject with a required reason.
+//   Схвалено → assign worker (automatically moves to «В роботі»).
+//   В роботі → reassign worker, finish work (Виконано → «На перевірці»).
+//   На перевірці → (auto-resolved after 3 days or confirmed by student; no manual resolve button).
 const ComplaintAdminActions = ({
   complaint,
   onPatch,
@@ -148,6 +158,34 @@ const ComplaintAdminActions = ({
     }
   };
 
+  const isAssignDeadlineInPast = isDateInPast(assignDeadline);
+  const isAssignValid = Boolean(assignWorkerId && assignDeadline && !isAssignDeadlineInPast);
+
+  const openAssignModal = () => {
+    setError(null);
+    setAssignWorkerId(complaint.worker ? String(complaint.worker.worker_id) : null);
+    setAssignDeadline(complaint.deadline ? new Date(complaint.deadline) : undefined);
+    setAssignPriority(complaint.priority || "medium");
+    setAssignOpen(true);
+  };
+
+  const handleAssignSubmit = () => {
+    if (!assignWorkerId || !assignDeadline || isAssignDeadlineInPast) return;
+    const payload: Record<string, unknown> = {
+      worker_id: Number(assignWorkerId),
+      deadline: assignDeadline.toISOString(),
+      priority: assignPriority,
+    };
+    // Assigning a worker automatically moves pending, approved, or not_accepted complaints to in_progress
+    if (complaint.status === "pending" || complaint.status === "approved" || complaint.status === "not_accepted") {
+      payload.status = "in_progress";
+    }
+    return run(
+      () => onPatch(payload),
+      "Не вдалося призначити виконавця. Спробуйте ще раз."
+    );
+  };
+
   // Delete is available in every state (hidden on closed states only when
   // hideDeleteWhenClosed). Extracted so the proxy branches can compose it.
   const renderDelete = () =>
@@ -166,7 +204,187 @@ const ComplaintAdminActions = ({
       />
     ) : null;
 
-  if (complaint.status === "pending") {
+  const renderAssignDialog = () => {
+    const isPending = complaint.status === "pending" || complaint.status === "not_accepted";
+    const isInProgress = complaint.status === "in_progress";
+    return (
+      <Dialog
+        open={assignOpen}
+        onOpenChange={(open) => {
+          if (!open && !busy) {
+            setAssignOpen(false);
+            setError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {isPending
+                ? "Схвалити та призначити"
+                : isInProgress
+                ? "Перепризначити виконавця"
+                : "Призначити виконавця"}
+            </DialogTitle>
+            <DialogDescription>
+              {isPending
+                ? "Звернення одразу перейде в статус «В роботі», виконавець, обовʼязковий дедлайн та пріоритет запишуться."
+                : isInProgress
+                ? "Оберіть нового працівника та оновіть дедлайн або пріоритет."
+                : "Звернення перейде в статус «В роботі». Оберіть працівника, обовʼязковий дедлайн та перевірте пріоритет."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Виконавець <span className="text-sky-500">*</span>
+              </label>
+              <Select value={assignWorkerId ?? ""} onValueChange={setAssignWorkerId}>
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Оберіть виконавця" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workers.map((w) => (
+                    <SelectItem key={w.worker_id} value={String(w.worker_id)}>
+                      {w.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!assignWorkerId && (
+                <p className="text-[11px] text-sky-500/80 dark:text-sky-400/80 font-medium mt-1">
+                  Обовʼязкове поле
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">
+                Дедлайн <span className="text-sky-500">*</span>
+              </label>
+              <DatePicker
+                date={assignDeadline}
+                setDate={(d) => setAssignDeadline(d ?? undefined)}
+                placeholder="Оберіть дату дедлайну"
+                disabled={{ before: new Date() }}
+              />
+              {!assignDeadline && (
+                <p className="text-[11px] text-sky-500/80 dark:text-sky-400/80 font-medium mt-1">
+                  Обовʼязкове поле
+                </p>
+              )}
+              {isAssignDeadlineInPast && (
+                <p className="text-[11px] text-sky-500 dark:text-sky-400 font-semibold mt-1">
+                  Дедлайн не може бути раніше сьогоднішнього дня
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">Пріоритет</label>
+              <Select value={assignPriority} onValueChange={setAssignPriority}>
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {priorityLabel(p)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {error && (
+              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                setAssignOpen(false);
+                setError(null);
+              }}
+            >
+              Скасувати
+            </Button>
+            <Button
+              className={skyActionClass}
+              disabled={!isAssignValid || busy}
+              onClick={handleAssignSubmit}
+            >
+              {isPending
+                ? "Схвалити і призначити"
+                : isInProgress
+                ? "Зберегти"
+                : "Призначити"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  const renderRejectDialog = () => (
+    <Dialog
+      open={rejectOpen}
+      onOpenChange={(open) => {
+        if (!open && !busy) {
+          setRejectOpen(false);
+          setError(null);
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Причина відхилення</DialogTitle>
+          <DialogDescription>
+            Опишіть, чому звернення відхилено — причину буде показано мешканцеві.
+            Статус зміниться на «Відхилено» остаточно.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Наприклад: це питання не належить до компетенції гуртожитку"
+          aria-invalid={!reason.trim() ? true : undefined}
+        />
+        {error && (
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+        )}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setRejectOpen(false);
+              setError(null);
+            }}
+          >
+            Скасувати
+          </Button>
+          <Button
+            className={skyActionClass}
+            disabled={!reason.trim() || busy}
+            onClick={() =>
+              run(
+                () =>
+                  onPatch({
+                    status: "rejected",
+                    rejection_reason: reason.trim(),
+                  }),
+                "Не вдалося відхилити звернення. Спробуйте ще раз."
+              )
+            }
+          >
+            Відхилити
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  if (complaint.status === "pending" || complaint.status === "not_accepted") {
     return (
       <>
         <ConfirmAction
@@ -174,7 +392,13 @@ const ComplaintAdminActions = ({
           title="Схвалити звернення?"
           description={'Ви впевнені, що хочете схвалити це звернення? Воно перейде в статус "Схвалено". Виконавця можна призначити пізніше.'}
           confirmLabel="Схвалити"
-          onConfirm={() => onPatch({ status: "approved" })}
+          confirmClassName={skyActionClass}
+          onConfirm={() =>
+            run(
+              () => onPatch({ status: "approved" }),
+              "Не вдалося схвалити звернення. Спробуйте ще раз."
+            )
+          }
         />
 
         <Button
@@ -192,7 +416,8 @@ const ComplaintAdminActions = ({
         </Button>
 
         <Button
-          variant="destructive"
+          variant="outline"
+          className="text-red-500 hover:text-red-600 border-red-500/20"
           onClick={() => {
             setError(null);
             setReason("");
@@ -204,137 +429,92 @@ const ComplaintAdminActions = ({
         </Button>
 
         {error && !rejectOpen && !assignOpen && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
         )}
 
-        {/* Fast path: approve + assign + priority in ONE patch — the triage
-            call, not three round trips. */}
-        <Dialog open={assignOpen} onOpenChange={(open) => { if (!open && !busy) { setAssignOpen(false); setError(null); } }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Схвалити та призначити</DialogTitle>
-              <DialogDescription>
-                Звернення перейде в статус «Схвалено», виконавець і дедлайн запишуться одразу.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Виконавець</label>
-                <Select value={assignWorkerId ?? ""} onValueChange={setAssignWorkerId}>
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Оберіть виконавця" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workers.map((w) => (
-                      <SelectItem key={w.worker_id} value={String(w.worker_id)}>
-                        <span className="flex items-center gap-1.5">
-                          {w.full_name}
-                          {w.has_account && (
-                            <Badge variant="secondary" className="px-1 py-0 text-xs leading-none h-4">
-                              доступ
-                            </Badge>
-                          )}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Дедлайн</label>
-                <DatePicker
-                  date={assignDeadline}
-                  setDate={(d) => setAssignDeadline(d ?? undefined)}
-                  placeholder="Не визначено"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-foreground mb-1 block">Пріоритет</label>
-                <Select value={assignPriority} onValueChange={setAssignPriority}>
-                  <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITY_OPTIONS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {priorityLabel(p)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {error && (
-                <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" disabled={busy} onClick={() => { setAssignOpen(false); setError(null); }}>
-                Скасувати
-              </Button>
-              <Button
-                disabled={!assignWorkerId || busy}
-                onClick={() =>
-                  run(
-                    () =>
-                      onPatch({
-                        status: "approved",
-                        worker_id: Number(assignWorkerId),
-                        deadline: assignDeadline ? assignDeadline.toISOString() : null,
-                        priority: assignPriority,
-                      }),
-                    "Не вдалося схвалити звернення. Спробуйте ще раз."
-                  )
-                }
-              >
-                Схвалити і призначити
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {renderAssignDialog()}
+        {renderRejectDialog()}
+      </>
+    );
+  }
 
-        {/* Rejection is terminal and must say why — the reason reaches the
-            resident's panel and their rejection notification. */}
-        <Dialog open={rejectOpen} onOpenChange={(open) => { if (!open && !busy) { setRejectOpen(false); setError(null); } }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Причина відхилення</DialogTitle>
-              <DialogDescription>
-                Опишіть, чому звернення відхилено — причину буде показано мешканцеві.
-                Статус зміниться на «Відхилено» остаточно.
-              </DialogDescription>
-            </DialogHeader>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Наприклад: це питання не належить до компетенції гуртожитку"
-              aria-invalid={!reason.trim() ? true : undefined}
-            />
-            {error && (
-              <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
-            )}
-            <DialogFooter>
-              <Button variant="outline" disabled={busy} onClick={() => { setRejectOpen(false); setError(null); }}>
-                Скасувати
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={!reason.trim() || busy}
-                onClick={() =>
-                  run(
-                    () =>
-                      onPatch({
-                        status: "rejected",
-                        rejection_reason: reason.trim(),
-                      }),
-                    "Не вдалося відхилити звернення. Спробуйте ще раз."
-                  )
-                }
-              >
-                Відхилити
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+  if (complaint.status === "approved") {
+    return (
+      <>
+        <Button
+          variant="outline"
+          onClick={openAssignModal}
+        >
+          <UserCheck className="size-3 mr-1" strokeWidth={2} />
+          Призначити
+        </Button>
+
+        {complaint.worker && (
+          <ConfirmAction
+            trigger={
+              <ActionButton icon={Play}>
+                Взято в роботу
+              </ActionButton>
+            }
+            title="Взяти звернення в роботу?"
+            description="Ви підтверджуєте, що виконавець розпочав виконання робіт. Статус зміниться на «В роботі»."
+            confirmLabel="Взяти в роботу"
+            confirmClassName={skyActionClass}
+            onConfirm={() =>
+              run(
+                () => onPatch({ status: "in_progress" }),
+                "Не вдалося змінити статус звернення."
+              )
+            }
+          />
+        )}
+
+        {renderDelete()}
+
+        {error && !assignOpen && (
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+        )}
+
+        {renderAssignDialog()}
+      </>
+    );
+  }
+
+  if (complaint.status === "in_progress") {
+    return (
+      <>
+        <Button
+          variant="outline"
+          onClick={openAssignModal}
+        >
+          <UserCheck className="size-3 mr-1" strokeWidth={2} />
+          Перепризначити
+        </Button>
+
+        {complaint.worker && (
+          <ConfirmAction
+            trigger={
+              <ActionButton icon={CircleCheck}>
+                Виконано
+              </ActionButton>
+            }
+            title="Завершити виконання робіт?"
+            description="Ви підтверджуєте, що всі роботи за зверненням завершено. Воно перейде в статус «На перевірці» для підтвердження мешканцем."
+            confirmLabel="Виконано"
+            confirmClassName={skyActionClass}
+            onConfirm={() =>
+              run(
+                () => onPatch({ status: "review" }),
+                "Не вдалося змінити статус звернення."
+              )
+            }
+          />
+        )}
+        {renderDelete()}
+        {error && !assignOpen && (
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+        )}
+        {renderAssignDialog()}
       </>
     );
   }
@@ -342,53 +522,9 @@ const ComplaintAdminActions = ({
   if (complaint.status === "review") {
     return (
       <>
-        <ConfirmAction
-          trigger={<ActionButton icon={CircleCheck}>Вирішити</ActionButton>}
-          title="Позначити як вирішене?"
-          description={'Ви підтверджуєте від імені мешканця, що проблему вирішено. Звернення перейде в статус "Вирішено".'}
-          confirmLabel="Вирішити"
-          onConfirm={() => onPatch({ status: "resolved" })}
-        />
-        {error && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
-        )}
-      </>
-    );
-  }
-
-  // Proxy lifecycle for account-less workers: the admin stamps the same
-  // started_at/finished_at fields the worker panel writes, through the same
-  // transition helper — so a printout job and a panel job produce identical
-  // records. Only meaningful once someone is assigned to do the work.
-  if (complaint.status === "approved" && complaint.worker) {
-    return (
-      <>
-        <ActionButton
-          icon={Play}
-          onClick={() => onPatch({ status: "in_progress" })}
-        >
-          Взято в роботу
-        </ActionButton>
         {renderDelete()}
         {error && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
-        )}
-      </>
-    );
-  }
-
-  if (complaint.status === "in_progress" && complaint.worker) {
-    return (
-      <>
-        <ActionButton
-          icon={CircleCheck}
-          onClick={() => onPatch({ status: "review" })}
-        >
-          Виконано
-        </ActionButton>
-        {renderDelete()}
-        {error && (
-          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
         )}
       </>
     );
@@ -398,7 +534,7 @@ const ComplaintAdminActions = ({
     <>
       {renderDelete()}
       {error && (
-        <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+        <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
       )}
     </>
   );

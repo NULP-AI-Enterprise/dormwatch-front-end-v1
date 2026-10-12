@@ -40,7 +40,7 @@ const NEUTRAL_COLOR = {
 const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string }> = {
   pending: {
     badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
-    text: "text-amber-600 dark:text-amber-400",
+    text: "text-amber-500",
     fill: "bg-amber-500",
   },
   approved: {
@@ -68,8 +68,16 @@ const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string 
     text: "text-red-500",
     fill: "bg-red-500",
   },
-  not_accepted: NEUTRAL_COLOR,
-  withdrawn: NEUTRAL_COLOR,
+  not_accepted: {
+    badge: "text-red-500 bg-red-500/10 border-red-700/50",
+    text: "text-red-500",
+    fill: "bg-red-500",
+  },
+  withdrawn: {
+    badge: "text-red-500 bg-red-500/10 border-red-700/50",
+    text: "text-red-500",
+    fill: "bg-red-500",
+  },
 };
 
 export const statusBadgeClass = (status: string | null | undefined) =>
@@ -105,26 +113,18 @@ export const statusLabel = (status: string) => {
 };
 
 
-// Priority is text — no palette. Design system §4: only "critical" (genuinely
-// alert-level) may borrow the `red` status hue; the rest stay neutral.
+// Priority is uniform neutral text badges across all levels.
 const NEUTRAL_PRIORITY = {
   badge: "text-muted-foreground bg-card border-border",
   text: "text-muted-foreground",
 };
 
-const CRITICAL_PRIORITY = {
-  badge: "text-red-500 bg-red-500/10 border-red-700/50",
-  text: "text-red-500",
+export const priorityBadgeClass = (_priority: string | null | undefined) => {
+  return NEUTRAL_PRIORITY.badge;
 };
 
-export const priorityBadgeClass = (priority: string | null | undefined) => {
-  const p = String(priority || "").toLowerCase();
-  return p === "critical" ? CRITICAL_PRIORITY.badge : NEUTRAL_PRIORITY.badge;
-};
-
-export const priorityColor = (priority: string | null | undefined) => {
-  const p = String(priority || "").toLowerCase();
-  return p === "critical" ? CRITICAL_PRIORITY : NEUTRAL_PRIORITY;
+export const priorityColor = (_priority: string | null | undefined) => {
+  return NEUTRAL_PRIORITY;
 };
 
 export const priorityLabel = (priority: string | null | undefined): string => {
@@ -221,3 +221,19 @@ export function groupByChain<
     })
     .flat();
 }
+
+/**
+ * Checks whether a complaint description indicates it concerns a shared block (tagged with "[Блок]").
+ */
+export const isBlockComplaint = (description?: string | null): boolean => {
+  if (!description) return false;
+  return /\[Блок\]/i.test(description);
+};
+
+/**
+ * Strips the "[Блок]" tag from the description text so it doesn't display as raw text.
+ */
+export const cleanComplaintDescription = (description?: string | null): string => {
+  if (!description) return "";
+  return description.replace(/\[Блок\]/gi, "").trim();
+};

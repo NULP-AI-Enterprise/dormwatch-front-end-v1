@@ -11,7 +11,7 @@ import {
 } from "@/services/problemsApi";
 import { formatDate } from "@/lib/dateUtils";
 import type { Comment } from "@/lib/types";
-import { ACCENT_BG, ACCENT_BG_HOVER_DARK, ERROR_TEXT } from "@/lib/theme";
+import { ERROR_TEXT } from "@/lib/theme";
 
 interface CommentSectionProps {
   complaintId: number;
@@ -96,13 +96,23 @@ const CommentSection = ({ complaintId, currentUserId, isAdmin, complaintAuthorId
             >
               <div className="flex justify-between items-baseline mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">{c.author}</span>
-                  {c.authorIsAdmin ? (
-                    <Badge variant="default" className={`text-xs px-1.5 py-0 h-4 ${ACCENT_BG} text-white ${ACCENT_BG_HOVER_DARK}`}>Адміністратор</Badge>
-                  ) : c.author_id === complaintAuthorId ? (
-                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Автор звернення</Badge>
+                  <span className="text-sm font-bold text-foreground">
+                    {c.author_id === complaintAuthorId && !isAdmin && currentUserId !== complaintAuthorId
+                      ? "Автор звернення"
+                      : c.author}
+                  </span>
+                  {(c.authorIsAdmin || (c as any).author_role === "admin" || (c as any).authorRole === "admin") ? (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-yellow-500 bg-yellow-500/10 border-yellow-700/50">
+                      Адмін
+                    </Badge>
+                  ) : ((c as any).author_role === "worker" || (c as any).authorRole === "worker") ? (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-orange-500 bg-orange-500/10 border-orange-700/50">
+                      Працівник
+                    </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground border-border">Студент</Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-blue-500 bg-blue-500/10 border-blue-700/50">
+                      Студент
+                    </Badge>
                   )}
                 </div>
                 <span className="text-xs text-muted-foreground">

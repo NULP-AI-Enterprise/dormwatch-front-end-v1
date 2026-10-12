@@ -44,6 +44,7 @@ export interface Complaint {
   building: string;
   room: string;
   placeName: string;
+  placeId?: number | null;
   // True when the complaint's location is a shared/common area (kitchen,
   // laundry, hallway) rather than a residence room. Drives the "(спільна)"
   // marker downstream so common areas never read as someone's room.
@@ -55,6 +56,7 @@ export interface Complaint {
   priority: string | null;
   createdAt: string | null;
   user_id: number | null;
+  isMine?: boolean;
   // Assignment + lifecycle (merged into the complaint server-side).
   worker: Worker | null;
   deadline: string | null;
@@ -72,6 +74,10 @@ export interface Complaint {
   // Real count of residents who joined this complaint (PublicComplaintSerializer
   // `supporters_count`), rendered as a read-only badge.
   supportersCount: number;
+  isRework?: boolean;
+  reworkPhoto?: string | null;
+  completionPhoto?: string | null;
+  userName?: string | null;
 }
 
 export interface Comment {
@@ -122,6 +128,7 @@ export interface UserProfile {
     role_name: string;
   };
   photo_url?: string | null;
+  phone?: string;
   place?: {
     place_id?: number;
     place_name: string;

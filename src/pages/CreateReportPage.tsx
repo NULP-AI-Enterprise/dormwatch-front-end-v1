@@ -1,14 +1,52 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createProblem, fetchUserProfile, fetchCategories, fetchMyComplaintPlaces, fetchSimilarComplaints, upvoteComplaint } from "@/services/problemsApi";
+import {
+  createProblem,
+  fetchUserProfile,
+  fetchMyComplaintPlaces,
+  fetchSimilarComplaints,
+  upvoteComplaint,
+} from "@/services/problemsApi";
+import { compressImage } from "@/services/imageUtils";
 import PlaceCombobox from "@/components/PlaceCombobox";
 import ComplaintCard from "@/components/ComplaintCard";
 import { toast } from "sonner";
-import { ChevronLeft, X, Send, ThumbsUp } from "lucide-react";
+import {
+  Droplets,
+  Zap,
+  Flame,
+  Armchair,
+  DoorClosed,
+  Wrench,
+  Wifi,
+  Paintbrush,
+  Lightbulb,
+  Key,
+  Wind,
+  HelpCircle,
+  ChevronLeft,
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  X,
+  Plus,
+  Send,
+  ThumbsUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import PhotoUploadField from "@/components/PhotoUploadField";
+import ImagePreviewDialog from "@/components/ImagePreviewDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Combobox,
   ComboboxContent,
@@ -17,60 +55,125 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import type { CategoryOption, Place, Complaint } from "@/lib/types";
+import type { Place, Complaint } from "@/lib/types";
+
+// 12 категорій, розбиті на 2 сторінки по 6 категорій
+const ALL_CATEGORIES = [
+  // Сторінка 1 (6 категорій)
+  { id: "Сантехніка", label: "Сантехніка", Icon: Droplets },
+  { id: "Електрика", label: "Електрика", Icon: Zap },
+  { id: "Опалення", label: "Опалення", Icon: Flame },
+  { id: "Меблі", label: "Меблі", Icon: Armchair },
+  { id: "Вікна та двері", label: "Вікна та двері", Icon: DoorClosed },
+  { id: "Побутова техніка", label: "Побутова техніка", Icon: Wrench },
+  // Сторінка 2 (6 категорій)
+  { id: "Інтернет", label: "Інтернет", Icon: Wifi },
+  { id: "Стіни та ремонт", label: "Стіни та ремонт", Icon: Paintbrush },
+  { id: "Освітлення", label: "Освітлення", Icon: Lightbulb },
+  { id: "Замки та ключі", label: "Замки та ключі", Icon: Key },
+  { id: "Вентиляція", label: "Вентиляція", Icon: Wind },
+  { id: "Інше", label: "Інше", Icon: HelpCircle },
+];
+
+const priorities = [
+  { id: "low", label: "Низький", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
+  { id: "medium", label: "Середній", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
+  { id: "high", label: "Високий", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
+  { id: "critical", label: "Критичний", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
+];
+
+const MAX_PHOTOS = 6;
+const MAX_TOTAL_BYTES = 10 * 1024 * 1024; // 10 MB
+
+interface PhotoItem {
+  id: string;
+  file: File;
+  previewUrl: string;
+  size: number;
+}
+
+function formatBytes(bytes: number) {
+  if (bytes === 0) return "0 КБ";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} КБ`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
 
 const CreateReportPage = () => {
   const navigate = useNavigate();
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-  // Category starts empty (no silent first-API pick) — the filer decides.
-  const [selectedCategory, setSelectedCategory] = useState("");
-  // Own room + shared areas in the building — the constrained selector shown
-  // when the resident has a room. Empty when they fall back to the building
-  // picker (no own room) or when no location is possible at all.
+  const [selectedCategory, setSelectedCategory] = useState("Сантехніка");
+  const [categoryPage, setCategoryPage] = useState(0); // 0 or 1
   const [allowedPlaces, setAllowedPlaces] = useState<Place[]>([]);
-  const [place, setPlace] = useState<Place | null>(null);
-  // Drives the building picker for residents with no own room.
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [profileBuildingId, setProfileBuildingId] = useState<number | null>(null);
-  // 'constrained' = own room + shared; 'picker' = building picker; 'none' = none.
-  const [selectorMode, setSelectorMode] = useState<"constrained" | "picker" | "none">("none");
-  const [placeResolved, setPlaceResolved] = useState(false);
-  // No priority on the create form — triage owns urgency (step19, resolved call #16).
+  const [isBlockShared, setIsBlockShared] = useState(false);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    priority: "low",
   });
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [compressing, setCompressing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [previewZoomUrl, setPreviewZoomUrl] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+  // Схожі відкриті звернення (ШІ)
   const [similarComplaints, setSimilarComplaints] = useState<Complaint[]>([]);
-  const [, setIsSearchingSimilar] = useState(false);
   const [upvotingId, setUpvotingId] = useState<number | null>(null);
 
-  // Debounced search for similar complaints
+  const totalPhotosSize = photos.reduce((acc, p) => acc + p.size, 0);
+
+  useEffect(() => {
+    fetchMyComplaintPlaces()
+      .then((places) => {
+        setAllowedPlaces(places);
+      })
+      .catch(() => {});
+
+    fetchUserProfile()
+      .then((user) => {
+        const buildingId =
+          user?.building?.building_id ?? user?.place?.building?.building_id ?? null;
+        setProfileBuildingId(buildingId);
+
+        if (user?.place?.place_id && user?.place?.place_name) {
+          setSelectedPlace({
+            place_id: user.place.place_id,
+            place_name: user.place.place_name,
+            capacity: 0,
+            isShared: false,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Пошук схожих звернень у реальному часі
   useEffect(() => {
     const text = (formData.title + " " + formData.description).trim();
-    if (text.length < 10) {
+    // Оптимальний критерій: щонайменше одне змістовне слово (>= 3 символів) та довжина тексту >= 4
+    const words = text.split(/\s+/).filter((w) => w.length >= 3);
+    if (words.length === 0 || text.length < 4) {
       setSimilarComplaints([]);
       return;
     }
 
     const timer = setTimeout(() => {
-      setIsSearchingSimilar(true);
       fetchSimilarComplaints(
         text,
-        categories.find(c => c.name === selectedCategory)?.category_id || null,
+        null,
         profileBuildingId,
-        place?.place_id || null
+        selectedPlace?.place_id || null
       )
         .then((data) => setSimilarComplaints(data))
-        .catch(() => setSimilarComplaints([]))
-        .finally(() => setIsSearchingSimilar(false));
-    }, 800);
+        .catch(() => setSimilarComplaints([]));
+    }, 400);
 
     return () => clearTimeout(timer);
-  }, [formData.title, formData.description, selectedCategory, profileBuildingId, categories, place?.place_id]);
+  }, [formData.title, formData.description, selectedCategory, profileBuildingId, selectedPlace?.place_id]);
 
   const handleUpvote = async (complaintId: number) => {
     setUpvotingId(complaintId);
@@ -86,43 +189,6 @@ const CreateReportPage = () => {
     }
   };
 
-  useEffect(() => {
-    Promise.all([fetchMyComplaintPlaces(), fetchUserProfile()])
-      .then(([places, user]) => {
-        const ownRoomId = user?.place?.place_id ?? null;
-        const buildingId =
-          user?.building?.building_id ?? user?.place?.building?.building_id ?? null;
-        setProfileBuildingId(buildingId);
-        if (ownRoomId) {
-          // Has a room: the constrained selector (own + shared areas), own room
-          // preselected. A hallway flood is filed by picking the shared area —
-          // the default is never silently submitted.
-          setAllowedPlaces(places);
-          setPlace(places.find((p) => p.place_id === ownRoomId) ?? null);
-          setSelectorMode("constrained");
-        } else if (buildingId != null) {
-          // No own room: fall back to the building picker, which owns its own
-          // list (all places in the building, shared areas included).
-          setAllowedPlaces([]);
-          setPlace(null);
-          setSelectorMode("picker");
-        } else {
-          // No room and no building: no location possible.
-          setSelectorMode("none");
-        }
-        setPlaceResolved(true);
-      })
-      .catch(() => {
-        setPlaceResolved(true);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchCategories().then((data) => {
-      setCategories(data);
-    }).catch(() => {});
-  }, []);
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -130,50 +196,107 @@ const CreateReportPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileSelect = (file: File | null) => {
-    if (file) {
-      setPhotoFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+  const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    const rawFiles = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (rawFiles.length === 0) return;
+
+    if (photos.length + rawFiles.length > MAX_PHOTOS) {
+      setError(`Максимально можна завантажити ${MAX_PHOTOS} фото (ви обрали ${rawFiles.length}, вже завантажено ${photos.length}).`);
+      e.target.value = "";
+      return;
+    }
+
+    setCompressing(true);
+    setError("");
+
+    try {
+      const newItems: PhotoItem[] = [];
+      let runningSize = totalPhotosSize;
+
+      for (const file of rawFiles) {
+        const compressed = await compressImage(file, 1920, 0.82);
+        if (runningSize + compressed.size > MAX_TOTAL_BYTES) {
+          setError("Сумарний об'єм доданих фото перевищує 10 МБ. Будь ласка, оберіть менше зображень.");
+          break;
+        }
+        runningSize += compressed.size;
+        newItems.push({
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          file: compressed,
+          previewUrl: URL.createObjectURL(compressed),
+          size: compressed.size,
+        });
+      }
+
+      setPhotos((prev) => [...prev, ...newItems]);
+    } catch {
+      setError("Помилка обробки фото.");
+    } finally {
+      setCompressing(false);
+      e.target.value = "";
     }
   };
 
-  const handleRemovePhoto = () => {
-    setPhotoFile(null);
-    setPreviewUrl(null);
+  const handleRemovePhoto = (id: string) => {
+    setPhotos((prev) => {
+      const item = prev.find((p) => p.id === id);
+      if (item) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+      return prev.filter((p) => p.id !== id);
+    });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (!formData.title.trim()) {
-      setError("Додайте короткий заголовок — так звернення легше впізнати.");
+      setError("Вкажіть короткий заголовок проблеми.");
       return;
     }
     if (!formData.description.trim()) {
-      setError("Опишіть, будь ласка, що сталося.");
+      setError("Опишіть проблему.");
       return;
     }
     if (!selectedCategory) {
       setError("Оберіть категорію.");
       return;
     }
-    if (!place) {
-      setError("Оберіть місце проблеми — кімнату або спільну зону.");
+    if (totalPhotosSize > MAX_TOTAL_BYTES) {
+      setError("Сумарний розмір фотографій не повинен перевищувати 10 МБ.");
       return;
     }
 
+    setIsConfirmOpen(true);
+  };
+
+  const executeSubmit = async () => {
+    setIsConfirmOpen(false);
     setSubmitting(true);
     try {
+      const descriptionToSubmit = isBlockShared
+        ? `${formData.description.trim()}\n\n[Блок]`
+        : formData.description.trim();
+
       const created = await createProblem({
         category: selectedCategory,
         title: formData.title.trim(),
-        description: formData.description.trim(),
-        place_id: place.place_id,
-        photoFile: photoFile,
+        description: descriptionToSubmit,
+        priority: formData.priority,
+        place_id: selectedPlace?.place_id,
+        photoFiles: photos.map((p) => p.file),
       });
-      toast.success(`Звернення №${created.id} створено`);
-      navigate(`/user`, { state: { openComplaintId: created.id } });
+
+      sessionStorage.setItem(
+        "studentReportSuccess",
+        "Ваше звернення успішно створено. Адміністрація вже отримала його для обробки."
+      );
+      toast.success("Ваше звернення успішно створено!");
+      navigate("/user", { state: { openComplaintId: created?.id } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Не вдалося надіслати звернення: ${msg}. Спробуйте ще раз.`);
@@ -182,90 +305,166 @@ const CreateReportPage = () => {
     }
   };
 
+  const visibleCategories = ALL_CATEGORIES.slice(categoryPage * 6, (categoryPage + 1) * 6);
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center gap-4 mb-10">
+    <div className="max-w-3xl mx-auto px-4 py-8 relative">
+      <div className="flex items-center gap-4 mb-8">
         <Button asChild variant="outline" size="icon">
           <Link to="/user">
             <ChevronLeft className="size-4" strokeWidth={2} />
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Нове звернення
-        </h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            Нове звернення
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            Повідомте про проблему, і ми вирішимо її найближчим часом
+          </p>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 border border-destructive/30 bg-destructive/10 text-destructive text-sm font-bold">
+        <div className="mb-6 p-4 border border-destructive/30 bg-destructive/10 text-destructive text-xs font-bold">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Lead with what the user is reporting — title + description — then the
-            classification (category) and where it happened. No silent pre-fills,
-            no priority on the filer's plate: triage owns urgency (resolved call #16). */}
+      <form onSubmit={handleFormSubmit} className="space-y-8 bg-card border border-border p-6 md:p-8 shadow-sm">
+        {/* Категорії з пагінацією 6 категорій на сторінці */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+              Що саме трапилось?
+            </label>
+
+            {/* Навігація між списками категорій */}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {categoryPage + 1} / 2
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                onClick={() => setCategoryPage(0)}
+                disabled={categoryPage === 0}
+                className="size-7"
+                title="Попередні категорії"
+              >
+                <ArrowLeft className="size-3.5" strokeWidth={2.5} />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                onClick={() => setCategoryPage(1)}
+                disabled={categoryPage === 1}
+                className="size-7"
+                title="Наступні категорії"
+              >
+                <ArrowRight className="size-3.5" strokeWidth={2.5} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {visibleCategories.map((category) => {
+              const isActive = selectedCategory === category.id;
+              const IconComponent = category.Icon;
+              return (
+                <Button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`p-4 h-auto flex flex-col items-center gap-2.5 transition-all duration-200 shadow-sm ${
+                    isActive
+                      ? "bg-blue-500/10 border-2 border-blue-500 text-blue-500 hover:bg-blue-500/15"
+                      : "bg-card border border-border text-muted-foreground hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-400"
+                  }`}
+                >
+                  <IconComponent
+                    className={`size-6 ${
+                      isActive ? "text-blue-500" : "text-muted-foreground"
+                    }`}
+                    strokeWidth={2}
+                  />
+                  <span className="text-xs font-semibold text-center">
+                    {category.label}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-5">
+            {/* Рівень пріоритету */}
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-2">Заголовок</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-3">
+                Рівень пріоритету
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {priorities.map((p) => {
+                  const isActive = formData.priority === p.id;
+                  return (
+                    <Button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, priority: p.id }))
+                      }
+                      className={`py-2 px-3 text-xs font-semibold transition-all duration-150 border-2 ${
+                        isActive
+                          ? p.activeClass
+                          : "bg-card border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      }`}
+                    >
+                      {p.label}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Короткий заголовок */}
+            <div>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+                Короткий заголовок
+              </label>
               <Input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
-                placeholder="Напр.: тече кран у ванній"
+                placeholder="Наприклад: Зламався змішувач, протікає батарея..."
                 maxLength={80}
                 required
+                className="h-10 text-xs"
               />
             </div>
+
+            {/* Де саме проблема */}
             <div>
-              <label className="text-xs font-semibold text-foreground block mb-2">Опис проблеми</label>
-              <Textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={6}
-                placeholder="Що саме зламалося, коли почалося, де саме…"
-                className="min-h-36 resize-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-4">Категорія</label>
-              <Combobox<string, false>
-                items={categories.map((c) => c.name)}
-                value={selectedCategory}
-                onValueChange={(v) => setSelectedCategory(v ?? "")}
-              >
-                <ComboboxInput placeholder="Оберіть категорію" className="w-full" />
-                <ComboboxContent>
-                  <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
-                  <ComboboxList>
-                    {(name: string) => (
-                      <ComboboxItem key={name} value={name}>
-                        {name}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-2">
-                Місце проблеми
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+                Де саме проблема?
               </label>
-              {!placeResolved ? (
-                <Input type="text" value="" disabled placeholder="Завантаження місць…" />
-              ) : selectorMode === "constrained" ? (
+              {allowedPlaces.length > 0 ? (
                 <Combobox<Place, false>
                   items={allowedPlaces}
-                  value={place}
-                  onValueChange={(p) => setPlace(p)}
+                  value={selectedPlace}
+                  onValueChange={(p) => {
+                    setSelectedPlace(p);
+                    if (!p || p.isShared || !/^\d+[a-zA-Zа-яА-ЯіїёІЇЄє]?$/.test(p.place_name.trim())) {
+                      setIsBlockShared(false);
+                    }
+                  }}
                   itemToStringLabel={(p) => p.place_name}
                   isItemEqualToValue={(a, b) => a.place_id === b.place_id}
                 >
-                  <ComboboxInput placeholder="Оберіть кімнату або спільну зону" className="w-full" />
+                  <ComboboxInput placeholder="Оберіть кімнату або зону..." className="w-full h-10 text-xs" />
                   <ComboboxContent>
                     <ComboboxEmpty>Місць не знайдено</ComboboxEmpty>
                     <ComboboxList>
@@ -273,59 +472,162 @@ const CreateReportPage = () => {
                         <ComboboxItem key={p.place_id} value={p}>
                           {p.place_name}
                           {p.isShared && (
-                            <span className="ml-1 text-muted-foreground">(спільна)</span>
+                            <span className="ml-1 text-muted-foreground text-[10px]">(спільна)</span>
                           )}
                         </ComboboxItem>
                       )}
                     </ComboboxList>
                   </ComboboxContent>
                 </Combobox>
-              ) : selectorMode === "picker" ? (
+              ) : profileBuildingId ? (
                 <PlaceCombobox
-                  buildingId={profileBuildingId ?? undefined}
-                  value={place}
-                  onChange={(p) => setPlace(p)}
+                  buildingId={profileBuildingId}
+                  value={selectedPlace}
+                  onChange={(p) => {
+                    setSelectedPlace(p);
+                    if (!p || p.isShared || !/^\d+[a-zA-Zа-яА-ЯіїёІЇЄє]?$/.test(p.place_name.trim())) {
+                      setIsBlockShared(false);
+                    }
+                  }}
                   placeholder="Оберіть кімнату або спільну зону"
                 />
               ) : (
-                <p className="text-xs text-muted-foreground pt-1">
-                  Щоб подати звернення, додайте гуртожиток у профілі.
-                </p>
+                <Input
+                  type="text"
+                  value=""
+                  disabled
+                  placeholder="Немає доступних кімнат — вкажіть гуртожиток у профілі"
+                  className="h-10 text-xs"
+                />
               )}
+
+              {selectedPlace && !selectedPlace.isShared && /^\d+[a-zA-Zа-яА-ЯіїёІЇЄє]?$/.test(selectedPlace.place_name.trim()) && (
+                <div className="flex items-center gap-2 mt-3 p-2.5 bg-muted/40 border border-border">
+                  <input
+                    type="checkbox"
+                    id="isBlockShared"
+                    checked={isBlockShared}
+                    onChange={(e) => setIsBlockShared(e.target.checked)}
+                    className="rounded-none border-border bg-card text-primary focus:ring-primary size-4"
+                  />
+                  <label htmlFor="isBlockShared" className="text-xs font-medium text-foreground cursor-pointer select-none">
+                    Це проблема спільного блоку
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Детальний опис проблеми */}
+            <div>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+                Детальний опис проблеми
+              </label>
+              <Textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                placeholder="Будь ласка, вкажіть деталі: що сталось, коли помітили, чи потрібна присутність у кімнаті..."
+                className="min-h-28 resize-none text-xs"
+                required
+              />
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-foreground block mb-3">Фото (необовʼязково, але дуже допомагає)</label>
-            {photoFile && previewUrl ? (
-              <div className="relative w-full aspect-square border-2 border-border overflow-hidden group">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={handleRemovePhoto}
-                  className="absolute top-2 right-2 bg-card border border-border text-destructive hover:bg-card transition-all"
-                >
-                  <X className="size-4" strokeWidth={2} />
-                </Button>
-              </div>
-            ) : (
-              <PhotoUploadField
-                onFileSelect={handleFileSelect}
-                label="Натисніть, щоб додати фото"
-                aspectSquare
-              />
-            )}
+          {/* Фотодоказ: до 6 фото, стиснення, макс 10МБ */}
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+                Фотодоказ (до {MAX_PHOTOS} фото)
+              </label>
+              <span className="text-[11px] font-medium text-muted-foreground">
+                {photos.length}/{MAX_PHOTOS} • {formatBytes(totalPhotosSize)}/10 МБ
+              </span>
+            </div>
+
+            <div className="space-y-3 flex-1 flex flex-col">
+              {/* Сітка завантажених фото */}
+              {photos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2.5">
+                  {photos.map((p) => (
+                    <div
+                      key={p.id}
+                      className="relative aspect-square border border-border overflow-hidden group shadow-sm bg-muted/20"
+                    >
+                      <img
+                        src={p.previewUrl}
+                        alt="Photo"
+                        onClick={() => setPreviewZoomUrl(p.previewUrl)}
+                        className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 py-0.5 backdrop-blur-xs">
+                        {formatBytes(p.size)}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => handleRemovePhoto(p.id)}
+                        className="absolute top-1 right-1 size-5 bg-card/90 border border-border text-destructive hover:bg-card hover:scale-110 transition-all shadow-sm"
+                        title="Видалити фото"
+                      >
+                        <X className="size-3" strokeWidth={2.5} />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {photos.length < MAX_PHOTOS && (
+                    <label className="aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
+                      <Plus
+                        className="size-6 text-muted-foreground group-hover:text-blue-500 transition-colors"
+                        strokeWidth={2}
+                      />
+                      <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-blue-500 mt-1">
+                        Додати ще
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg, image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={handleFilesSelect}
+                        disabled={compressing}
+                      />
+                    </label>
+                  )}
+                </div>
+              )}
+
+              {/* Зона первинного завантаження коли немає фото */}
+              {photos.length === 0 && (
+                <label className="w-full aspect-[3/2] md:aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-200 shadow-sm flex-1 min-h-[200px] group">
+                  <Camera
+                    className="size-10 mb-3 text-muted-foreground group-hover:scale-110 group-hover:text-blue-500 transition-all duration-200"
+                    strokeWidth={2}
+                  />
+                  <p className="text-xs font-bold text-foreground mb-1">
+                    {compressing ? "Стискаємо фотографії..." : "Натисніть для завантаження фото"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground max-w-xs leading-normal">
+                    Можна обрати до 6 фото (PNG, JPEG, WEBP). Фото оптимізуються автоматично, сумарний об'єм до 10 МБ.
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={handleFilesSelect}
+                    disabled={compressing}
+                  />
+                </label>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Секція ШІ-пошуку дублікатів */}
         {similarComplaints.length > 0 && (
-          <div className="bg-muted/30 border border-border p-5 space-y-4">
+          <div className="bg-muted/30 border border-border p-5 space-y-4 shadow-sm">
             <div>
               <h3 className="text-sm font-semibold text-foreground">
                 Знайдено схожі відкриті проблеми
@@ -336,7 +638,7 @@ const CreateReportPage = () => {
             </div>
             
             <div className="grid gap-3">
-              {similarComplaints.map(sc => (
+              {similarComplaints.map((sc) => (
                 <div key={sc.id} className="relative">
                   <ComplaintCard complaint={sc} variant="compact" showPriority />
                   <div className="mt-2 flex justify-end">
@@ -345,10 +647,13 @@ const CreateReportPage = () => {
                       size="sm"
                       onClick={() => handleUpvote(sc.id)}
                       disabled={upvotingId === sc.id || submitting}
+                      className="gap-1.5"
                     >
-                      {upvotingId === sc.id ? "Приєднуємось..." : (
+                      {upvotingId === sc.id ? (
+                        "Приєднуємось..."
+                      ) : (
                         <>
-                          <ThumbsUp className="size-4" strokeWidth={2} />
+                          <ThumbsUp className="size-3.5" strokeWidth={2} />
                           У мене така ж проблема
                         </>
                       )}
@@ -363,13 +668,37 @@ const CreateReportPage = () => {
         <Button
           type="submit"
           size="lg"
-          disabled={submitting}
-          className="w-full"
+          disabled={submitting || compressing}
+          className="w-full h-12 text-sm font-bold shadow-md bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
         >
-          <Send className="size-4 mr-2" strokeWidth={2} />
-          {submitting ? "Надсилаємо…" : "Надіслати звернення"}
+          <Send className="size-4" strokeWidth={2.5} />
+          {submitting ? "Надсилаємо заявку..." : "Опублікувати звернення"}
         </Button>
       </form>
+
+      {/* Модальне вікно перегляду фото */}
+      <ImagePreviewDialog
+        imageUrl={previewZoomUrl}
+        onClose={() => setPreviewZoomUrl(null)}
+      />
+
+      {/* Діалог підтвердження */}
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Створити звернення?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ваше звернення буде надіслано адміністрації для обробки. Перевірте, чи всі дані вказано правильно.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Скасувати</AlertDialogCancel>
+            <AlertDialogAction onClick={executeSubmit}>
+              Створити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

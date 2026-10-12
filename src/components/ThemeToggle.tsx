@@ -4,8 +4,8 @@ import { useTheme } from "@/components/theme-provider";
 
 const THEME_OPTIONS = [
   { key: "light", label: "Світла", icon: Sun },
-  { key: "dark", label: "Темна", icon: Moon },
   { key: "system", label: "Системна", icon: Monitor },
+  { key: "dark", label: "Темна", icon: Moon },
 ] as const;
 
 export function ThemeToggle() {
@@ -30,11 +30,12 @@ export function ThemeToggle() {
           key={key}
           value={key}
           aria-label={label}
+          title={label}
           // design-system.md §7: ToggleGroup on-states carry the primary fill,
           // not the muted on-state shadcn ships by default.
-          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80"
+          className="size-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80 cursor-pointer"
         >
-          <Icon strokeWidth={2} />
+          <Icon className="size-3.5" strokeWidth={2} />
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

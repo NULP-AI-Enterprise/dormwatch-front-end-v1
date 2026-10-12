@@ -5,7 +5,6 @@ import HomePage from "@/pages/HomePage";
 import UserPage from "@/pages/UserPage";
 import AdminPage from "@/pages/AdminPage";
 import AdminComplaintsPage from "@/pages/AdminComplaintsPage";
-import AdminResidentsPage from "@/pages/AdminResidentsPage";
 import AdminAnnouncementsPage from "@/pages/AdminAnnouncementsPage";
 import AdminSettingsPage from "@/pages/AdminSettingsPage";
 import CreateReportPage from "@/pages/CreateReportPage";
@@ -75,16 +74,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/admin/residents"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AdminLayout>
-              <AdminResidentsPage />
-            </AdminLayout>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/admin/residents" element={<Navigate to="/admin" replace />} />
       <Route
         path="/admin/complaints"
         element={

@@ -16,9 +16,16 @@ interface DatePickerProps {
   setDate: (date: Date | undefined) => void
   placeholder?: string
   className?: string
+  disabled?: React.ComponentProps<typeof Calendar>["disabled"]
 }
 
-export function DatePicker({ date, setDate, placeholder = "Оберіть дату", className }: DatePickerProps) {
+export function DatePicker({
+  date,
+  setDate,
+  placeholder = "Оберіть дату",
+  className,
+  disabled,
+}: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -40,6 +47,7 @@ export function DatePicker({ date, setDate, placeholder = "Оберіть дат
           selected={date}
           onSelect={setDate}
           locale={uk}
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>

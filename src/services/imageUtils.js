@@ -1,9 +1,22 @@
 import { API_BASE } from "@/services/apiConfig";
 
 export function resolveImageUrl(path) {
-  if (!path) return null;
-  if (path.startsWith("http") || path.startsWith("blob:")) return path;
-  return `${API_BASE}${path}`;
+  if (!path || typeof path !== "string") return null;
+  if (path.startsWith("blob:") || path.startsWith("data:")) return path;
+
+  // Extract relative media path (handles any host like testserver, 127.0.0.1, localhost, etc.)
+  const mediaIdx = path.indexOf("/media/");
+  if (mediaIdx !== -1) {
+    return path.substring(mediaIdx);
+  }
+  if (path.startsWith("media/")) {
+    return `/${path}`;
+  }
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  if (path.startsWith("/")) return `/media${path}`;
+  return `/media/${path}`;
 }
 
 /**

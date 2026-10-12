@@ -68,12 +68,7 @@ export async function loginUser(email, password) {
   });
   if (!res.ok) {
     const body = await parseErrorBody(res);
-    const err = new Error(body?.detail || "Invalid credentials");
-    if (body?.email_verified === false) {
-      err.requiresVerification = true;
-      err.email = body.email;
-    }
-    throw err;
+    throw new Error(body?.detail || "Invalid credentials");
   }
   const data = await res.json();
   setAccessToken(data.access);
@@ -92,12 +87,6 @@ export async function registerUser(data) {
     throw new Error(body ? JSON.stringify(body) : `Error ${res.status}`);
   }
   const tokenData = await res.json();
-  if (tokenData?.email_verified === false) {
-    const err = new Error(tokenData.detail);
-    err.requiresVerification = true;
-    err.email = tokenData.email;
-    throw err;
-  }
   setAccessToken(tokenData.access);
   return tokenData;
 }
@@ -541,8 +530,9 @@ function normalizeComplaint(raw) {
     category: raw.category?.name ?? raw.category ?? null,
     building: safeBuilding,
     room: safeRoom,
-    placeName: safeRoom,
-    isShared: shared,
+    placeName: safeRoom || raw.place_name || "",
+    placeId: raw.place?.place_id ?? raw.place_id ?? null,
+    isShared: shared || !!raw.is_shared,
     floor: safeFloor,
     photoUrl: raw.photo_url ?? raw.photoUrl ?? null,
     thumbnail: raw.thumbnail ?? null,
@@ -559,6 +549,10 @@ function normalizeComplaint(raw) {
     workNote: raw.work_note || "",
     rejectionReason: raw.rejection_reason || "",
     reworkReason: raw.rework_reason || "",
+    isRework: !!(raw.is_rework ?? raw.isRework),
+    reworkPhoto: raw.rework_photo ?? raw.reworkPhoto ?? null,
+    completionPhoto: raw.completion_photo ?? raw.completionPhoto ?? null,
+    userName: raw.user_name ?? raw.userName ?? (raw.user ? `${raw.user.first_name || ''} ${raw.user.last_name || ''}`.trim() : ""),
     followUpOf: raw.follow_up_of ?? null,
     root: raw.root ?? null,
     isOverdue: !!raw.is_overdue,
@@ -566,7 +560,8 @@ function normalizeComplaint(raw) {
     // null when unset — avoids fabricating a "created today" timestamp that
     // would also sort to the top and match the "today" date filter.
     createdAt: raw.created_at ?? raw.createdAt ?? null,
-    user_id: raw.user?.id || raw.user?.user || raw.user || null,
+    user_id: raw.user?.id || raw.user?.user || raw.user || raw.user_id || null,
+    isMine: !!raw.is_mine,
   };
 }
 
@@ -583,6 +578,15 @@ export async function fetchUserProfile() {
   } catch (e) {
     return null;
   }
+}
+
+export async function updateUserProfile(data) {
+  const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+  return await fetchJson("/profile/", {
+    method: "PATCH",
+    body: isFormData ? data : JSON.stringify(data),
+    headers: isFormData ? {} : { "Content-Type": "application/json" },
+  });
 }
 
 export async function createProblem(problem) {
@@ -627,12 +631,13 @@ export async function fetchMyProblems() {
 
 // Build a `?a=1&b=2` query string from `filters`, restricted to `keys`.
 // Skips missing/empty values and the sentinel "all"; prefixes "?" when non-empty.
-function buildQueryParams(filters = {}, keys = ["corps", "priority"]) {
+function buildQueryParams(filters = {}, keys = ["corps", "priority", "rework"]) {
   const params = new URLSearchParams();
   for (const key of keys) {
     const value = filters[key];
     if (value && value !== "all") params.append(key, value);
   }
+  if (filters.reworkOnly) params.append("rework", "true");
   return params.toString() ? `?${params.toString()}` : "";
 }
 
@@ -665,7 +670,7 @@ export async function fetchAllComplaints(filters = {}) {
 // pending/rejected. Admins get every status from the API but this same cut keeps
 // the public dashboard's meaning consistent across roles.
 export async function fetchPublicComplaints(filters = {}) {
-  return fetchComplaints({ statuses: ["approved", "resolved"], filters });
+  return fetchComplaints({ filters });
 }
 
 export async function deleteProblem(id) {
@@ -690,11 +695,26 @@ export async function acceptComplaint(id) {
   return true;
 }
 
-export async function rejectComplaint(id, reworkReason) {
-  await fetchJson(`/me/complaints/${id}/reject/`, {
-    method: "POST",
-    body: { rework_reason: reworkReason },
-  });
+/**
+ * @param {number} id
+ * @param {string} reworkReason
+ * @param {File | null} [photoFile]
+ */
+export async function rejectComplaint(id, reworkReason, photoFile = null) {
+  if (photoFile instanceof File) {
+    const formData = new FormData();
+    formData.append("rework_reason", reworkReason);
+    formData.append("rework_photo", photoFile);
+    await fetchJson(`/me/complaints/${id}/reject/`, {
+      method: "POST",
+      body: formData,
+    });
+  } else {
+    await fetchJson(`/me/complaints/${id}/reject/`, {
+      method: "POST",
+      body: { rework_reason: reworkReason },
+    });
+  }
   return true;
 }
 
@@ -706,17 +726,21 @@ export async function withdrawComplaint(id) {
 // One-tap re-file: the server creates a fresh Очікує complaint prefilled from
 // the closed one (title/description/category/place/photo), linked via
 // follow_up_of. 409 means this source already has one open follow-up.
-export async function refileComplaint(id) {
-  const raw = await fetchJson(`/complaints/${id}/refile/`, { method: "POST" });
+export async function refileComplaint(id, reason) {
+  const raw = await fetchJson(`/complaints/${id}/refile/`, {
+    method: "POST",
+    body: { reason },
+  });
   return normalizeComplaint(raw);
 }
 
 // ── WORKER PANEL ──
 // The provisioned worker's own jobs. Active list = live work sorted by next
 // deadline (server-side); history = past jobs with their stamps.
-export async function fetchWorkerJobs() {
+export async function fetchWorkerJobs(status = "") {
   try {
-    const data = await fetchJson("/worker/complaints/");
+    const url = status ? `/worker/complaints/?status=${encodeURIComponent(status)}` : "/worker/complaints/";
+    const data = await fetchJson(url);
     if (Array.isArray(data)) {
       return data.map(normalizeComplaint).filter(Boolean);
     }
@@ -739,17 +763,34 @@ export async function fetchWorkerHistory() {
 }
 
 // One-tap lifecycle stamps for the assigned worker: start (Взято в роботу),
-// finish (Виконано), start_undo / finish_undo, with an optional short note.
-// The server enforces the transition matrix; the 30s undo window before a
-// resident is notified lives server-side too.
-export async function workerComplaintAction(id, action, note) {
-  const body = { action };
-  if (note && note.trim()) body.note = note.trim();
-  const raw = await fetchJson(`/worker/complaints/${id}/`, {
-    method: "PATCH",
-    body,
-  });
-  return normalizeComplaint(raw);
+// finish (Виконано), start_undo / finish_undo, with an optional short note
+// and optional completion photo.
+/**
+ * @param {number} id
+ * @param {string} action
+ * @param {string} [note]
+ * @param {File | null} [photoFile]
+ */
+export async function workerComplaintAction(id, action, note = "", photoFile = null) {
+  if (photoFile instanceof File) {
+    const formData = new FormData();
+    formData.append("action", action);
+    if (note && note.trim()) formData.append("note", note.trim());
+    formData.append("completion_photo", photoFile);
+    const raw = await fetchJson(`/worker/complaints/${id}/`, {
+      method: "PATCH",
+      body: formData,
+    });
+    return normalizeComplaint(raw);
+  } else {
+    const body = { action };
+    if (note && note.trim()) body.note = note.trim();
+    const raw = await fetchJson(`/worker/complaints/${id}/`, {
+      method: "PATCH",
+      body,
+    });
+    return normalizeComplaint(raw);
+  }
 }
 
 // Generic admin PATCH over the single complaint endpoint: any subset of
@@ -775,10 +816,11 @@ export async function updateComplaintPriority(id, newPriority) {
 
 // Admin assignment surface (worker + deadline on the complaint itself).
 // workerId null clears the assignment; deadline null clears the deadline.
-export async function updateComplaintAssignment(id, { workerId, deadline } = {}) {
+export async function updateComplaintAssignment(id, { workerId, deadline, status } = {}) {
   const body = {};
   if (workerId !== undefined) body.worker_id = workerId;
   if (deadline !== undefined) body.deadline = deadline;
+  if (status !== undefined) body.status = status;
   return updateComplaintAdmin(id, body);
 }
 
@@ -1013,8 +1055,12 @@ export async function generateInviteLink(payload) {
   });
 }
 
+export async function fetchInviteInfo(token) {
+  return fetchJson(`/invites/${token}/`);
+}
+
 export async function upvoteComplaint(complaintId) {
-  return await fetchJson(`/api/complaints/${complaintId}/upvote/`, {
+  return await fetchJson(`/complaints/${complaintId}/upvote/`, {
     method: "POST"
   });
 }
@@ -1033,7 +1079,7 @@ export async function fetchSimilarComplaints(text, categoryId = null, buildingId
     if (buildingId) params.append("building_id", buildingId);
     if (placeId) params.append("place_id", placeId);
 
-    const data = await fetchJson(`/api/complaints/similar/?${params.toString()}`);
+    const data = await fetchJson(`/complaints/similar/?${params.toString()}`);
     if (Array.isArray(data)) {
       return data.map(normalizeComplaint).filter(Boolean);
     }

@@ -45,11 +45,7 @@ function LoginForm() {
       window.dispatchEvent(new Event("profileUpdated"));
       navigate(roleHomeRoute(res.role), { replace: true });
     } catch (err: any) {
-      if (err.requiresVerification) {
-        navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
-      } else {
-        setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
-      }
+      setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
     } finally {
       setLoading(false);
     }
