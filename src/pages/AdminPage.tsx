@@ -1,3 +1,5 @@
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { isUrgentPriority } from "@/lib/complaintUtils";
 import { useEffect, useState, useMemo } from "react";
 import {
   fetchAllComplaints,
@@ -21,7 +23,6 @@ import { formatDate } from "@/lib/dateUtils";
 import { priorityBadgeClass, priorityLabel, cleanComplaintDescription } from "@/lib/complaintUtils";
 import { useUser } from "@/context/UserContext";
 import { AdminAnalyticsModal, type AnalyticsTimeframe } from "@/components/AdminAnalyticsModal";
-import { cn } from "@/lib/utils";
 import type { Complaint } from "@/lib/types";
 
 const TIMEFRAME_OPTIONS: { value: AnalyticsTimeframe; label: string }[] = [
@@ -77,7 +78,7 @@ const AdminPage = () => {
 
   const pendingCount = filteredByTimeframe.filter((c) => c.status === "pending").length;
   const urgentPendingCount = filteredByTimeframe.filter(
-    (c) => c.status === "pending" && (c.priority === "urgent" || c.priority === "high")
+    (c) => c.status === "pending" && isUrgentPriority(c.priority)
   ).length;
   const approvedCount = filteredByTimeframe.filter((c) => c.status === "approved").length;
   const inProgressCount = filteredByTimeframe.filter((c) => c.status === "in_progress").length;
@@ -111,23 +112,10 @@ const AdminPage = () => {
       <div className="flex-1 overflow-auto p-6">
         <div className="mx-auto max-w-6xl space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-1 bg-muted/60 p-1 border border-border">
-              {TIMEFRAME_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTimeframe(opt.value)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-                    timeframe === opt.value
-                      ? "bg-card text-foreground shadow-2xs border border-border"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <ToggleGroup type="single" value={timeframe} onValueChange={(value) => { if (value) setTimeframe(value as AnalyticsTimeframe); }}
+              aria-label="Період огляду" variant="outline" className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4 gap-1">
+              {TIMEFRAME_OPTIONS.map((opt) => <ToggleGroupItem key={opt.value} value={opt.value} className="min-w-0 whitespace-normal h-auto min-h-8 py-1.5">{opt.label}</ToggleGroupItem>)}
+            </ToggleGroup>
 
             <Button
               variant="outline"
@@ -135,7 +123,7 @@ const AdminPage = () => {
               onClick={() => setAnalyticsOpen(true)}
               className="text-xs h-9 cursor-pointer gap-2"
             >
-              <BarChart3 className="size-4 text-primary" />
+              <BarChart3 className="size-4 text-link" />
               <span>Розширена аналітика</span>
             </Button>
           </div>
@@ -149,37 +137,37 @@ const AdminPage = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
               <StatCard
-                icon={<Clock className="size-4 text-amber-500" strokeWidth={1.5} />}
+                icon={<Clock className="size-4 text-status-warning" strokeWidth={1.5} />}
                 label="Очікують"
                 value={pendingCount}
                 subtitle={urgentPendingCount > 0 ? `з них ${urgentPendingCount} термінових` : "без затримок"}
               />
               <StatCard
-                icon={<UserCheck className="size-4 text-sky-500" strokeWidth={1.5} />}
+                icon={<UserCheck className="size-4 text-status-info" strokeWidth={1.5} />}
                 label="Схвалено"
                 value={approvedCount}
                 subtitle="очікують майстра"
               />
               <StatCard
-                icon={<Wrench className="size-4 text-blue-500" strokeWidth={1.5} />}
+                icon={<Wrench className="size-4 text-status-info" strokeWidth={1.5} />}
                 label="В роботі"
                 value={inProgressCount}
                 subtitle="активні ремонти"
               />
               <StatCard
-                icon={<Eye className="size-4 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />}
+                icon={<Eye className="size-4 text-status-info" strokeWidth={1.5} />}
                 label="На перевірці"
                 value={reviewCount}
                 subtitle="очікують оцінки"
               />
               <StatCard
-                icon={<CircleCheck className="size-4 text-emerald-500" strokeWidth={1.5} />}
+                icon={<CircleCheck className="size-4 text-status-success" strokeWidth={1.5} />}
                 label="Вирішено"
                 value={resolvedCount}
                 subtitle="успішно закриті"
               />
               <StatCard
-                icon={<CircleX className="size-4 text-red-500" strokeWidth={1.5} />}
+                icon={<CircleX className="size-4 text-status-danger" strokeWidth={1.5} />}
                 label="Не прийнято"
                 value={notAcceptedCount}
                 subtitle="потребують уваги"
@@ -254,15 +242,15 @@ const AdminPage = () => {
                         <StatusBadge status={c.status} />
                       </TableCell>
                       <TableCell className="px-4 py-4 text-right">
-                        <button
+                        <Button variant="ghost" size="content"
                           type="button"
                           onClick={() => handleRowClick(c)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none"
+                          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-link hover:text-link bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none"
                           title="Переглянути деталі звернення"
                         >
                           <span>Деталі</span>
-                          <ChevronRight className="size-3 text-primary/70 group-hover/details:text-primary group-hover/details:translate-x-0.5 transition-all" strokeWidth={2} />
-                        </button>
+                          <ChevronRight className="size-3 text-link/70 group-hover/details:text-link group-hover/details:translate-x-0.5 transition-all" strokeWidth={2} />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

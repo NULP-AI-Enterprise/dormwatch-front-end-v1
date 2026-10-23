@@ -1,44 +1,35 @@
+import type { ChangeEvent, ReactNode } from "react";
 import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ACCEPTED_TYPES = "image/png, image/jpeg, image/jpg, image/webp";
-
 interface PhotoUploadFieldProps {
-  onFileSelect: (file: File | null) => void;
-  /** Text shown inside the dropzone (e.g. "Натисніть, щоб додати фото"). */
+  onFileSelect?: (file: File | null) => void;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   label: string;
-  /** Constrain the dropzone to a square (used by the create-report form). */
   aspectSquare?: boolean;
   className?: string;
+  multiple?: boolean;
+  accept?: string;
+  disabled?: boolean;
+  children?: ReactNode;
 }
 
-// Shared drag-drop-style photo upload `<label>` (design-system.md: dashed
-// square drop zone, sharp corners). Replaces the near-identical dashed
-// dropzones in ComplaintSidePanel and CreateReportPage.
-const PhotoUploadField = ({
-  onFileSelect,
-  label,
-  aspectSquare = false,
-  className,
-}: PhotoUploadFieldProps) => (
-  <label
-    className={cn(
-      "w-full border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors",
-      aspectSquare && "aspect-square",
-      className
-    )}
-  >
-    <Camera 
-      className={cn("text-muted-foreground", aspectSquare ? "size-8 mb-3" : "size-6 mb-2")}
-      strokeWidth={2} />
-    <p className="text-xs font-normal text-muted-foreground">{label}</p>
-    <input
-      type="file"
-      accept={ACCEPTED_TYPES}
-      className="hidden"
-      onChange={(e) => onFileSelect(e.target.files?.[0] || null)}
+// The native input remains keyboard-reachable; focus is visible on its label.
+const PhotoUploadField = ({ onFileSelect, onChange, label, aspectSquare = false,
+  className, multiple, accept = "image/png,image/jpeg,image/jpg,image/webp", disabled, children }: PhotoUploadFieldProps) => (
+  <label className={cn(
+    "relative w-full min-w-0 border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors focus-within:ring-2 focus-within:ring-ring",
+    aspectSquare && "aspect-square", disabled && "opacity-50 cursor-wait", className,
+  )}>
+    {children || <><Camera className="size-6 text-muted-foreground" /><span className="text-xs text-muted-foreground">{label}</span></>}
+    <input type="file" accept={accept} className="sr-only"
+      aria-label={label} multiple={multiple} disabled={disabled}
+      onChange={(event) => {
+        onFileSelect?.(event.target.files?.[0] || null);
+        onChange?.(event);
+        event.target.value = "";
+      }}
     />
   </label>
 );
-
 export default PhotoUploadField;

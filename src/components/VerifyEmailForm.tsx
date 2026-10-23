@@ -74,7 +74,7 @@ export default function VerifyEmailForm({ email }: { email: string }) {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 text-sm font-semibold rounded-lg"
+                className="w-full h-11 text-sm font-semibold rounded-none"
               >
                 {loading ? "Підтвердження..." : "Підтвердити"}
               </Button>

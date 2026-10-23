@@ -1,3 +1,4 @@
+import { Label } from "@/components/ui/label";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -131,17 +132,17 @@ function RegisterForm() {
   useEffect(() => {
     if (!inviteToken) return;
     fetchInviteInfo(inviteToken)
-      .then((res: any) => {
+      .then((res: { role?: string }) => {
         if (res?.role) {
           setInviteRole(String(res.role).toLowerCase());
         }
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         try {
-          const parsed = JSON.parse(err.message);
+          const parsed = JSON.parse(err instanceof Error ? err.message : "");
           setError(parsed.detail || "Посилання-запрошення недійсне або вже використане");
         } catch {
-          setError(err.message || "Посилання-запрошення недійсне або вже використане");
+          setError((err instanceof Error ? err.message : "") || "Посилання-запрошення недійсне або вже використане");
         }
       });
   }, [inviteToken]);
@@ -187,11 +188,11 @@ function RegisterForm() {
       });
       window.dispatchEvent(new Event("profileUpdated"));
       navigate(roleHomeRoute(result.role), { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       let msg = "Не вдалося зареєструватися. Перевірте дані й спробуйте ще раз.";
       if (err instanceof Error) {
         try {
-          const parsed = JSON.parse(err.message);
+          const parsed = JSON.parse(err instanceof Error ? err.message : "");
           if (typeof parsed === "object" && parsed !== null) {
             const firstKey = Object.keys(parsed)[0];
             const val = (parsed as Record<string, unknown>)[firstKey];
@@ -199,7 +200,7 @@ function RegisterForm() {
             
             // Map common backend errors to form fields
             if (firstKey in registerForm.getValues()) {
-              registerForm.setError(firstKey as any, { type: "server", message: msg });
+              registerForm.setError(firstKey as keyof RegisterData, { type: "server", message: msg });
               setLoading(false);
               return;
             }
@@ -320,8 +321,9 @@ function RegisterForm() {
                       name="place_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Кімната</FormLabel>
+                          <Label htmlFor="registration-room">Кімната</Label>
                           <PlaceCombobox
+                            id="registration-room"
                             buildingId={Number(regBuildingId)}
                             value={regPlace}
                             onChange={(p) => {
@@ -387,7 +389,7 @@ function RegisterForm() {
           <p className="text-sm text-muted-foreground">Вже маєте обліковий запис?</p>
           <Link
             to="/auth"
-            className="inline-flex items-center gap-1 mt-2 text-primary hover:text-primary/80 font-bold transition-colors group"
+            className="inline-flex items-center gap-1 mt-2 text-link hover:text-link/80 font-bold transition-colors group"
           >
             Увійти до системи
             <ChevronRight strokeWidth={2} className="size-4 group-hover:translate-x-1 transition-transform" />

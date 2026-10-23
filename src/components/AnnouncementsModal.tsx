@@ -121,7 +121,7 @@ const AnnouncementsModal = ({
                 <Button
                   variant="ghost"
                   size="xs"
-                  className="text-xs font-semibold text-primary p-0 h-auto hover:bg-transparent hover:underline"
+                  className="text-xs font-semibold text-link p-0 h-auto hover:bg-transparent hover:underline"
                   onClick={() => setDetailedAnnouncement(null)}
                 >
                   <ChevronLeft className="size-3.5 mr-1" strokeWidth={2} />
@@ -167,7 +167,7 @@ const AnnouncementsModal = ({
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-link hover:underline"
                       >
                         <Link className="size-4" strokeWidth={2} />
                         Перейти за посиланням
@@ -231,7 +231,7 @@ const AnnouncementsModal = ({
                           href={detectedUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-link hover:underline"
                         >
                           <Link className="size-3.5" strokeWidth={2} />
                           Посилання

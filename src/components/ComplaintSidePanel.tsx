@@ -1,3 +1,4 @@
+import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { useState, useEffect } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
 import CommentSection from "@/components/CommentSection";
@@ -98,11 +99,10 @@ const ComplaintSidePanel = ({
     setIsEditing(false);
   }, [complaint]);
 
-  if (!complaint) return null;
-
   const { user: currentUser } = useUser();
+  if (!complaint) return null;
   const isOwner = String(currentUserId) === String(complaint.user_id) || (currentUser?.user != null && complaint.user_id === currentUser.user);
-  const isWorker = currentUser?.role === "worker" || (currentUser as any)?.worker != null;
+  const isWorker = ["worker", "працівник"].includes(String(currentUser?.role?.role_name ?? currentUser?.role ?? "").toLowerCase());
   const canViewReasons = isOwner || isAdmin || isWorker;
   const canEdit = isOwner && complaint.status === "pending";
 
@@ -190,12 +190,12 @@ const ComplaintSidePanel = ({
                 <StatusBadge status={complaint.status} />
                 <OverdueBadge complaint={complaint} />
                 {complaint.isRework && (
-                  <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                  <Badge variant="outline" className="bg-status-danger-bg text-status-danger border-status-danger/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
                     Повторне опрацювання
                   </Badge>
                 )}
                 {complaint.studentPhone && !isAdmin && (
-                  <Badge variant="outline" className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                  <Badge variant="outline" className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
                     <Phone className="size-3" strokeWidth={2} />
                     {complaint.studentPhone}
                   </Badge>
@@ -287,14 +287,14 @@ const ComplaintSidePanel = ({
               {(isBlockComplaint(complaint.description) || complaint.isShared) && (
                 <div className="flex flex-wrap gap-2 items-center">
                   {isBlockComplaint(complaint.description) && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                      <Home className="size-4 shrink-0 text-blue-500" strokeWidth={2} />
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-status-info-bg text-status-info border border-status-info/40">
+                      <Home className="size-4 shrink-0 text-status-info" strokeWidth={2} />
                       <span>Звернення стосується блоку</span>
                     </div>
                   )}
                   {complaint.isShared && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                      <Users className="size-4 shrink-0 text-amber-500" strokeWidth={2} />
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-status-warning-bg text-status-warning border border-status-warning/40">
+                      <Users className="size-4 shrink-0 text-status-warning" strokeWidth={2} />
                       <span>Звернення стосується спільного простору</span>
                     </div>
                   )}
@@ -325,7 +325,7 @@ const ComplaintSidePanel = ({
             </div>
           ) : (
             complaint.photoUrl && (
-              <div 
+              <PhotoAttachment
                 className="relative w-full max-h-80 overflow-hidden border border-border bg-muted/20 dark:bg-black/30 flex items-center justify-center group/panelphoto cursor-zoom-in"
                 onClick={() => setPreviewImage(resolveImageUrl(complaint.photoUrl as string))}
               >
@@ -338,12 +338,12 @@ const ComplaintSidePanel = ({
                   <ZoomIn className="size-3.5 text-muted-foreground" strokeWidth={2} />
                   <span>Збільшити фото</span>
                 </div>
-              </div>
+              </PhotoAttachment>
             )
           )}
 
           {error && (
-            <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+            <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
           )}
 
           {isEditing && (
@@ -355,21 +355,21 @@ const ComplaintSidePanel = ({
 
           {/* Reason read surfaces: only visible to owner, admin, or worker */}
           {canViewReasons && complaint.status === "rejected" && complaint.rejectionReason && (
-            <div className="border border-sky-500/30 bg-sky-500/10 p-3">
-              <p className="text-xs font-semibold text-sky-600 dark:text-sky-400 mb-1">Причина відхилення</p>
+            <div className="border border-status-danger/30 bg-status-danger-bg p-3">
+              <p className="text-xs font-semibold text-status-danger mb-1">Причина відхилення</p>
               <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
                 {complaint.rejectionReason}
               </p>
             </div>
           )}
           {canViewReasons && (complaint.status === "not_accepted" || complaint.isRework) && complaint.reworkReason && (
-            <div className="border border-red-500/30 bg-red-500/10 p-3 space-y-2">
-              <p className="text-xs font-semibold text-red-600 dark:text-red-400">Причина неприйняття (повторне опрацювання)</p>
+            <div className="border border-status-danger/30 bg-status-danger-bg p-3 space-y-2">
+              <p className="text-xs font-semibold text-status-danger">Причина неприйняття (повторне опрацювання)</p>
               <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
                 {complaint.reworkReason}
               </p>
               {complaint.reworkPhoto && (
-                <div
+                <PhotoAttachment
                   className="mt-2 relative inline-block cursor-zoom-in border border-border overflow-hidden bg-background"
                   onClick={() => setPreviewImage(resolveImageUrl(complaint.reworkPhoto as string))}
                 >
@@ -378,17 +378,17 @@ const ComplaintSidePanel = ({
                     alt="Фото від мешканця"
                     className="max-h-36 w-auto object-contain"
                   />
-                  <div className="text-[10px] text-muted-foreground p-1 text-center bg-muted/40">
+                  <div className="text-xs text-muted-foreground p-1 text-center bg-muted/40">
                     Фото від мешканця (натисніть для збільшення)
                   </div>
-                </div>
+                </PhotoAttachment>
               )}
             </div>
           )}
           {complaint.completionPhoto && (
-            <div className="border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
-              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Фото виконаної роботи (від працівника)</p>
-              <div
+            <div className="border border-status-success/30 bg-status-success-bg p-3 space-y-2">
+              <p className="text-xs font-semibold text-status-success">Фото виконаної роботи (від працівника)</p>
+              <PhotoAttachment
                 className="relative inline-block cursor-zoom-in border border-border overflow-hidden bg-background"
                 onClick={() => setPreviewImage(resolveImageUrl(complaint.completionPhoto as string))}
               >
@@ -397,10 +397,10 @@ const ComplaintSidePanel = ({
                   alt="Фото виконаної роботи"
                   className="max-h-36 w-auto object-contain"
                 />
-                <div className="text-[10px] text-muted-foreground p-1 text-center bg-muted/40">
+                <div className="text-xs text-muted-foreground p-1 text-center bg-muted/40">
                   Фото виконання (натисніть для збільшення)
                 </div>
-              </div>
+              </PhotoAttachment>
             </div>
           )}
 
@@ -425,7 +425,7 @@ const ComplaintSidePanel = ({
 
           {isAdmin && (
             <>
-              <Separator />
+              <Separator dashed />
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   <ComplaintAdminActions
@@ -440,13 +440,13 @@ const ComplaintSidePanel = ({
                   <div className="grid grid-cols-2 gap-2 text-xs border border-border/60 bg-muted/20 p-2.5">
                     {complaint.worker && (
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Виконавець:</span>
+                        <span className="text-muted-foreground block text-xs">Виконавець:</span>
                         <span className="font-semibold text-foreground">{complaint.worker.full_name}</span>
                       </div>
                     )}
                     {complaint.deadline && (
                       <div>
-                        <span className="text-muted-foreground block text-[11px]">Дедлайн:</span>
+                        <span className="text-muted-foreground block text-xs">Дедлайн:</span>
                         <span className="font-semibold text-foreground">{formatDate(complaint.deadline)}</span>
                       </div>
                     )}
@@ -462,9 +462,9 @@ const ComplaintSidePanel = ({
               unusable list + input. */}
           {(isOwner || isAdmin) && (
             <>
-              <Separator />
+              <Separator dashed />
 
-              <ComplaintResourcesSection complaintId={complaint.id} isAdmin={isAdmin} />
+              <ComplaintResourcesSection complaintId={complaint.id} />
 
               <Separator dashed />
 

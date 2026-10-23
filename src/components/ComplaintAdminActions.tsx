@@ -48,7 +48,7 @@ interface ComplaintAdminActionsProps {
 
 const destructiveActionClass =
   "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-const skyActionClass = "bg-sky-500 hover:bg-sky-600 text-white";
+const skyActionClass = "bg-primary hover:bg-primary/80 text-primary-foreground";
 
 // One confirmation dialog + trigger button for the actions that need no input.
 const ConfirmAction = ({
@@ -237,7 +237,7 @@ const ComplaintAdminActions = ({
           <div className="space-y-3">
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">
-                Виконавець <span className="text-sky-500">*</span>
+                Виконавець <span className="text-status-info">*</span>
               </label>
               <Select value={assignWorkerId ?? ""} onValueChange={setAssignWorkerId}>
                 <SelectTrigger className="w-full h-8 text-xs">
@@ -252,14 +252,14 @@ const ComplaintAdminActions = ({
                 </SelectContent>
               </Select>
               {!assignWorkerId && (
-                <p className="text-[11px] text-sky-500/80 dark:text-sky-400/80 font-medium mt-1">
+                <p className="text-xs text-status-info font-medium mt-1">
                   Обовʼязкове поле
                 </p>
               )}
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">
-                Дедлайн <span className="text-sky-500">*</span>
+                Дедлайн <span className="text-status-info">*</span>
               </label>
               <DatePicker
                 date={assignDeadline}
@@ -268,12 +268,12 @@ const ComplaintAdminActions = ({
                 disabled={{ before: new Date() }}
               />
               {!assignDeadline && (
-                <p className="text-[11px] text-sky-500/80 dark:text-sky-400/80 font-medium mt-1">
+                <p className="text-xs text-status-info font-medium mt-1">
                   Обовʼязкове поле
                 </p>
               )}
               {isAssignDeadlineInPast && (
-                <p className="text-[11px] text-sky-500 dark:text-sky-400 font-semibold mt-1">
+                <p className="text-xs text-status-info font-semibold mt-1">
                   Дедлайн не може бути раніше сьогоднішнього дня
                 </p>
               )}
@@ -294,7 +294,7 @@ const ComplaintAdminActions = ({
               </Select>
             </div>
             {error && (
-              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+              <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
             )}
           </div>
           <DialogFooter>
@@ -350,7 +350,7 @@ const ComplaintAdminActions = ({
           aria-invalid={!reason.trim() ? true : undefined}
         />
         {error && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
         )}
         <DialogFooter>
           <Button
@@ -417,7 +417,7 @@ const ComplaintAdminActions = ({
 
         <Button
           variant="outline"
-          className="text-red-500 hover:text-red-600 border-red-500/20"
+          className="text-status-danger hover:text-status-danger border-status-danger/40"
           onClick={() => {
             setError(null);
             setReason("");
@@ -429,7 +429,7 @@ const ComplaintAdminActions = ({
         </Button>
 
         {error && !rejectOpen && !assignOpen && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
         )}
 
         {renderAssignDialog()}
@@ -472,7 +472,7 @@ const ComplaintAdminActions = ({
         {renderDelete()}
 
         {error && !assignOpen && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
         )}
 
         {renderAssignDialog()}
@@ -512,7 +512,7 @@ const ComplaintAdminActions = ({
         )}
         {renderDelete()}
         {error && !assignOpen && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
         )}
         {renderAssignDialog()}
       </>
@@ -524,7 +524,7 @@ const ComplaintAdminActions = ({
       <>
         {renderDelete()}
         {error && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
         )}
       </>
     );
@@ -534,7 +534,7 @@ const ComplaintAdminActions = ({
     <>
       {renderDelete()}
       {error && (
-        <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+        <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
       )}
     </>
   );

@@ -1,3 +1,4 @@
+import PhotoUploadField from "@/components/PhotoUploadField";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CircleCheck, CircleX, ImagePlus, Trash2 } from "lucide-react";
+import { CircleCheck, CircleX, Trash2 } from "lucide-react";
 import {
   acceptComplaint,
   rejectComplaint,
@@ -117,7 +118,7 @@ const ComplaintResidentActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Скасувати</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-sky-500 hover:bg-sky-600 text-white"
+                className="bg-primary hover:bg-primary/80 text-primary-foreground"
                 onClick={handleAccept}
               >
                 Прийняти
@@ -129,7 +130,7 @@ const ComplaintResidentActions = ({
         <Button
           variant="outline"
           size={size}
-          className="text-red-500 hover:text-red-600 border-red-500/20"
+          className="text-status-danger hover:text-status-danger border-status-danger/40"
           onClick={() => {
             setError(null);
             setRejectOpen(true);
@@ -140,7 +141,7 @@ const ComplaintResidentActions = ({
         </Button>
 
         {error && !rejectOpen && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
         )}
 
         <Dialog
@@ -156,7 +157,9 @@ const ComplaintResidentActions = ({
                 Опишіть, що саме не влаштовує або не виконано. Звернення перейде до адміністратора.
               </DialogDescription>
             </DialogHeader>
+            <label htmlFor="rework-reason" className="text-xs font-semibold">Причина повторного опрацювання</label>
             <Textarea
+              id="rework-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Наприклад: кран продовжує текти після ремонту"
@@ -165,7 +168,7 @@ const ComplaintResidentActions = ({
 
             {photoPreview ? (
               <div className="relative border border-border p-2 bg-muted/20 flex items-center justify-between">
-                <img src={photoPreview} alt="Попередній перегляд" className="h-20 w-auto object-contain rounded" />
+                <img src={photoPreview} alt="Попередній перегляд" className="h-20 w-auto object-contain rounded-none" />
                 <Button
                   type="button"
                   variant="ghost"
@@ -174,39 +177,27 @@ const ComplaintResidentActions = ({
                     setPhotoFile(null);
                     setPhotoPreview(null);
                   }}
-                  className="text-red-500 hover:text-red-600 gap-1 text-xs"
+                  className="text-status-danger hover:text-status-danger gap-1 text-xs"
                 >
                   <Trash2 className="size-3.5" /> Видалити фото
                 </Button>
               </div>
             ) : (
-              <label className="flex items-center justify-center gap-2 border border-dashed border-border py-3 px-4 cursor-pointer hover:bg-muted/30 transition-colors text-xs text-muted-foreground">
-                <ImagePlus className="size-4 text-muted-foreground" />
-                <span>Прикріпити фото (опціонально)</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setPhotoFile(file);
-                      setPhotoPreview(URL.createObjectURL(file));
-                    }
-                  }}
-                />
-              </label>
+              <PhotoUploadField label="Прикріпити фото (необов’язково)" onFileSelect={(file) => {
+                if (photoPreview) URL.revokeObjectURL(photoPreview);
+                setPhotoFile(file); setPhotoPreview(file ? URL.createObjectURL(file) : null);
+              }} disabled={busy} />
             )}
 
             {error && (
-              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+              <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
             )}
             <DialogFooter>
               <Button variant="outline" onClick={reset} disabled={busy}>
                 Скасувати
               </Button>
               <Button
-                className="bg-sky-500 hover:bg-sky-600 text-white"
+                className="bg-primary hover:bg-primary/80 text-primary-foreground"
                 disabled={!reason.trim() || busy}
                 onClick={handleReject}
               >
@@ -240,7 +231,7 @@ const ComplaintResidentActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Назад</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-sky-500 hover:bg-sky-600 text-white"
+                className="bg-primary hover:bg-primary/80 text-primary-foreground"
                 onClick={handleWithdraw}
               >
                 Скасувати звернення
@@ -249,7 +240,7 @@ const ComplaintResidentActions = ({
           </AlertDialogContent>
         </AlertDialog>
         {error && (
-          <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
         )}
       </>
     );

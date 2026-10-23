@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, X, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { RoleBadge } from "@/components/RoleBadge";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   fetchComments,
@@ -33,6 +33,9 @@ const CommentSection = ({
   const [comments, setComments] = useState<Comment[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   // Tracks the complaint currently displayed, so async handlers can tell
   // whether the user switched complaints mid-flight.
   const currentComplaintIdRef = useRef(complaintId);
@@ -40,12 +43,12 @@ const CommentSection = ({
   const onCommentsChangeRef = useRef(onCommentsChange);
   onCommentsChangeRef.current = onCommentsChange;
 
-  const notifyChange = (list: Comment[]) => {
+  const notifyChange = useCallback((list: Comment[]) => {
     if (!onCommentsChangeRef.current) return;
     const foreign = list.filter((c) => currentUserId == null || c.author_id !== currentUserId);
     const latestForeignId = foreign.length > 0 ? Math.max(...foreign.map((c) => c.id)) : null;
     onCommentsChangeRef.current(list.length, latestForeignId);
-  };
+  }, [currentUserId]);
 
   // Guard against a cross-complaint async race: the same component instance is
   // reused as the user switches complaints in the side panel, so a slow fetch
@@ -53,35 +56,35 @@ const CommentSection = ({
   useEffect(() => {
     let ignore = false;
     (async () => {
-      setLoading(true);
-      const data = await fetchComments(complaintId);
-      if (!ignore) {
-        setComments(data);
-        setLoading(false);
-        notifyChange(data);
-      }
+      setLoading(true); setError("");
+      try {
+        const data = await fetchComments(complaintId);
+        if (!ignore) { setComments(data); notifyChange(data); }
+      } catch {
+        if (!ignore) setError("Не вдалося завантажити коментарі.");
+      } finally { if (!ignore) setLoading(false); }
     })();
     return () => {
       ignore = true;
     };
-  }, [complaintId]);
+  }, [complaintId, reloadKey, notifyChange]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || sending) return;
+    setSending(true);
+    setError("");
     const targetComplaintId = complaintId;
     try {
-      await postComment(targetComplaintId, input);
-      setInput("");
-      // Refetch for the complaint we posted to, and only apply if the user
-      // hasn't switched complaints in the meantime.
-      const data = await fetchComments(targetComplaintId);
+      const posted = await postComment(targetComplaintId, input);
       if (targetComplaintId === currentComplaintIdRef.current) {
-        setComments(data);
-        notifyChange(data);
+        setInput("");
+        const next = [...comments, posted];
+        setComments(next);
+        notifyChange(next);
       }
-    } catch (err) {
-      console.warn('Failed to send comment', err);
-    }
+    } catch {
+      setError("Не вдалося надіслати коментар. Спробуйте ще раз.");
+    } finally { setSending(false); }
   };
 
   const handleDelete = async (commentId: number) => {
@@ -92,8 +95,8 @@ const CommentSection = ({
         notifyChange(next);
         return next;
       });
-    } catch (err) {
-      console.warn('Failed to delete comment', err);
+    } catch {
+      setError("Не вдалося видалити коментар.");
     }
   };
 
@@ -107,6 +110,7 @@ const CommentSection = ({
         </div>
       )}
 
+      {error && <div role="alert" className="mb-3 space-y-2"><p className="text-xs text-destructive">{error}</p><Button variant="outline" onClick={() => setReloadKey((value) => value + 1)}>Оновити коментарі</Button></div>}
       {loading && (
         <div className="flex items-center justify-center py-4">
           <LoadingSpinner size="sm" />
@@ -120,26 +124,14 @@ const CommentSection = ({
               key={c.id}
               className="bg-card p-3 border border-border relative group/comment"
             >
-              <div className="flex justify-between items-baseline mb-2">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap justify-between items-baseline gap-2 mb-2 pr-5">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="text-sm font-bold text-foreground">
                     {c.author_id === complaintAuthorId && !isAdmin && currentUserId !== complaintAuthorId
                       ? "Автор звернення"
                       : c.author}
                   </span>
-                  {(c.authorIsAdmin || (c as any).author_role === "admin" || (c as any).authorRole === "admin") ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-yellow-500 bg-yellow-500/10 border-yellow-700/50">
-                      Адмін
-                    </Badge>
-                  ) : ((c as any).author_role === "worker" || (c as any).authorRole === "worker") ? (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-orange-500 bg-orange-500/10 border-orange-700/50">
-                      Працівник
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-semibold text-blue-500 bg-blue-500/10 border-blue-700/50">
-                      Студент
-                    </Badge>
-                  )}
+                  <RoleBadge role={c.authorRole} isAdmin={c.authorIsAdmin} />
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {formatDate(c.date)}
@@ -147,7 +139,7 @@ const CommentSection = ({
               </div>
               <p className="text-sm text-muted-foreground">{c.text}</p>
               {(currentUserId === c.author_id || isAdmin) && (
-                <Button variant="ghost" size="icon-xs" onClick={() => handleDelete(c.id)} className={`absolute top-1 right-1 ${ERROR_TEXT} opacity-0 group-hover/comment:opacity-100 transition-opacity`}>
+                <Button aria-label={"Видалити коментар: " + c.author} variant="ghost" size="icon-xs" onClick={() => handleDelete(c.id)} className={`absolute top-1 right-1 ${ERROR_TEXT} opacity-100 transition-opacity`}>
                   <X className="size-3" strokeWidth={2} />
                 </Button>
               )}
@@ -160,11 +152,13 @@ const CommentSection = ({
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          aria-label="Новий коментар"
+          disabled={sending}
           placeholder="Напишіть коментар…"
           className="flex-1"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
-        <Button onClick={handleSend}>
+        <Button onClick={handleSend} disabled={sending || !input.trim()}>
           <Send className="size-3 mr-1" strokeWidth={2} />
           Надіслати
         </Button>

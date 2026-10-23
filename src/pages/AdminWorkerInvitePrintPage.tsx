@@ -1,3 +1,4 @@
+import { PrintDocument, PrintStyles } from "@/components/PrintDocument";
 import { useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
@@ -44,75 +45,60 @@ const AdminWorkerInvitePrintPage = () => {
   }
 
   return (
-    <div className="bg-white text-black min-h-screen p-8 print-container font-sans antialiased">
-      <style>{`
-        @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-        }
-      `}</style>
+    <div className="bg-background text-foreground min-h-screen p-4 sm:p-8 print-container font-sans antialiased">
+      <PrintStyles />
 
       {/* Control bar for screen rendering */}
-      <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
-        <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
+      <div className="no-print flex flex-wrap gap-3 justify-between items-center bg-muted border border-border p-4 mb-8 rounded-none shadow-sm">
+        <Button variant="outline" className="gap-2 text-foreground border-border hover:bg-muted" onClick={handleClose}>
           <ChevronLeft className="size-4" strokeWidth={1.5} />
           Назад
         </Button>
-        <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
+        <Button size="touch" className="max-w-full whitespace-normal gap-2" onClick={handlePrint}>
           <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>
 
-      <div className="max-w-xl mx-auto">
-        <header className="border-b-2 border-black pb-4 mb-6">
+      <PrintDocument className="min-w-0 max-w-xl">
+        <header className="border-b-2 border-foreground pb-4 mb-6">
           <Logo />
-          <p className="text-xs text-gray-500 font-semibold mt-1">
+          <p className="text-xs text-muted-foreground font-semibold mt-1">
             Система прямої комунікації між студентами та адміністрацією
           </p>
         </header>
 
-        <h2 className="text-xl font-bold text-gray-800 mb-1">Запрошення до DormWatch</h2>
-        {name && <p className="text-sm text-gray-600 font-semibold mb-6">{name}</p>}
+        <h2 className="text-xl font-bold text-foreground mb-1">Запрошення до DormWatch</h2>
+        {name && <p className="text-sm text-muted-foreground font-semibold mb-6">{name}</p>}
 
-        <div className="border border-gray-300 p-8 flex flex-col items-center gap-6">
-          <QRCodeSVG value={redeemUrl} size={224} level="M" />
+        <div className="border border-border p-4 sm:p-8 flex flex-col items-center gap-6">
+          <QRCodeSVG value={redeemUrl} size={224} level="M" marginSize={4} className="max-w-full h-auto shrink-0" />
 
           <div className="text-center space-y-1">
-            <p className="text-xs font-semibold text-gray-500">
+            <p className="text-xs font-semibold text-muted-foreground">
               Або введіть посилання вручну
             </p>
-            <p className="text-xs text-gray-800 break-all">{redeemUrl}</p>
+            <p className="text-xs text-foreground break-all">{redeemUrl}</p>
           </div>
 
-          <Separator className="bg-gray-300" />
+          <Separator className="bg-muted" />
 
-          <ol className="text-sm text-gray-800 space-y-2 list-decimal list-inside">
+          <ol className="text-sm text-foreground space-y-2 list-decimal list-inside">
             <li>Відскануйте QR-код камерою телефона.</li>
             <li>На сторінці реєстрації вкажіть свою електронну пошту та придумайте пароль.</li>
             <li>Підтвердіть пошту кодом із листа — після цього увійдіть у систему.</li>
           </ol>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             Запрошення одноразове й не має строку давності. Якщо ви вже зареєструвалися — просто увійдіть на{' '}
             <span className="font-semibold">{window.location.origin}/auth</span>.
           </p>
         </div>
 
-        <p className="text-xs text-gray-500 mt-6">
+        <p className="text-xs text-muted-foreground mt-6">
           Видано: {new Date().toLocaleDateString("uk-UA")}
         </p>
-      </div>
+      </PrintDocument>
     </div>
   );
 };

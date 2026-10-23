@@ -1,3 +1,8 @@
+import PhotoUploadField from "@/components/PhotoUploadField";
+import { PhotoAttachment } from "@/components/PhotoAttachment";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PRIORITY_OPTIONS, priorityLabel } from "@/lib/complaintUtils";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -75,12 +80,7 @@ const ALL_CATEGORIES = [
   { id: "Інше", label: "Інше", Icon: HelpCircle },
 ];
 
-const priorities = [
-  { id: "low", label: "Низький", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
-  { id: "medium", label: "Середній", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
-  { id: "high", label: "Високий", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
-  { id: "critical", label: "Критичний", activeClass: "bg-muted text-muted-foreground border-border hover:bg-muted/80" },
-];
+const priorities = PRIORITY_OPTIONS.map((id) => ({ id, label: priorityLabel(id) }));
 
 const MAX_PHOTOS = 6;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -102,6 +102,9 @@ const CreateReportPage = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("Сантехніка");
   const [categoryPage, setCategoryPage] = useState(0); // 0 or 1
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState("");
+  const [locationReload, setLocationReload] = useState(0);
   const [allowedPlaces, setAllowedPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [profileBuildingId, setProfileBuildingId] = useState<number | null>(null);
@@ -127,29 +130,19 @@ const CreateReportPage = () => {
   const totalPhotosSize = photos.reduce((acc, p) => acc + p.size, 0);
 
   useEffect(() => {
-    fetchMyComplaintPlaces()
-      .then((places) => {
-        setAllowedPlaces(places);
-      })
-      .catch(() => {});
-
-    fetchUserProfile()
-      .then((user) => {
-        const buildingId =
-          user?.building?.building_id ?? user?.place?.building?.building_id ?? null;
-        setProfileBuildingId(buildingId);
-
-        if (user?.place?.place_id && user?.place?.place_name) {
-          setSelectedPlace({
-            place_id: user.place.place_id,
-            place_name: user.place.place_name,
-            capacity: 0,
-            isShared: false,
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
+    let active = true;
+    setLocationLoading(true); setLocationError("");
+    Promise.all([fetchMyComplaintPlaces(), fetchUserProfile()]).then(([places, user]) => {
+      if (!active) return;
+      if (!user) throw new Error("Профіль недоступний");
+      setAllowedPlaces(places);
+      setProfileBuildingId(user.building?.building_id ?? user.place?.building?.building_id ?? null);
+      setSelectedPlace((previous) => previous || places.find((place: Place) => place.place_id === user.place?.place_id) || null);
+    }).catch(() => {
+      if (active) setLocationError("Не вдалося завантажити доступні місця звернення.");
+    }).finally(() => { if (active) setLocationLoading(false); });
+    return () => { active = false; };
+  }, [locationReload]);
 
   // Пошук схожих звернень у реальному часі
   useEffect(() => {
@@ -308,10 +301,10 @@ const CreateReportPage = () => {
   const visibleCategories = ALL_CATEGORIES.slice(categoryPage * 6, (categoryPage + 1) * 6);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 relative">
+    <div className="w-full min-w-0 max-w-3xl mx-auto px-4 py-8 relative">
       <div className="flex items-center gap-4 mb-8">
         <Button asChild variant="outline" size="icon">
-          <Link to="/user">
+          <Link to="/user" aria-label="Повернутися на головну">
             <ChevronLeft className="size-4" strokeWidth={2} />
           </Link>
         </Button>
@@ -325,23 +318,28 @@ const CreateReportPage = () => {
         </div>
       </div>
 
+      {locationLoading && <p role="status" className="mb-4 text-sm text-muted-foreground">Завантаження доступних місць…</p>}
+      {locationError && <div role="alert" className="mb-4 space-y-2">
+        <p className="text-sm text-destructive">{locationError}</p>
+        <Button type="button" variant="outline" onClick={() => setLocationReload((value) => value + 1)}>Спробувати ще раз</Button>
+      </div>}
       {error && (
         <div className="mb-6 p-4 border border-destructive/30 bg-destructive/10 text-destructive text-xs font-bold">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleFormSubmit} className="space-y-8 bg-card border border-border p-6 md:p-8 shadow-sm">
+      <form onSubmit={handleFormSubmit} className="min-w-0 space-y-8 bg-card border border-border p-4 sm:p-6 md:p-8 shadow-sm">
         {/* Категорії з пагінацією 6 категорій на сторінці */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <label className="text-xs font-bold text-foreground ">
               Що саме трапилось?
             </label>
 
             {/* Навігація між списками категорій */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {categoryPage + 1} / 2
               </span>
               <Button
@@ -369,73 +367,43 @@ const CreateReportPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <ToggleGroup type="single" value={selectedCategory} onValueChange={(value) => { if (value) setSelectedCategory(value); }}
+            aria-label="Категорія звернення" variant="outline" className="grid w-full grid-cols-2 md:grid-cols-3 gap-3">
             {visibleCategories.map((category) => {
-              const isActive = selectedCategory === category.id;
               const IconComponent = category.Icon;
               return (
-                <Button
-                  key={category.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`p-4 h-auto flex flex-col items-center gap-2.5 transition-all duration-200 shadow-sm ${
-                    isActive
-                      ? "bg-blue-500/10 border-2 border-blue-500 text-blue-500 hover:bg-blue-500/15"
-                      : "bg-card border border-border text-muted-foreground hover:border-blue-500/30 hover:bg-blue-500/5 hover:text-blue-400"
-                  }`}
-                >
-                  <IconComponent
-                    className={`size-6 ${
-                      isActive ? "text-blue-500" : "text-muted-foreground"
-                    }`}
-                    strokeWidth={2}
-                  />
-                  <span className="text-xs font-semibold text-center">
-                    {category.label}
-                  </span>
-                </Button>
+                <ToggleGroupItem key={category.id} value={category.id}
+                  className="min-w-0 h-auto p-3 flex-col gap-2 whitespace-normal">
+                  <IconComponent className="size-6" strokeWidth={2} />
+                  <span>{category.label}</span>
+                </ToggleGroupItem>
               );
             })}
-          </div>
+          </ToggleGroup>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-6 [&>*]:min-w-0">
           <div className="space-y-5">
             {/* Рівень пріоритету */}
             <div>
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-3">
+              <label className="text-xs font-bold text-foreground  block mb-3">
                 Рівень пріоритету
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {priorities.map((p) => {
-                  const isActive = formData.priority === p.id;
-                  return (
-                    <Button
-                      key={p.id}
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, priority: p.id }))
-                      }
-                      className={`py-2 px-3 text-xs font-semibold transition-all duration-150 border-2 ${
-                        isActive
-                          ? p.activeClass
-                          : "bg-card border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      }`}
-                    >
-                      {p.label}
-                    </Button>
-                  );
-                })}
-              </div>
+              <ToggleGroup type="single" value={formData.priority}
+                onValueChange={(value) => { if (value) setFormData((prev) => ({ ...prev, priority: value })); }}
+                aria-label="Рівень пріоритету" variant="outline" className="grid w-full grid-cols-2 gap-2">
+                {priorities.map((priority) => <ToggleGroupItem key={priority.id} value={priority.id} className="min-w-0">{priority.label}</ToggleGroupItem>)}
+              </ToggleGroup>
             </div>
 
             {/* Короткий заголовок */}
             <div>
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+              <label htmlFor="report-title" className="text-xs font-semibold block mb-2">
                 Короткий заголовок
               </label>
               <Input
                 type="text"
+                id="report-title"
                 name="title"
                 value={formData.title}
                 onChange={handleInputChange}
@@ -448,7 +416,7 @@ const CreateReportPage = () => {
 
             {/* Де саме проблема */}
             <div>
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+              <label htmlFor="report-place" className="text-xs font-semibold block mb-2">
                 Де саме проблема?
               </label>
               {allowedPlaces.length > 0 ? (
@@ -464,7 +432,7 @@ const CreateReportPage = () => {
                   itemToStringLabel={(p) => p.place_name}
                   isItemEqualToValue={(a, b) => a.place_id === b.place_id}
                 >
-                  <ComboboxInput placeholder="Оберіть кімнату або зону..." className="w-full h-10 text-xs" />
+                  <ComboboxInput id="report-place" placeholder="Оберіть кімнату або зону..." className="w-full h-10 text-xs" />
                   <ComboboxContent>
                     <ComboboxEmpty>Місць не знайдено</ComboboxEmpty>
                     <ComboboxList>
@@ -472,7 +440,7 @@ const CreateReportPage = () => {
                         <ComboboxItem key={p.place_id} value={p}>
                           {p.place_name}
                           {p.isShared && (
-                            <span className="ml-1 text-muted-foreground text-[10px]">(спільна)</span>
+                            <span className="ml-1 text-muted-foreground text-xs">(спільна)</span>
                           )}
                         </ComboboxItem>
                       )}
@@ -481,6 +449,7 @@ const CreateReportPage = () => {
                 </Combobox>
               ) : profileBuildingId ? (
                 <PlaceCombobox
+                  id="report-place"
                   buildingId={profileBuildingId}
                   value={selectedPlace}
                   onChange={(p) => {
@@ -503,12 +472,11 @@ const CreateReportPage = () => {
 
               {selectedPlace && !selectedPlace.isShared && /^\d+[a-zA-Zа-яА-ЯіїёІЇЄє]?$/.test(selectedPlace.place_name.trim()) && (
                 <div className="flex items-center gap-2 mt-3 p-2.5 bg-muted/40 border border-border">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="isBlockShared"
                     checked={isBlockShared}
-                    onChange={(e) => setIsBlockShared(e.target.checked)}
-                    className="rounded-none border-border bg-card text-primary focus:ring-primary size-4"
+                    onCheckedChange={(checked) => setIsBlockShared(checked === true)}
+                    className="rounded-none border-border bg-card text-link focus:ring-primary size-4"
                   />
                   <label htmlFor="isBlockShared" className="text-xs font-medium text-foreground cursor-pointer select-none">
                     Це проблема спільного блоку
@@ -519,10 +487,11 @@ const CreateReportPage = () => {
 
             {/* Детальний опис проблеми */}
             <div>
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider block mb-2">
+              <label htmlFor="report-description" className="text-xs font-semibold block mb-2">
                 Детальний опис проблеми
               </label>
               <Textarea
+                id="report-description"
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
@@ -536,11 +505,11 @@ const CreateReportPage = () => {
 
           {/* Фотодоказ: до 6 фото, стиснення, макс 10МБ */}
           <div className="flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <label className="text-xs font-bold text-foreground ">
                 Фотодоказ (до {MAX_PHOTOS} фото)
               </label>
-              <span className="text-[11px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {photos.length}/{MAX_PHOTOS} • {formatBytes(totalPhotosSize)}/10 МБ
               </span>
             </div>
@@ -554,13 +523,14 @@ const CreateReportPage = () => {
                       key={p.id}
                       className="relative aspect-square border border-border overflow-hidden group shadow-sm bg-muted/20"
                     >
+                      <PhotoAttachment className="size-full" onClick={() => setPreviewZoomUrl(p.previewUrl)} aria-label={"Збільшити фото: " + p.file.name}>
                       <img
                         src={p.previewUrl}
-                        alt="Photo"
-                        onClick={() => setPreviewZoomUrl(p.previewUrl)}
-                        className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform"
+                        alt="Фото звернення"
+                        className="w-full h-full object-cover"
                       />
-                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1 py-0.5 backdrop-blur-xs">
+                      </PhotoAttachment>
+                      <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1 py-0.5 backdrop-blur-xs">
                         {formatBytes(p.size)}
                       </div>
                       <Button
@@ -568,7 +538,7 @@ const CreateReportPage = () => {
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => handleRemovePhoto(p.id)}
-                        className="absolute top-1 right-1 size-5 bg-card/90 border border-border text-destructive hover:bg-card hover:scale-110 transition-all shadow-sm"
+                        className="absolute top-1 right-1 size-6 bg-card/90 border border-border text-destructive hover:bg-card hover:scale-110 transition-all shadow-sm"
                         title="Видалити фото"
                       >
                         <X className="size-3" strokeWidth={2.5} />
@@ -577,49 +547,20 @@ const CreateReportPage = () => {
                   ))}
 
                   {photos.length < MAX_PHOTOS && (
-                    <label className="aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group">
-                      <Plus
-                        className="size-6 text-muted-foreground group-hover:text-blue-500 transition-colors"
-                        strokeWidth={2}
-                      />
-                      <span className="text-[10px] font-semibold text-muted-foreground group-hover:text-blue-500 mt-1">
-                        Додати ще
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                        multiple
-                        className="hidden"
-                        onChange={handleFilesSelect}
-                        disabled={compressing}
-                      />
-                    </label>
+                    <PhotoUploadField label="Додати ще фото" multiple disabled={compressing} onChange={handleFilesSelect} className="aspect-square p-2">
+                      <Plus className="size-6" /><span className="text-xs">Додати ще</span>
+                    </PhotoUploadField>
                   )}
                 </div>
               )}
 
               {/* Зона первинного завантаження коли немає фото */}
               {photos.length === 0 && (
-                <label className="w-full aspect-[3/2] md:aspect-square border-2 border-dashed border-border flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all duration-200 shadow-sm flex-1 min-h-[200px] group">
-                  <Camera
-                    className="size-10 mb-3 text-muted-foreground group-hover:scale-110 group-hover:text-blue-500 transition-all duration-200"
-                    strokeWidth={2}
-                  />
-                  <p className="text-xs font-bold text-foreground mb-1">
-                    {compressing ? "Стискаємо фотографії..." : "Натисніть для завантаження фото"}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground max-w-xs leading-normal">
-                    Можна обрати до 6 фото (PNG, JPEG, WEBP). Фото оптимізуються автоматично, сумарний об'єм до 10 МБ.
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/png, image/jpeg, image/jpg, image/webp"
-                    multiple
-                    className="hidden"
-                    onChange={handleFilesSelect}
-                    disabled={compressing}
-                  />
-                </label>
+                <PhotoUploadField label="Завантажити фото звернення" multiple disabled={compressing} onChange={handleFilesSelect} className="min-h-52 flex-1">
+                  <Camera className="size-10 text-muted-foreground" />
+                  <span className="text-xs font-semibold">{compressing ? "Стискаємо фотографії…" : "Обрати фото"}</span>
+                  <span className="text-xs text-muted-foreground">До 6 фото PNG, JPEG або WEBP. Фото оптимізуються автоматично, загальний розмір — до 10 МБ.</span>
+                </PhotoUploadField>
               )}
             </div>
           </div>
@@ -667,9 +608,9 @@ const CreateReportPage = () => {
 
         <Button
           type="submit"
-          size="lg"
-          disabled={submitting || compressing}
-          className="w-full h-12 text-sm font-bold shadow-md bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center gap-2"
+          size="touch"
+          disabled={submitting || compressing || locationLoading || !!locationError}
+          className="w-full"
         >
           <Send className="size-4" strokeWidth={2.5} />
           {submitting ? "Надсилаємо заявку..." : "Опублікувати звернення"}

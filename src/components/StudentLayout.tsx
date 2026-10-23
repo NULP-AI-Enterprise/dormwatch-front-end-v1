@@ -39,7 +39,7 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
       ];
 
   return (
-    <div className="min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col w-full max-w-full">
       <nav className="bg-card border-b border-border sticky top-0 z-50 w-full">
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">

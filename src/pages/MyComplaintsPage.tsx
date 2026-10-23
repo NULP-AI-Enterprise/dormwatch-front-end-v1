@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { deleteProblem, fetchCategories } from "@/services/problemsApi";
@@ -184,12 +185,12 @@ const MyComplaintsPage = () => {
             icon={Search}
             title="Нічого не знайшли за цими фільтрами."
             action={
-              <button
+              <Button variant="ghost" size="content"
                 className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
                 onClick={resetFilters}
               >
                 Скинути фільтри
-              </button>
+              </Button>
             }
           />
         ) : (

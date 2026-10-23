@@ -1,3 +1,6 @@
+import { PhotoAttachment } from "@/components/PhotoAttachment";
+import PhotoUploadField from "@/components/PhotoUploadField";
+import { ComplaintResourceDisclosure } from "@/components/ComplaintResourcesSection";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Wrench,
@@ -8,7 +11,6 @@ import {
   Eye,
   Home,
   Users,
-  Upload,
   X,
   CheckCircle2,
   Phone,
@@ -71,6 +73,8 @@ const WorkerHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [openComments, setOpenComments] = useState<Record<number, boolean>>({});
   const [liveCommentCounts, setLiveCommentCounts] = useState<Record<number, number>>({});
   const [liveForeignIds, setLiveForeignIds] = useState<Record<number, number | null>>({});
@@ -124,12 +128,13 @@ const WorkerHomePage = () => {
   const [isFinishing, setIsFinishing] = useState(false);
 
   const load = useCallback(async () => {
+    setLoading(true); setLoadError("");
     try {
       const active = await fetchWorkerJobs();
       setJobs(active);
     } catch {
-      setError("Не вдалося завантажити завдання");
-    }
+      setLoadError("Не вдалося завантажити завдання");
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -407,7 +412,7 @@ const WorkerHomePage = () => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-sky-500/10 border border-sky-500/25 text-xs font-semibold text-sky-600 dark:text-sky-400">
+          <div role="alert" className="mb-4 p-3 bg-status-danger-bg border border-status-danger/30 text-xs text-status-danger">
             {error}
           </div>
         )}
@@ -471,8 +476,12 @@ const WorkerHomePage = () => {
           />
         </div>
 
-        {jobs === null ? (
+        {loading ? (
           <PageSpinner />
+        ) : loadError ? (
+          <div role="alert" className="space-y-3"><p className="text-sm text-destructive">{loadError}</p>
+            <Button variant="outline" onClick={load}>Спробувати ще раз</Button>
+          </div>
         ) : filteredJobs.length === 0 ? (
           <EmptyState
             icon={Wrench}
@@ -510,7 +519,7 @@ const WorkerHomePage = () => {
                       {job.isRework && (
                         <Badge
                           variant="outline"
-                          className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+                          className="bg-status-danger-bg text-status-danger border-status-danger/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
                         >
                           Повторне опрацювання
                         </Badge>
@@ -518,7 +527,7 @@ const WorkerHomePage = () => {
                       {job.studentPhone && (
                         <Badge
                           variant="outline"
-                          className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 gap-1 text-[11px] font-semibold px-2 py-0.5"
+                          className="border-status-info/40 bg-status-info-bg text-status-info gap-1 text-xs font-semibold px-2 py-0.5"
                         >
                           <Phone className="size-3" strokeWidth={2} />
                           {job.studentPhone}
@@ -542,14 +551,14 @@ const WorkerHomePage = () => {
                     {(hasBlock || job.isShared) && (
                       <div className="flex flex-wrap gap-2 items-center pt-1">
                         {hasBlock && (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                            <Home className="size-3.5 shrink-0 text-blue-500" strokeWidth={2} />
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-status-info-bg text-status-info border border-status-info/40">
+                            <Home className="size-3.5 shrink-0 text-status-info" strokeWidth={2} />
                             <span>Звернення стосується блоку</span>
                           </div>
                         )}
                         {job.isShared && (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                            <Users className="size-3.5 shrink-0 text-amber-500" strokeWidth={2} />
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-status-warning-bg text-status-warning border border-status-warning/40">
+                            <Users className="size-3.5 shrink-0 text-status-warning" strokeWidth={2} />
                             <span>Спільний простір</span>
                           </div>
                         )}
@@ -559,7 +568,7 @@ const WorkerHomePage = () => {
                     {/* Resident's initial complaint photo preview */}
                     {job.photoUrl && (
                       <div className="pt-1">
-                        <button
+                        <PhotoAttachment aria-label="Переглянути фото проблеми" variant="ghost" size="content"
                           type="button"
                           onClick={() => setPreviewImage(resolveImageUrl(job.photoUrl as string))}
                           className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none max-w-full"
@@ -573,16 +582,16 @@ const WorkerHomePage = () => {
                             />
                           </div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <ImageIcon className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0" strokeWidth={2} />
-                            <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
+                            <ImageIcon className="size-3.5 text-muted-foreground group-hover/attachment:text-link transition-colors shrink-0" strokeWidth={2} />
+                            <span className="font-semibold text-foreground group-hover/attachment:text-link transition-colors">
                               Фото проблеми
                             </span>
-                            <span className="text-muted-foreground text-[11px] font-normal flex items-center gap-1">
+                            <span className="text-muted-foreground text-xs font-normal flex items-center gap-1">
                               · (переглянути)
-                              <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-primary transition-colors" strokeWidth={2} />
+                              <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-link transition-colors" strokeWidth={2} />
                             </span>
                           </div>
-                        </button>
+                        </PhotoAttachment>
                       </div>
                     )}
 
@@ -590,8 +599,8 @@ const WorkerHomePage = () => {
                     {isNotAccepted && (
                       <div className="space-y-2 pt-1">
                         {job.reworkReason && (
-                          <div className="p-3 bg-red-500/10 border border-red-500/25 text-xs">
-                            <span className="font-bold text-red-600 dark:text-red-400 block mb-1">
+                          <div className="p-3 bg-status-danger-bg border border-status-danger/40 text-xs">
+                            <span className="font-bold text-status-danger block mb-1">
                               Причина повернення:
                             </span>
                             <p className="text-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{job.reworkReason}</p>
@@ -599,29 +608,29 @@ const WorkerHomePage = () => {
                         )}
                         {job.reworkPhoto && (
                           <div>
-                            <button
+                            <PhotoAttachment aria-label="Переглянути фото повторного звернення" variant="ghost" size="content"
                               type="button"
                               onClick={() => setPreviewImage(resolveImageUrl(job.reworkPhoto as string))}
-                              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 text-red-700 dark:text-red-300 transition-colors cursor-pointer select-none max-w-full"
+                              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-status-danger/40 bg-status-danger-bg hover:bg-status-danger-bg text-status-danger transition-colors cursor-pointer select-none max-w-full"
                             >
-                              <div className="relative size-6 shrink-0 overflow-hidden border border-red-500/40 bg-card">
+                              <div className="relative size-6 shrink-0 overflow-hidden border border-status-danger/40 bg-card">
                                 <img
                                   src={resolveImageUrl(job.reworkPhoto) || ""}
                                   alt=""
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <ImageIcon className="size-3.5 text-red-600 dark:text-red-400 shrink-0" />
+                              <ImageIcon className="size-3.5 text-status-danger shrink-0" />
                               <span className="font-semibold">Фото дефекту від мешканця</span>
-                              <Eye className="size-3 ml-0.5 text-red-500 shrink-0" />
-                            </button>
+                              <Eye className="size-3 ml-0.5 text-status-danger shrink-0" />
+                            </PhotoAttachment>
                           </div>
                         )}
                       </div>
                     )}
 
                     {/* Metadata & Timestamps */}
-                    <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-border/60">
+                    <div className="text-xs text-muted-foreground space-y-1 pt-1 border-t border-dashed border-border/60">
                       {assignedDateDisplay && (
                         <p>
                           Дата призначення:{" "}
@@ -645,7 +654,7 @@ const WorkerHomePage = () => {
                         </p>
                       )}
                       {job.resolvedAt && (
-                        <p className="font-medium text-emerald-600 dark:text-emerald-400">
+                        <p className="font-medium text-status-success">
                           Прийнято мешканцем: {formatDateTime(job.resolvedAt)}
                         </p>
                       )}
@@ -657,7 +666,7 @@ const WorkerHomePage = () => {
                       )}
                       {job.completionPhoto && (
                         <div className="pt-1">
-                          <button
+                          <PhotoAttachment aria-label="Переглянути фото виконаної роботи" variant="ghost" size="content"
                             type="button"
                             onClick={() => setPreviewImage(resolveImageUrl(job.completionPhoto as string))}
                             className="inline-flex items-center gap-2 px-2.5 py-1 text-xs border border-border bg-muted/40 hover:bg-muted text-foreground transition-colors cursor-pointer"
@@ -665,17 +674,17 @@ const WorkerHomePage = () => {
                             <ImageIcon className="size-3.5 text-muted-foreground" />
                             <span className="font-semibold">Фото виконаної роботи</span>
                             <Eye className="size-3 ml-0.5 text-muted-foreground" />
-                          </button>
+                          </PhotoAttachment>
                         </div>
                       )}
                     </div>
 
                     {/* Action buttons (only for approved / in_progress) */}
                     {canAct && (
-                      <div className="pt-2 border-t border-border">
+                      <div className="pt-2 border-t border-dashed border-border">
                         {job.status === "approved" ? (
                           <Button
-                            size="sm"
+                            size="lg"
                             disabled={busyId === job.id}
                             onClick={() => handleStartWork(job)}
                             className="w-full cursor-pointer font-semibold"
@@ -684,10 +693,10 @@ const WorkerHomePage = () => {
                           </Button>
                         ) : (
                           <Button
-                            size="sm"
+                            size="lg"
                             disabled={busyId === job.id}
                             onClick={() => openFinishDialog(job)}
-                            className="w-full cursor-pointer font-semibold bg-sky-500 hover:bg-sky-600 text-white"
+                            className="w-full cursor-pointer font-semibold bg-primary hover:bg-primary/80 text-primary-foreground"
                           >
                             <CheckCircle2 className="size-4 mr-1.5" />
                             Виконано
@@ -697,12 +706,14 @@ const WorkerHomePage = () => {
                     )}
 
                     {/* Comments toggle & bottom-right location metadata */}
-                    <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-dashed border-border flex flex-wrap items-center justify-between gap-2">
                       <Button
                         variant="ghost"
                         size="xs"
                         onClick={() => toggleComments(job)}
-                        className={`text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1.5 h-auto cursor-pointer transition-all ${
+                        aria-expanded={!!openComments[job.id]}
+                        aria-controls={"comments-" + job.id}
+                        className={`text-link text-xs font-semibold hover:underline inline-flex items-center gap-1.5 h-auto cursor-pointer transition-all ${
                           hasUnreadComments
                             ? "animate-pulse bg-primary/10 px-2.5 py-1 border border-primary/30 rounded-none"
                             : "p-0"
@@ -712,8 +723,8 @@ const WorkerHomePage = () => {
                         <span>Коментарі ({commentCount})</span>
                         {hasUnreadComments && (
                           <span className="relative flex size-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                            <span className="relative inline-flex rounded-full size-2 bg-primary" />
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-primary opacity-75" />
+                            <span className="relative inline-flex rounded-none size-2 bg-primary" />
                           </span>
                         )}
                         {openComments[job.id] ? (
@@ -737,8 +748,10 @@ const WorkerHomePage = () => {
                       </div>
                     </div>
 
+                    <ComplaintResourceDisclosure complaintId={job.id} />
+
                     {openComments[job.id] && (
-                      <div className="pt-3 border-t border-border">
+                      <div id={"comments-" + job.id} className="pt-3 border-t border-border">
                         <CommentSection
                           complaintId={job.id}
                           currentUserId={currentUser?.user}
@@ -772,10 +785,11 @@ const WorkerHomePage = () => {
 
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-xs font-medium text-foreground block mb-1.5">
+              <label htmlFor="worker-completion-note" className="text-xs font-semibold block mb-1.5">
                 Нотатка про виконану роботу <span className="text-muted-foreground font-normal">(опціонально)</span>
               </label>
               <Textarea
+                id="worker-completion-note"
                 placeholder="Опишіть, що саме було зроблено (наприклад: замінено прокладку у крані)..."
                 value={finishNote}
                 onChange={(e) => setFinishNote(e.target.value)}
@@ -800,7 +814,7 @@ const WorkerHomePage = () => {
                       <p className="text-xs font-medium text-foreground truncate">
                         {finishPhotoFile?.name}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {((finishPhotoFile?.size || 0) / 1024).toFixed(1)} КБ
                       </p>
                     </div>
@@ -809,28 +823,15 @@ const WorkerHomePage = () => {
                     type="button"
                     variant="ghost"
                     size="icon-xs"
+                    aria-label="Видалити фото виконання"
                     onClick={handleRemovePhoto}
-                    className="text-muted-foreground hover:text-red-500 cursor-pointer"
+                    className="text-muted-foreground hover:text-status-danger cursor-pointer"
                   >
                     <X className="size-4" />
                   </Button>
                 </div>
               ) : (
-                <label className="border border-dashed border-border hover:border-primary/50 bg-muted/10 hover:bg-muted/20 p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors text-center">
-                  <Upload className="size-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Обрати або перетягнути фото
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    PNG, JPG або WEBP
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoSelect}
-                    className="sr-only"
-                  />
-                </label>
+                <PhotoUploadField accept="image/*" label="Обрати фото виконаної роботи (необов’язково)" onChange={handlePhotoSelect} disabled={isFinishing} />
               )}
             </div>
           </div>
@@ -851,7 +852,7 @@ const WorkerHomePage = () => {
               size="sm"
               onClick={confirmFinish}
               disabled={isFinishing}
-              className="text-xs font-semibold cursor-pointer bg-sky-500 hover:bg-sky-600 text-white"
+              className="text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/80 text-primary-foreground"
             >
               {isFinishing ? "Збереження..." : "Підтвердити виконання"}
             </Button>

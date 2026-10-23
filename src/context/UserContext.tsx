@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import type { UserProfile } from "@/lib/types";
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
 import { fetchUserProfile } from "@/services/problemsApi";
 
 interface UserContextValue {
-  user: any;
+  user: UserProfile | null;
   loading: boolean;
   refreshUser: () => void;
 }
@@ -14,11 +15,15 @@ const UserContext = createContext<UserContextValue>({
 });
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUser = useRef(user);
+  currentUser.current = user;
 
   const refreshUser = () => {
-    setLoading(true);
+    // Sign-in must wait for its first profile; background profile saves must
+    // keep the existing page/dialog mounted.
+    setLoading(currentUser.current === null);
     fetchUserProfile()
       .then((data) => setUser(data))
       .catch(() => setUser(null))

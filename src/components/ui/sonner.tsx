@@ -9,11 +9,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as Theme}
+      containerAriaLabel="Сповіщення"
       className="toaster group"
       toastOptions={{
+        // Design system §5: Sonner owns its stylesheet, so set the shared surface explicitly.
+        style: { borderRadius: 0, background: "var(--popover)", color: "var(--popover-foreground)", borderColor: "var(--border)" },
+        closeButtonAriaLabel: "Закрити сповіщення",
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+            "group toast rounded-none group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           description: "group-[.toaster]:text-muted-foreground",
           actionButton:
             "group-[.toaster]:bg-primary group-[.toaster]:text-primary-foreground",

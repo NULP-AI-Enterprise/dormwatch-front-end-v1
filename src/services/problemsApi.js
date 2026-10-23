@@ -284,12 +284,13 @@ function mapPlace(p) {
   };
 }
 
-export async function fetchPlaces(buildingId) {
+export async function fetchPlaces(buildingId, throwOnError = false) {
   try {
     const data = await fetchJson(`/places/?building_id=${buildingId}`);
     return Array.isArray(data) ? data.map(mapPlace) : [];
   } catch (e) {
     console.warn("Failed to fetch places", e);
+    if (throwOnError) throw e;
     return [];
   }
 }
@@ -302,8 +303,7 @@ export async function fetchMyComplaintPlaces() {
     const data = await fetchJson("/me/complaint-places/");
     return Array.isArray(data) ? data.map(mapPlace) : [];
   } catch (e) {
-    console.warn("Failed to fetch complaint places", e);
-    return [];
+    throw e;
   }
 }
 
@@ -433,15 +433,12 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
 
   let res = await doFetch();
 
-  // On 401/403 with an access token present, the token may be expired
-  // or corrupted. Try a silent refresh once and retry the request.
-  // DRF returns 401 (NotAuthenticated) when all authenticators fail,
-  // but can return 403 (PermissionDenied) in some flows (e.g. CSRF
-  // failure on SessionAuthentication). We attempt a refresh on both,
-  // but only retry 403 if the refresh actually produced a *different*
-  // token — otherwise it's a genuine permission denial (e.g. non-admin
-  // hitting an admin endpoint).
-  if ((res.status === 401 || res.status === 403) && accessToken) {
+  // Refresh only authentication failures. A permission-denied 403 must keep
+  // the session intact (e.g. a building admin viewing another building).
+  const authError = res.status === 403 ? await res.clone().json().catch(() => null) : null;
+  const expiredAuthentication = res.status === 401 ||
+    (res.status === 403 && ["token_not_valid", "not_authenticated", "authentication_failed"].includes(authError?.code));
+  if (expiredAuthentication && accessToken) {
     try {
       const oldToken = accessToken;
       await refreshAccessToken();   // mutex-guarded — safe under concurrency
@@ -462,8 +459,11 @@ export async function fetchJson(path, { method = "GET", body } = {}) {
     }
   }
 
-  // After refresh-retry, if it's STILL 401/403 the session is truly dead
-  if (res.status === 401 || res.status === 403) {
+  // Only a remaining authentication failure ends the session. Permission
+  // denials still flow through the ordinary error path with their server message.
+  const finalAuthError = res.status === 403 ? await res.clone().json().catch(() => null) : null;
+  if (res.status === 401 ||
+      (res.status === 403 && ["token_not_valid", "not_authenticated", "authentication_failed"].includes(finalAuthError?.code))) {
     setAccessToken(null);
     throw new Error("AUTH_REQUIRED");
   }
@@ -588,7 +588,7 @@ export async function updateUserProfile(data) {
   const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
   return await fetchJson("/profile/", {
     method: "PATCH",
-    body: isFormData ? data : JSON.stringify(data),
+    body: data,
     headers: isFormData ? {} : { "Content-Type": "application/json" },
   });
 }
@@ -648,7 +648,7 @@ function buildQueryParams(filters = {}, keys = ["corps", "priority", "rework"]) 
 // `status` keeps the single-code shorthand; `statuses` (array) narrows to any
 // of several normalized codes — both are optional and, if given together,
 // applied in sequence.
-export async function fetchComplaints({ status, statuses, filters = {} } = {}) {
+export async function fetchComplaints({ status, statuses, filters = {}, throwOnError = false } = {}) {
   try {
     const q = buildQueryParams(filters);
     const data = await fetchJson(`/complaints/${q}`);
@@ -660,13 +660,14 @@ export async function fetchComplaints({ status, statuses, filters = {} } = {}) {
       return results;
     }
   } catch (e) {
+    if (throwOnError) throw e;
     console.warn("Fetch error:", e);
   }
   return [];
 }
 
-export async function fetchAllComplaints(filters = {}) {
-  return fetchComplaints({ filters });
+export async function fetchAllComplaints(filters = {}, throwOnError = false) {
+  return fetchComplaints({ filters, throwOnError });
 }
 
 // The public board feed: active ("approved") plus completed ("resolved")
@@ -674,7 +675,7 @@ export async function fetchAllComplaints(filters = {}) {
 // pending/rejected. Admins get every status from the API but this same cut keeps
 // the public dashboard's meaning consistent across roles.
 export async function fetchPublicComplaints(filters = {}) {
-  return fetchComplaints({ filters });
+  return fetchComplaints({ filters, throwOnError: true });
 }
 
 export async function deleteProblem(id) {
@@ -749,7 +750,7 @@ export async function fetchWorkerJobs(status = "") {
       return data.map(normalizeComplaint).filter(Boolean);
     }
   } catch (e) {
-    console.warn("Failed to fetch worker jobs", e);
+    throw e;
   }
   return [];
 }
@@ -761,7 +762,7 @@ export async function fetchWorkerHistory() {
       return data.map(normalizeComplaint).filter(Boolean);
     }
   } catch (e) {
-    console.warn("Failed to fetch worker history", e);
+    throw e;
   }
   return [];
 }
@@ -837,11 +838,11 @@ export async function fetchComments(complaintId) {
       author: c.user_name || "Користувач",
       author_id: c.user,
       authorIsAdmin: !!c.author_is_admin,
+      authorRole: c.author_is_admin ? "admin" : String(c.author_role || "").trim().toLowerCase(),
       date: c.created_at,
     }));
   } catch (e) {
-    console.warn("Fetch comments error:", e);
-    return [];
+    throw e;
   }
 }
 
@@ -849,12 +850,13 @@ export async function fetchComments(complaintId) {
 
 // External contractors assignable to complaints (managed in Admin Settings).
 // Also serves the complaint assignment dropdown in the admin panel.
-export async function fetchWorkers() {
+export async function fetchWorkers(throwOnError = false) {
   try {
       const data = await fetchJson("/admin/workers/");
       if (Array.isArray(data)) return data;
   } catch (e) {
       console.warn("Failed to fetch workers", e);
+      if (throwOnError) throw e;
   }
   return [];
 }
@@ -944,7 +946,7 @@ export async function fetchCompletedReport({ date_from, date_to } = {}) {
     const data = await fetchJson(`/admin/reports/completed/${q}`);
     if (Array.isArray(data)) return data;
   } catch (e) {
-    console.warn("Failed to fetch completed report", e);
+    throw e;
   }
   return [];
 }
@@ -958,7 +960,7 @@ export async function fetchWorkerReport() {
     const data = await fetchJson("/admin/reports/workers/");
     if (data && Array.isArray(data.workers)) return data;
   } catch (e) {
-    console.warn("Failed to fetch worker report", e);
+    throw e;
   }
   return { workers: [], caveats: [] };
 }
@@ -974,6 +976,7 @@ export async function postComment(complaintId, text) {
     author: data.user_name || "Ви",
     author_id: data.user,
     authorIsAdmin: !!data.author_is_admin,
+    authorRole: data.author_is_admin ? "admin" : String(data.author_role || "").trim().toLowerCase(),
     date: data.created_at,
   };
 }
@@ -1100,8 +1103,7 @@ export async function fetchResources() {
     const data = await fetchJson("/resources/");
     return Array.isArray(data) ? data : [];
   } catch (e) {
-    console.warn("Failed to fetch resources", e);
-    return [];
+    throw e;
   }
 }
 
@@ -1129,8 +1131,7 @@ export async function fetchComplaintResources(complaintId) {
   try {
     return await fetchJson(`/complaints/${complaintId}/resources/`);
   } catch (e) {
-    console.warn(`Failed to fetch resources for complaint ${complaintId}`, e);
-    return { complaint_id: complaintId, total_cost: 0, resources: [] };
+    throw e;
   }
 }
 
@@ -1152,8 +1153,7 @@ export async function fetchResourceReport(filters = {}) {
     const q = buildQueryParams(filters, ["period", "building_id", "category_id", "date_from", "date_to"]);
     return await fetchJson(`/admin/reports/resources/${q}`);
   } catch (e) {
-    console.warn("Failed to fetch resource expenditure report", e);
-    return { total_cost: 0, total_items_logged: 0, resource_summary: [], recent_logs: [] };
+    throw e;
   }
 }
 

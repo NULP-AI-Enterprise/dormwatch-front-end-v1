@@ -20,8 +20,8 @@ const Logo = ({ to, className, onClick }: LogoProps) => {
   );
 
   const baseClass = cn(
-    "flex items-center gap-2 text-primary font-bold text-xl tracking-tight",
-    to && "cursor-pointer hover:text-primary/80 transition-colors",
+    "flex items-center gap-2 text-link font-bold text-xl tracking-tight",
+    to && "cursor-pointer hover:text-link/80 transition-colors",
     className
   );
 

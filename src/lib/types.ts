@@ -90,6 +90,7 @@ export interface Comment {
   author: string;
   author_id: number;
   authorIsAdmin: boolean;
+  authorRole: string;
   date: string;
 }
 
@@ -120,6 +121,7 @@ export interface Announcement {
 }
 
 export interface UserProfile {
+  is_staff?: boolean;
   user: number;
   first_name: string;
   last_name: string;

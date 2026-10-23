@@ -14,7 +14,8 @@ const PIPELINE = ["pending", "approved", "in_progress", "review", "resolved"] as
 // Terminal label tones — same four-hue status set as badges (§4). "rejected"
 // is the alert outcome that colors the bar; the other terminals stay neutral.
 const TERMINAL_TEXT: Record<string, string> = {
-  rejected: "text-sky-500 dark:text-sky-400",
+  rejected: "text-status-danger",
+  not_accepted: "text-status-danger",
 };
 
 interface ProgressStepperProps {
@@ -36,7 +37,7 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
           <div
             className={cn(
               "flex-1 h-full",
-              s === "rejected" ? "bg-sky-500/40" : "bg-primary"
+              ["rejected", "not_accepted"].includes(s) ? "bg-status-danger" : "bg-foreground"
             )}
           />
         </div>
@@ -79,8 +80,8 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
               key={key}
               className={cn(
                 "h-full transition-all duration-500",
-                isReached ? "bg-primary" : "bg-muted",
-                isCurrent && !isResolved && "animate-pulse"
+                isReached ? "bg-foreground" : "bg-muted",
+                isCurrent && !isResolved && "motion-safe:animate-pulse"
               )}
             />
           );

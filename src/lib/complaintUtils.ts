@@ -37,47 +37,23 @@ const NEUTRAL_COLOR = {
   fill: "bg-muted",
 };
 
+const semanticStatus = (name: "warning" | "info" | "success" | "danger") => ({
+  // Literal classes are kept here so Tailwind discovers every palette token.
+  warning: { badge: "text-status-warning bg-status-warning-bg border-status-warning/30", text: "text-status-warning", fill: "bg-status-warning" },
+  info: { badge: "text-status-info bg-status-info-bg border-status-info/30", text: "text-status-info", fill: "bg-status-info" },
+  success: { badge: "text-status-success bg-status-success-bg border-status-success/30", text: "text-status-success", fill: "bg-status-success" },
+  danger: { badge: "text-status-danger bg-status-danger-bg border-status-danger/30", text: "text-status-danger", fill: "bg-status-danger" },
+})[name];
+
 const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string }> = {
-  pending: {
-    badge: "text-amber-500 bg-amber-500/10 border-amber-700/50",
-    text: "text-amber-500",
-    fill: "bg-amber-500",
-  },
-  approved: {
-    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
-    text: "text-sky-600 dark:text-sky-400",
-    fill: "bg-sky-500",
-  },
-  in_progress: {
-    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
-    text: "text-sky-600 dark:text-sky-400",
-    fill: "bg-sky-500",
-  },
-  review: {
-    badge: "text-sky-500 bg-sky-500/10 border-sky-700/50",
-    text: "text-sky-600 dark:text-sky-400",
-    fill: "bg-sky-500",
-  },
-  resolved: {
-    badge: "text-green-500 bg-green-500/10 border-green-700/50",
-    text: "text-green-500",
-    fill: "bg-green-500",
-  },
-  rejected: {
-    badge: "text-red-500 bg-red-500/10 border-red-700/50",
-    text: "text-red-500",
-    fill: "bg-red-500",
-  },
-  not_accepted: {
-    badge: "text-red-500 bg-red-500/10 border-red-700/50",
-    text: "text-red-500",
-    fill: "bg-red-500",
-  },
-  withdrawn: {
-    badge: "text-red-500 bg-red-500/10 border-red-700/50",
-    text: "text-red-500",
-    fill: "bg-red-500",
-  },
+  pending: semanticStatus("warning"),
+  approved: semanticStatus("info"),
+  in_progress: semanticStatus("info"),
+  review: NEUTRAL_COLOR,
+  resolved: semanticStatus("success"),
+  rejected: semanticStatus("danger"),
+  not_accepted: semanticStatus("danger"),
+  withdrawn: NEUTRAL_COLOR,
 };
 
 export const statusBadgeClass = (status: string | null | undefined) =>
@@ -99,10 +75,13 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: "Адміністратор",
   student: "Студент",
   worker: "Працівник",
+  працівник: "Працівник",
+  адміністратор: "Адміністратор",
+  студент: "Студент",
 };
 
 export const roleLabel = (roleName: string) =>
-  ROLE_LABELS[String(roleName || "").toLowerCase()] || roleName;
+  ROLE_LABELS[String(roleName || "").trim().toLowerCase()] || roleName || "Користувач";
 
 // Ordered low → critical; the single source for priority selectors/forms.
 export const PRIORITY_OPTIONS = ["low", "medium", "high", "critical"] as const;
@@ -119,13 +98,11 @@ const NEUTRAL_PRIORITY = {
   text: "text-muted-foreground",
 };
 
-export const priorityBadgeClass = (_priority: string | null | undefined) => {
-  return NEUTRAL_PRIORITY.badge;
-};
+export const priorityBadgeClass = (priority: string | null | undefined) =>
+  priority === "critical" ? semanticStatus("danger").badge : NEUTRAL_PRIORITY.badge;
 
-export const priorityColor = (_priority: string | null | undefined) => {
-  return NEUTRAL_PRIORITY;
-};
+export const priorityColor = (priority: string | null | undefined) =>
+  priority === "critical" ? semanticStatus("danger") : NEUTRAL_PRIORITY;
 
 export const priorityLabel = (priority: string | null | undefined): string => {
   const p = String(priority || "").toLowerCase();
@@ -155,10 +132,11 @@ export const complaintIsOverdue = (c: {
 export const OVERDUE_LABEL = "Прострочено";
 
 export const isAdminUser = (user: {
+  is_staff?: boolean;
   role?: { role_name?: string | null } | null;
 } | null | undefined) =>
   !!(
-    user?.role &&
+    user?.is_staff || user?.role &&
     ["admin", "адміністратор"].includes(
       (user.role.role_name || "").toLowerCase()
     )
@@ -180,13 +158,13 @@ export const isWorkerUser = (user: {
   role?: { role_name?: string | null } | null;
 } | null | undefined) =>
   !!user?.role?.role_name &&
-  user.role.role_name.toLowerCase() === "worker" &&
+  ["worker", "працівник"].includes(user.role.role_name.toLowerCase()) &&
   !isAdminUser(user);
 
 export const roleHomeRoute = (roleName: string | null | undefined): string => {
   const r = String(roleName || "").toLowerCase();
   if (r === "admin" || r === "адміністратор") return "/admin";
-  if (r === "worker") return "/worker";
+  if (r === "worker" || r === "працівник") return "/worker";
   return "/user";
 };
 export const chainGroupId = (c: { id: number; root: number | null }) =>
@@ -237,3 +215,18 @@ export const cleanComplaintDescription = (description?: string | null): string =
   if (!description) return "";
   return description.replace(/\[Блок\]/gi, "").trim();
 };
+
+// Shared urgency and exhaustive analytics: unknown persisted values remain visible.
+export const isUrgentPriority = (priority?: string | null) =>
+  priority === "critical" || priority === "high";
+
+export function priorityBreakdown(items: { priority?: string | null }[]) {
+  const known = PRIORITY_OPTIONS.map((value) => ({
+    value, label: priorityLabel(value),
+    count: items.filter((item) => item.priority === value).length,
+  })).reverse();
+  const unknown = items.filter((item) =>
+    !PRIORITY_OPTIONS.some((value) => value === item.priority)
+  ).length;
+  return unknown ? [...known, { value: "unknown", label: "Не визначено", count: unknown }] : known;
+}

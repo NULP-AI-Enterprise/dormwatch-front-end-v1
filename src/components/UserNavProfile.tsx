@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { LogOut, User, Sun } from "lucide-react";
 import { useUser } from "@/context/UserContext";
@@ -39,10 +40,11 @@ export function getDisplayName(user: UserProfile | null): string {
  * Returns role label in Ukrainian matching the screenshot ("Суперадмін", "Студент", "Працівник").
  */
 export function getRoleLabel(user: UserProfile | null): string {
+  if (user?.is_staff) return "Адміністратор системи";
   if (!user || !user.role) return "";
   const roleName = (typeof user.role === "string" ? user.role : user.role.role_name)?.toLowerCase();
   if (roleName === "admin" || roleName === "адміністратор") {
-    return "Суперадмін";
+    return user.is_staff ? "Адміністратор системи" : "Адміністратор";
   }
   if (roleName === "student" || roleName === "студент") {
     return "Студент";
@@ -78,18 +80,19 @@ export default function UserNavProfile({ className }: UserNavProfileProps) {
       <div className={`flex items-center gap-2 sm:gap-3 ${className || ""}`}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
+            <Button variant="ghost" size="content"
               type="button"
-              className="flex flex-col text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-muted/50 select-none"
+              className="flex flex-col text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-muted/50 select-none"
               title="Меню користувача"
+              aria-label="Меню користувача"
             >
-              <span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[110px] xs:max-w-[140px] sm:max-w-[180px] md:max-w-[240px] group-hover:text-primary transition-colors">
+              <span className="text-sm font-semibold text-foreground leading-tight truncate max-w-[80px] min-[360px]:max-w-[110px] sm:max-w-[180px] md:max-w-[240px] group-hover:text-link transition-colors">
                 {displayName}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight truncate max-w-[110px] xs:max-w-[140px] sm:max-w-[180px] md:max-w-[240px] mt-0.5">
+              <span className="text-xs text-muted-foreground leading-tight truncate max-w-[80px] min-[360px]:max-w-[110px] sm:max-w-[180px] md:max-w-[240px] mt-0.5">
                 {roleLabel ? `${roleLabel} · ` : ""}{user.email}
               </span>
-            </button>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 p-1.5">
             <DropdownMenuItem onClick={() => setProfileOpen(true)} className="cursor-pointer">

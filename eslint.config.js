@@ -15,6 +15,9 @@ export default defineConfig([
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
     ],
+    rules: {
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useAdminHeaderActions', 'WORKER_STATUS_OPTIONS', 'getDisplayName', 'getRoleLabel', 'useTheme', 'useUser', 'badgeVariants', 'buttonVariants', 'useComboboxAnchor', 'useFormField', 'tabsListVariants', 'toggleVariants'] }],
+    },
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

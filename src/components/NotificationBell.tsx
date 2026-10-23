@@ -129,6 +129,7 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label={unreadCount ? "Сповіщення: " + unreadCount + " непрочитаних" : "Сповіщення"}
           variant="ghost"
           size="icon"
           className="relative text-muted-foreground hover:text-foreground cursor-pointer outline-none"
@@ -141,16 +142,16 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-96 flex flex-col bg-card border border-border p-0 shadow-lg">
+      <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-1.5rem)] max-h-96 flex flex-col bg-card border border-border p-0 shadow-lg">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="text-sm font-bold text-foreground">Сповіщення</span>
           {unreadCount > 0 && (
-            <button
+            <Button variant="ghost" size="content"
               onClick={handleMarkAllRead}
               className={`text-xs font-semibold ${LINK} ${LINK_HOVER} cursor-pointer`}
             >
               Позначити все як прочитане
-            </button>
+            </Button>
           )}
         </div>
 

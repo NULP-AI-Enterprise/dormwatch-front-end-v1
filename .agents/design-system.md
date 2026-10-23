@@ -1,357 +1,192 @@
-# DormWatch Design System
-
-Successor of the deleted `DESIGN.md`. Only stable, generalizable rules live
-here; page-level layouts and per-component specs are intentionally **not**
-documented — read the code (`src/pages`, `src/components`).
-
-## 1. Philosophy
-
-DormWatch bridges residents and housing management at LPNU. The interface
-prioritizes utility, accessibility, and institutional trust over flashy
-consumer trends.
-
-- Reject the "AI slop" aesthetic: no heavy gradients, soft glow shadows,
-  pill-shaped radii, emojis as UI, bulbous floating components.
-- Embrace: crisp `border-border` borders, sharp edges, distinct visual
-  hierarchy, asymmetrical hover states (`4px` left-border reveal), and
-  meaningful micro-visualizations (progress steppers).
-- The background is a flat `var(--background)` surface — **no background
-  texture of any kind** (the former patterned overlay was removed).
-- **Language:** the entire UI is Ukrainian. Only the brand "DormWatch" and
-  technical identifiers (e.g. `#id`, `@lpnu.ua`) are English.
-- **Accent color is for interaction; color on data is information.** The `--primary`
-  accent is a first-class tool for signaling what can be acted on and what is
-  selected (see §4). Color on data is a different, scarce resource: a small,
-  deliberate palette of hues reserved for the few states where hue genuinely
-  helps scanning — never a rainbow keyed to every row of data, never a hue per
-  pipeline step. When a state's color doesn't earn its meaning, render it
-  monochrome.
-
-## 2. Motifs
-
-### The "Ticket" motif
-
-Complaint cards and data containers read as physical work orders.
-
-- **Categorization:** `text-xs font-semibold text-foreground` for form/section
-  labels, `text-xs font-normal text-muted-foreground` for metadata.
-- **Separators:** dashed borders via `<Separator dashed />` divide card
-  sections; solid separators for page-level and header boundaries.
-- **Status indicators:** small, crisp, rectangular badges with high-contrast
-  text and a subtle translucent background fill (see Semantic status colors).
-
-### Asymmetrical hover states
-
-Interactions feel mechanical and precise.
-
-- Instead of lifting elements with a drop-shadow, reveal a `1px` solid left
-  bar in the primary accent (`w-1`, `opacity-0 → opacity-100` on group hover)
-  accompanied by a slight text color shift.
-- Link/text hover uses `border-left: 4px solid var(--primary)` with
-  `translateX(0.25rem)` and `padding-left: 0.5rem`.
-
-### The "auth field" interaction
-
-Auth-form inputs use a custom focus treatment: a `3px` solid left border in
-`var(--primary)` crops in via `border-left-color` transition, with a
-`padding-left` shift of `0.5rem` — the field "indents" when focused.
-
-## 3. Typography
-
-### Core rules
-
-1. **No raw CSS for visual styles.** Use Tailwind utilities in JSX. Exceptions:
-   theme tokens, keyframe animations, and imperative CSS that can't be
-   expressed as utilities.
-2. **No bracket classes where the named scale covers the value.** `text-[10px]`,
-   `w-[420px]`, `h-[32px]`, `gap-[12px]`, `px-[16px]` are banned when
-   `text-xs`, `w-96`, `h-8`, `gap-3`, `px-4` exist. Arbitrary values are only
-   for truly non-standard layout edge cases (e.g. `top-[calc(50%-20px)]`).
-3. **No positive letter-spacing.** `tracking-wider`/`tracking-widest` and
-   positive `letter-spacing` are banned.
-4. **`tracking-tight` only on display sizes** — Hero (`text-4xl+`) and H1
-   (`text-2xl+`).
-5. **No arbitrary pixel font sizes.** `text-[Npx]` is forbidden; minimum
-   `text-xs` (12px); named scale only.
-6. **No 8–11px text anywhere.** If content doesn't fit at `text-xs`, the
-   layout is wrong.
-7. **No uppercase-only convention.** `uppercase` only for status badges.
-8. **No `.micro-label` generic utility** — labels use inline Tailwind utilities.
-9. **No per-instance button typography overrides.** Button label styling is
-   defined once in the Button component (currently `text-xs font-semibold`,
-   `rounded-none`) and never overridden with `className` at call sites.
-
-### Type scale
-
-| Token | Size | Weight | Tracking | Where |
-|---|---|---|---|---|
-| Hero (H0) | `text-4xl` / `sm:text-5xl` / `lg:text-6xl` | `font-bold` | `tracking-tight` | Landing hero only |
-| Page title (H1) | `text-2xl` / `md:text-3xl` | `font-bold` | `tracking-tight` | Top of every page/section |
-| Section title (H2) | `text-lg` / `md:text-xl` | `font-semibold` | none | Group headings |
-| Card title (H3) | `text-sm` | `font-semibold` | none | Complaint / ticket card titles |
-| Body | `text-sm` | `font-normal` | none | Paragraphs, descriptions |
-| Metadata | `text-xs` | `font-normal` | none | Dates, locations, secondary info |
-| Badge label | `text-xs` | `font-semibold` | none | Status / category badges |
-| Button label | defined in Button component | `font-semibold` | none | All buttons use component default |
-| Data value | `text-sm` | `font-normal` | none | Displayed user data, counts |
-
-**Weight rules:** only `font-bold`, `font-semibold`, `font-normal`. No
-`font-medium` (visually ambiguous). `font-bold` = headings only (H0, H1);
-`font-semibold` = subheadings, labels, buttons; `font-normal` = everything else.
-
-### Contrast
-
-All text at `text-xs` or smaller keeps a minimum **4.5:1** contrast ratio
-against its background. `--muted-foreground` on `--card` passes AA for 12px
-text (~6.3:1). Color is never the sole carrier of meaning, so color-blind-safe
-contrast is a baseline requirement: hue changes must always be paired with a
-label.
-
-## 4. Color system
-
-### Tokens
-
-Colors are OKLCH custom properties in `src/index.css` under `:root` and
-`.dark` (`.dark` is applied to wrapper elements to activate dark mode).
-
-**Dark mode tokens:** `--background: oklch(0.147 0.004 49.25)` (Stone 900,
-app background) · `--foreground: oklch(0.985 0.001 106.423)` (Stone 50) ·
-`--card: oklch(0.216 0.006 56.043)` (Stone 800, surfaces) ·
-`--muted: oklch(0.268 0.007 34.298)` · `--muted-foreground: oklch(0.709 0.01 56.259)`
-(Stone 400) · `--primary: oklch(0.443 0.11 240.79)` (sky-800, brand accent)
-· `--primary-foreground: oklch(0.977 0.013 236.62)` ·
-`--destructive: oklch(0.704 0.191 22.216)` · `--border: oklch(1 0 0 / 10%)`.
-
-**Light mode tokens:** `--background: oklch(1 0 0)` (white) ·
-`--foreground: oklch(0.147 0.004 49.25)` (Stone 900) · `--card: oklch(1 0 0)` ·
-`--muted-foreground: oklch(0.553 0.013 58.071)` (Stone 600) ·
-`--border: oklch(0.923 0.003 48.717)` (Stone 200).
-
-### Color is a scarce resource
-
-Hierarchy and meaning come primarily from typography, spacing, borders, and
-surfaces; color is additive, not the default grammar. Three allowed uses, in
-priority order:
-
-1. **Interactive accent (`--primary`)** — signals what can be acted on or is
-   currently selected: the primary action per view, links and focus rings,
-   active/selected tabs and nav states, the hover left-bar reveal. This is
-   sanctioned and used widely; leave it alone.
-2. **Semantic status** — a short, fixed hue set for state labels only (see
-   below). The palette is deliberately small: a state gets a hue only when the
-   hue genuinely aids scanning; everything else is neutral (`foreground`,
-   `muted-foreground`, `card`, `muted`, `border`).
-3. **Error (`--destructive`)** — destructive actions, error messages, invalid
-   input, deletion.
-
-Color is never used to decorate — no tinted rows, no hue-coded filters, no
-rainbow bars.
-
-### Semantic status colors
-
-Status hues exist to make a handful of consequential states scannable in dense
-lists. The palette is a hard ceiling of four hues, owned by
-`src/lib/complaintUtils.ts` — that file is the only one allowed to map a
-status to a Tailwind class:
-
-- `amber` — awaiting action (pending)
-- `sky` — in work / approved
-- `green` — resolved / success
-- `red` — rejected / error / urgent / overdue
-- everything else is neutral (`text-muted-foreground`, no fill)
-
-Rules:
-
-- The label always carries the meaning; color only aids scanning. States that
-  resolve to the same meaning share a hue — "На перевірці", "Не прийнято",
-  priority levels, and roles do **not** earn hues of their own; they are
-  distinct by name and stay uncolored unless genuinely alert-level.
-- Status color is allowed **on the status token itself**: the badge trio
-  `text-*-500 bg-*-500/10 border-*-700/50` on one of the four hues, and the
-  matching `text-*-500` for inline state names.
-- Nothing else borrows these hues: no fills on cards/rows, no progress
-  segmentation, no tinted icons, no status-colored filters or charts.
-
-### Banned
-
-- Per-state hues that stretch the lifecycle into a rainbow (`violet` for
-  in_progress, `cyan` for review, `orange` for not_accepted, …). Sharing the
-  four hues across similar states is expected, not a bug.
-- Colored role banners (roles are names — text only).
-- Full priority spectrum (priority is text — only "critical" may borrow the
-  `red` hue).
-- Tinted surface fills (`bg-*-500/10` on cards, rows, inputs) and any
-  `bg-*-500` behind content.
-- Colored headings, colored body text, and hue-coded data icons that repeat a
-  status hue without being that status.
-
-## 5. Geometry & surfaces
-
-### Shape & radius (strictly sharp)
-
-- `rounded-none` everywhere: cards, buttons, dialogs, avatars, inputs, badges,
-  tabs, selects. `--radius: 0` globally in `:root` and `.dark`.
-- **Exceptions:** radio group items + indicator dots keep `rounded-full`
-  (platform convention, distinguishes from checkboxes); `LoadingSpinner` keeps
-  `rounded-full` (a rotating square reads as broken, defeating the progress
-  indicator).
-
-### Surface opacity tiers
-
-`bg-muted` at three levels; use the lowest tier that gives sufficient
-separation:
-
-| Tier | Usage |
-|---|---|
-| `bg-muted` | Static surfaces needing a visible fill (tab list, future step bars, icon boxes) |
-| `bg-muted/50` | Hover states, lighter fills (outline button hover, cross-link cards, table header row) |
-| `bg-muted/30` | Subtle tints behind content (comment section, skeleton secondary bars) |
-
-### App chrome (sidebar, header, toolbars)
-
-The persistent framing surfaces — sidebar, top header/toolbar — are one
-continuous piece of "chrome," visually distinct from the content area.
-
-- **One surface token for all chrome:** every chrome surface uses the same
-  elevated fill (`bg-card`), never a mix of `bg-card` and `bg-background`.
-  The content area keeps the base `bg-background` so the chrome sits above it.
-- **Chrome/content boundary** is a solid `border-border`, never dashed
-  (dashed is reserved for intra-card divisions).
-
-### Aligning fixed-height rows (border-model discipline)
-
-When two fixed-height rows sit side by side across a layout seam, their bottom
-edges (and any divider) must land on the same pixel.
-
-- **Draw a row's bottom divider with an in-box `border-b`, not an appended 1px
-  separator element.** With the default `box-border`, a `border-b` lives
-  *inside* the declared height; a separate sibling separator adds its 1px
-  *outside*, pushing the seam down and leaving a sub-pixel mismatch.
-- **Rule:** rows aligned across a seam use the *same* height token **and** the
-  *same* divider mechanism — never pair a bordered row against a
-  row-plus-`Separator`.
-
-### Buttons
-
-- **Size discipline:** use the `default` size; avoid `size="sm"` unless a
-  layout constraint requires it.
-- Primary: `bg-primary text-primary-foreground hover:bg-primary/80`,
-  `font-semibold`, square corners, `h-8` default. One primary button per view.
-- Outline: `border-border bg-background hover:bg-muted hover:text-foreground`.
-- Ghost: `text-muted-foreground hover:bg-muted hover:text-foreground`. Keep them
-  true ghosts — rely on the variant's own hover; never bolt on structural chrome
-  (left-border dividers, `hover:opacity-*`). A divider from adjacent chrome
-  belongs on the surrounding container, not the button.
-- **Composite triggers (avatar/element + affordance):** when a ghost trigger
-  wraps a fixed-height element alongside an affordance icon or label, do **not**
-  force `h-8` — use `h-auto` plus content-scaled vertical padding. Scale the
-  padding and affordance to what the trigger wraps:
-  - **Header account trigger** (`StudentLayout`): compact — `sm` avatar +
-    trailing `ChevronDown`, no label, `gap-2 py-1.5`. The chevron reads as a
-    menu that drops *below*.
-  - **Sidebar account trigger** (`AdminLayout`): full-width list row — `md`
-    avatar + two-line name/place + trailing `ChevronRight` (`ml-auto`),
-    `gap-3 px-4 py-3`. The chevron reads as navigation.
-  - The difference is intentional and content-driven: a chevron for an in-place
-    menu, an arrow for a navigational row.
-- Destructive: `bg-destructive/10 text-destructive hover:bg-destructive/20`.
-- Focus states: `focus-visible:border-ring focus-visible:ring-1
-  focus-visible:ring-ring/50`.
-
-### Cards
-
-- Base: `rounded-none bg-card border border-border` with internal vertical gap
-  (`--card-spacing`).
-- Ticket-style: `bg-card border border-border` with the group-hover left-border
-  reveal.
-- Hover: `hover:border-border/80 transition-colors` (slight border brightening).
-- **Padding — do not double it.** `Card` supplies its own vertical padding
-  (`py-(--card-spacing)`); `CardContent` supplies only horizontal padding by
-  default. Do **not** add a full-`p` override (`p-4`, `p-6`) to `CardContent`
-  or a raw wrapper `div` inside a `Card` — it re-adds vertical padding on top of
-  the Card's own. Instead:
-  1. Default look → add no padding class.
-  2. Inner gaps between children → `space-y-*` (not `p-*`).
-  3. Genuinely different padding → `py-0` on the `Card`, then one `p-*` on the
-     inner content. Never let both layers apply padding at once.
-
-### Inputs
-
-- Base: `h-8 rounded-none border border-input bg-transparent px-2.5` with
-  `focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50`.
-- Dark mode: `dark:bg-input/30`, `dark:disabled:bg-input/80`.
-- Autofill override (dark only): WebKit autofill gets
-  `box-shadow: 0 0 0 30px #1c1917 inset` with `text-fill-color: #fafaf9` to
-  prevent the white flash.
-
-### Tabs
-
-- `line` variant: active tab gets a `0.5` (2px) bottom bar via an `::after`
-  pseudo-element (`after:bg-foreground after:h-0.5 after:opacity-100`). Used in
-  the user dashboard.
-- `default` variant: segment style with `bg-muted` list and `bg-background`
-  active triggers.
-
-### Progress indicators
-
-Progress visualizations are monochrome by design — the pipeline itself is
-information, and painting each step its own hue would be decoration.
-
-- Segments/bars for reached steps fill with a neutral foreground
-  (`bg-foreground` on a `bg-muted` track); unreached stays `bg-muted`.
-- Color appears only for a genuine alert outcome: a rejection/error terminal
-  may collapse to a single full-width `--destructive` bar. Nothing else in a
-  progress indicator may be colored.
-- Terminal labels under the bar use the four-hue status set from §4; the bar
-  itself is monochrome unless it is the destructive case.
-
-### Intentional empty states
-
-Do not leave dead space when there is no data.
-
-- `border-dashed border-border p-8 text-center` box with a muted icon in a
-  small centered square (`w-12 h-12 border border-border bg-card`).
-- Provide a reassuring heading + description.
-
-### Skeleton loading
-
-- `animate-pulse` on the container.
-- Bars: `bg-muted/50` for prominent elements, `bg-muted/30` for secondary
-  lines.
-- Vary widths (`w-3/4`, `w-1/2`, `w-full`) for realism.
-
-## 6. Iconography
-
-**Lucide only** (`lucide-react`).
-
-- **Style:** outline, 1.5–2px stroke width. Lucide's default is `2`; pass
-  `strokeWidth={1.5}` where the weight should stay light.
-- **Rendering:** `<IconName className="size-X" />` (optionally with
-  `strokeWidth={1.5}`; see `src/components/Logo.tsx` for the canonical pattern).
-- **Sizing:** `size-*` utilities, never `w-* h-*` pairs. Primary
-  navigation/actions `size-6`; secondary/list items `size-4`–`size-5`; micro
-  actions `size-3`–`size-3.5`; inline with button text `size-3`/`size-4`.
-- **Common icons:** `Building2` (brand), `ChevronRight`/`ArrowRight` (CTAs),
-  `Search`, `Trash2`, `MessageSquare`, `Bell`, `Settings`, `LogOut`, `Pin`,
-  `ChevronUp`, `Plus`, `X`, `CircleCheck`, `CircleX`.
-- **Import pattern:**
-
-  ```tsx
-  import { Search, ChevronDown } from "lucide-react";
-  ```
-
-## 7. shadcn conventions
-
-- `components.json` is the source of truth for shadcn config: style
-  `radix-lyra`, stone base, icon library `lucide`, radius none.
-- Key primitives already carry the house style — use them, don't restyle:
-  `Button` (base `text-xs font-semibold` + `rounded-none`), `Card`
-  (`--card-spacing`, `rounded-none`), `Separator` (`dashed` prop),
-  `Input` (`h-8`), `Tabs`.
-- Add missing components via `npx shadcn@latest add <component>`; never
-  hand-author a primitive. Decline overwrites of existing files.
-- **Selected/on states use the primary fill.** `data-[state=on]` triggers
-  (ToggleGroup, Toggle) render `bg-primary text-primary-foreground border-primary`
-  with `hover:bg-primary/80`, not shadcn's muted on-state. Overriding a
-  primitive's on-state with `className` is the one sanctioned exception to the
-  "className is for layout" rule — cite this doc in a comment when doing it.
+# DormWatch design system
+
+Approved audit decisions, 2026-10-23. This is the stable visual and interaction
+contract; page-specific behavior remains in the components.
+
+## 1. Principles and language
+
+Prioritize useful hierarchy, accessibility, and clear institutional communication.
+Use Ukrainian for visible and accessible labels, validation, calendar navigation,
+dismiss buttons, notifications, and empty states. DormWatch, identifiers, and
+email domains retain their original spelling.
+
+Use flat surfaces, crisp boundaries, and square corners. Avoid decorative
+gradients, shadows, pill shapes, and a different hue for every category.
+State, selection, unread indicators, and error feedback must also carry text,
+an icon, or a programmatic state; color alone is insufficient.
+
+## 2. Typography and responsiveness
+
+Inter Variable is bundled through the application entry point so Vite emits its
+font assets. Include Latin and Cyrillic glyph coverage. A production check must
+fetch emitted font URLs and render Ukrainian text.
+
+Use the named type scale. Metadata and compact labels use text-xs; body uses
+text-sm; card titles use text-sm font-semibold; section titles use text-lg or
+text-xl; page titles use text-2xl or text-3xl. The house minimum of text-xs is a
+design choice, not a WCAG minimum font-size rule.
+
+Useful variants:
+- Brand and hero: display sizes and font-bold with optional tracking-tight.
+- Statistics: text-2xl/text-3xl font-bold; values retain readable units.
+- Accordion and disclosure: text-sm font-medium or font-semibold.
+- Secondary data and compact labels: font-normal or font-medium.
+- Print: explicit table/header hierarchy and page-breaking rules; never tiny
+  text as a substitute for a usable preview container.
+- Button typography belongs to the shared size variant.
+
+Avoid arbitrary pixel text sizes, extra letter spacing, and uppercase-only
+headings. A badge may use uppercase, but its readable label is still required.
+Do not blanket-normalize weights without examining the semantic role.
+
+Reflow normal content at narrow widths and 200% zoom. Use min-w-0, wrapping,
+and responsive grids before clipping or hiding overflow. Dense tables may have
+an independently scrollable, named region. Never hide global horizontal
+overflow to conceal an off-screen action.
+
+## 3. Color and contrast
+
+src/index.css owns theme tokens. src/lib/complaintUtils.ts maps lifecycle and
+priority meanings; StatusBadge and RoleBadge own shared presentation.
+Do not duplicate mappings in cards, filters, comments, or analytics.
+
+Palette A (foreground / tinted background):
+
+| Meaning | Light | Dark |
+|---|---|---|
+| Awaiting action | #92400e / #fffbeb | #fcd34d / #30271b |
+| Approved or in progress | #075985 / #f0f9ff | #7dd3fc / #152a36 |
+| Success | #166534 / #f0fdf4 | #86efac / #172e22 |
+| Rejected, error, critical, overdue | #991b1b / #fef2f2 | #fca5a5 / #341c20 |
+| Neutral, including review | #57534e / #f5f5f4 | #d6d3d1 / #292524 |
+
+Use status-*-bg for a badge background and status-* for its foreground.
+Neutral review is an explicit product decision. Withdrawn is neutral.
+Not accepted and rejected use the danger meaning. Role badges stay neutral.
+Critical priority may use danger; remaining priorities stay neutral.
+High and critical are both included in the separate urgent filter/count.
+
+The primary fill and primary-foreground pair belong to filled actions and
+selected controls. Link text uses --link (#075985 light / #7dd3fc dark).
+Never use the dark-theme primary fill as small text on a dark surface.
+Muted foreground is #57534e light / #d6d3d1 dark.
+Destructive foreground must always be defined.
+
+Normal text, including 12–18px text, needs at least 4.5:1 against its actual
+rendered background; large text needs 3:1. Evaluate hover/selected states,
+opacity, and composited backgrounds too. Logos and disabled controls have
+contrast exceptions; do not count these as ordinary text failures.
+Focus and essential control boundaries need appropriate non-text contrast.
+Verify measured contrast rather than deriving it from a palette shade number.
+
+Meaningful exceptions to neutral surfaces include selected controls, unread
+notifications, contextual success/error messages, and rework/completion feedback.
+They use semantic tokens and an explicit label. Ordinary charts, role labels,
+location labels, and pipeline progress need no decorative hue spectrum.
+
+## 4. Interaction and accessibility
+
+Compose shared shadcn primitives. Use Button for actions, links for navigation,
+ToggleGroup for exclusive visible choices, Checkbox/Switch for boolean state,
+Collapsible for disclosure, and Popover for anchored filters. Use shared Sheet
+for mobile admin navigation. Close the drawer on navigation.
+
+Controls have persistent accessible names. Associate a visible field label
+with its input; placeholder text alone does not replace it. Icon-only controls
+need a Ukrainian aria-label. Selection/disclosure expose checked, pressed,
+selected, or expanded state through their primitive.
+
+Keyboard focus is a stable, visible 2px ring/outline with no text movement.
+Do not indent the input value on focus. Preserve focus visibility and space
+around the ring. Popovers/dialogs support Escape and focus return; nested
+selectors/calendars must dismiss the correct layer first.
+
+Photo previews are buttons. File uploads retain a focusable native file input
+and visible focus treatment. Copy and delete actions are keyboard reachable.
+Touch and keyboard feedback must not depend on pointer hover.
+
+The optional ticket hover motif is a 4px bar (w-1), not 1px. It occupies reserved
+space or overlays the boundary without shifting content. Hover may change
+surface/text color; movement and shadows are not required. Respect reduced
+motion for nonessential animations.
+
+## 5. Geometry, surfaces, and shared variants
+
+Square corners apply to cards, dialogs, menus, buttons, avatars, tabs, and
+form fields. Radio indicators and circular LoadingSpinner are exceptions.
+
+App chrome uses bg-card with solid border-border boundaries. Content uses
+bg-background. Internal ticket divisions use dashed Separator; page, table,
+and structural boundaries remain solid.
+
+Card may use an inset ring or a border if it provides the same visible boundary
+without changing layout. The current shared ring is accepted. Avoid adding
+vertical padding in both Card and CardContent: use content spacing, or disable
+Card padding and apply it once to the inner wrapper.
+
+Surface tiers: bg-muted for separation, bg-muted/50 for subtle hover/header
+fills, bg-muted/30 for subordinate content and secondary skeleton bars.
+
+Button variants:
+- default: primary fill with primary-foreground; principal action.
+- outline: visible boundary and neutral surface; secondary action.
+- ghost: neutral text/surface on hover; chrome and contextual actions.
+- destructive: semantic danger feedback with readable contrast.
+- link: --link foreground with underline feedback.
+
+Size variants: default 32px, sm 28px, xs 24px, lg 36px, touch minimum 44px
+with text-sm, content for composite triggers or wrapping photo/text actions.
+Icon variants follow the corresponding square size. Preserve larger auth and
+worker actions; do not shrink them for mechanical consistency.
+WCAG 2.2 AA target sizing is 24x24 CSS pixels with stated exceptions; enhanced
+AAA is 44x44. Check width, height, and spacing together.
+
+Toggle/ToggleGroup selected state uses primary fill, primary-foreground and a
+primary boundary. Tabs may use an explicit underline or selected surface.
+Pipeline bars are neutral foreground on muted tracks; an error terminal can
+use danger. The current status label always remains visible.
+
+## 6. Empty, loading, and error states
+
+Full-page emptiness: a dashed panel, heading, useful explanation, and optional
+next action. Nested sections: a compact message with normal spacing is enough.
+Do not put large empty panels in every resource/comment sub-section.
+
+Skeletons distinguish prominent and subordinate bars; honor reduced motion.
+Network failure is never an empty-data state. Show a specific Ukrainian error
+and retry action. Preserve entered values and selected filters on failures.
+Disable duplicate submissions while saving. Permission-dependent actions use
+server capabilities; hidden controls alone are not authorization.
+
+## 7. Icons and implementation boundaries
+
+Use Lucide. A call site may choose size-*; otherwise the shared primitive owns
+its default icon size. Do not apply competing size rules at both levels.
+Keep icon-only actions named and decorative icons hidden from assistive tech.
+
+Use Tailwind utilities for ordinary visuals. Exact named equivalents are
+preferred, but w-96 is not equivalent to 420px and text-xs is not equivalent
+to 10px. Changing geometry requires a layout check.
+Scoped CSS is appropriate for print pagination/table behavior, browser autofill,
+keyframes, and rules utilities cannot reasonably express. Theme colors still
+come from tokens. Do not enforce a blanket CSS ban.
+
+## 8. Print and previews
+
+The document preview and printed document follow the app theme, as requested.
+Screen controls wrap and stay outside the independently scrollable document
+region; print removes the controls and scroll restriction. Tables repeat
+headers, avoid splitting rows, and preserve usable column widths. Work orders
+start on new pages. Test a real PDF with long data and photos.
+
+Only genuinely overdue active work gets a danger cue, paired with
+“Прострочено”; future and historical deadlines remain neutral.
+QR codes retain an explicit black-on-white quiet zone for reliable scanning.
+
+## 9. Verification
+
+Build/typecheck and lint are necessary but insufficient. Verify changed flows
+against the live API, role permissions, both themes, narrow/tablet/desktop
+viewports, keyboard navigation, failures/retry, and production font delivery.
+Record measured results and outstanding limitations. Never claim source-only
+inspection as a successful runtime test.

@@ -54,6 +54,8 @@ const DashboardPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [problems, setProblems] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const buildings = useBuildings();
@@ -73,16 +75,17 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const complaintsData = await fetchPublicComplaints().catch(() => []);
+        setLoadError("");
+        const complaintsData = await fetchPublicComplaints();
         if (Array.isArray(complaintsData)) setProblems(complaintsData);
-      } catch (error) {
-        console.error("Critical dashboard error:", error);
+      } catch {
+        setLoadError("Не вдалося завантажити звернення. Спробуйте ще раз.");
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [reloadKey]);
 
   const selectedProblemRef = useRef(selectedProblem);
   selectedProblemRef.current = selectedProblem;
@@ -93,7 +96,7 @@ const DashboardPage = () => {
   // would leave the snapshot stale — refetch the detail to keep status and
   // priority truthful, and close the panel if the record is gone.
   const refreshFeed = useCallback(async () => {
-    const data = await fetchPublicComplaints().catch(() => []);
+    const data = await fetchPublicComplaints().catch(() => { setLoadError("Не вдалося оновити звернення."); return null; });
     if (!Array.isArray(data)) return;
     const fresh = data.filter(Boolean) as Complaint[];
     setProblems(fresh);
@@ -206,9 +209,11 @@ const DashboardPage = () => {
     activePriority.length +
     activeStatus.length;
 
-  if (loading) {
-    return <PageSpinner />;
-  }
+  if (loading) return <PageSpinner />;
+  if (loadError) return <div role="alert" className="space-y-3 p-6">
+    <p className="text-sm text-destructive">{loadError}</p>
+    <Button variant="outline" onClick={() => setReloadKey((key) => key + 1)}>Спробувати ще раз</Button>
+  </div>;
 
   const resetDashboardFilters = () => {
     setActiveCategories([]);

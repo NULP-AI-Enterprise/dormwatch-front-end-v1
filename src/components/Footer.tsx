@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Building2 className="size-5 text-primary" strokeWidth={1.5} />
+            <Building2 className="size-5 text-link" strokeWidth={1.5} />
             <span className="text-lg font-bold">DormWatch</span>
           </div>
           <p className="text-muted-foreground text-sm">Система прямої комунікації між студентами та адміністрацією.</p>

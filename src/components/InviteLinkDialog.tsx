@@ -83,7 +83,7 @@ export function InviteLinkDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-border">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
+          <div className="flex items-center gap-2 text-link font-bold text-lg mb-1">
             <Link className="size-5" strokeWidth={1.5} />
             <DialogTitle>
               {selectedRole === "worker"
@@ -133,7 +133,7 @@ export function InviteLinkDialog({
           </div>
         ) : (
           <div className="space-y-4 mt-2">
-            <div className="p-3 bg-muted rounded-md text-sm break-all font-mono">
+            <div className="p-3 bg-muted rounded-none text-sm break-all font-mono">
               {inviteUrl}
             </div>
             <div className="flex justify-end gap-3">

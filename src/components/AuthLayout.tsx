@@ -11,7 +11,7 @@ function AuthLayout({ children, heading, subtitle }: { children: ReactNode; head
       </div>
       <div className="w-full max-w-lg">
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-2 text-primary font-bold text-2xl mb-2">
+          <div className="flex items-center gap-2 text-link font-bold text-2xl mb-2">
             <Building2 strokeWidth={2} className="size-8" />
             <span>DormWatch</span>
           </div>

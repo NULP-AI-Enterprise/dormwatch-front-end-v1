@@ -44,7 +44,7 @@ function LoginForm() {
       const res = await loginUser(data.email, data.password);
       window.dispatchEvent(new Event("profileUpdated"));
       navigate(roleHomeRoute(res.role), { replace: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Невірний email або пароль. Перевірте ще раз.");
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ function LoginForm() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Пароль</FormLabel>
-                      <Link to="/auth?tab=forgot" tabIndex={-1} className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                      <Link to="/auth?tab=forgot" tabIndex={-1} className="text-xs font-semibold text-link hover:text-link/80 transition-colors">
                         Забули пароль?
                       </Link>
                     </div>
@@ -112,7 +112,7 @@ function LoginForm() {
           <p className="text-sm text-muted-foreground">Новий студент у гуртожитку?</p>
           <Link
             to="/auth?tab=register"
-            className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-primary hover:text-primary/80 hover:underline transition-colors"
+            className="inline-flex items-center gap-1 mt-1 text-sm font-semibold text-link hover:text-link/80 hover:underline transition-colors"
           >
             Створити обліковий запис
             <ChevronRight strokeWidth={2} className="size-4" />

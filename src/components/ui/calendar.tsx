@@ -1,4 +1,5 @@
-"use client"
+import { uk } from "date-fns/locale";
+
 
 import * as React from "react"
 import {
@@ -18,7 +19,8 @@ function Calendar({
   showOutsideDays = true,
   captionLayout = "label",
   buttonVariant = "ghost",
-  locale,
+  locale = uk,
+  labels,
   formatters,
   components,
   ...props
@@ -38,6 +40,22 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       locale={locale}
+      labels={{
+        labelPrevious: () => "Попередній місяць",
+        labelNext: () => "Наступний місяць",
+        labelNav: () => "Навігація календаря",
+        labelMonthDropdown: () => "Місяць",
+        labelYearDropdown: () => "Рік",
+        labelWeekNumberHeader: () => "Номер тижня",
+        labelWeekNumber: (week) => "Тиждень " + week,
+        labelDayButton: (date, modifiers) => [
+          date.toLocaleDateString("uk-UA", { dateStyle: "full" }),
+          modifiers.today && "сьогодні", modifiers.selected && "обрано",
+        ].filter(Boolean).join(", "),
+        labelWeekday: (date) => date.toLocaleDateString("uk-UA", { weekday: "long" }),
+        labelGrid: (date) => date.toLocaleDateString("uk-UA", { month: "long", year: "numeric" }),
+        ...labels,
+      }}
       formatters={{
         formatMonthDropdown: (date) =>
           date.toLocaleString(locale?.code, { month: "short" }),

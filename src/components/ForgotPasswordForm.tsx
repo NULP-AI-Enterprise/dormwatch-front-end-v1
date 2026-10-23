@@ -74,7 +74,7 @@ export default function ForgotPasswordForm() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 text-sm font-semibold rounded-lg"
+                className="w-full h-11 text-sm font-semibold rounded-none"
               >
                 {loading ? "Відправка..." : "Відправити код"}
               </Button>
@@ -83,7 +83,7 @@ export default function ForgotPasswordForm() {
 
           <p className="mt-6 text-center text-sm font-medium text-muted-foreground">
             Згадали пароль?{" "}
-            <Link to="/auth?tab=login" className="text-primary hover:text-primary/80 transition-colors">
+            <Link to="/auth?tab=login" className="text-link hover:text-link/80 transition-colors">
               Увійдіть
             </Link>
           </p>

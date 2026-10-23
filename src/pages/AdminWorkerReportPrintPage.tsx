@@ -1,3 +1,4 @@
+import { PrintDocument, PrintStyles } from "@/components/PrintDocument";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWorkerReport } from "@/services/problemsApi";
@@ -47,7 +48,7 @@ interface WorkerReport {
   caveats: string[];
 }
 
-// Per-job duration as hours, rounded to one decimal — shown per job, never
+// Per-job duration as hours, rounded-none to one decimal — shown per job, never
 // summed into person-hours (overlapping jobs would double-count, breaks would
 // count as labor).
 const fmtHours = (minutes: number | null): string => {
@@ -62,16 +63,16 @@ const AdminWorkerReportPrintPage = () => {
   const navigate = useNavigate();
   const [report, setReport] = useState<WorkerReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(true); setLoadError(false);
     fetchWorkerReport()
       .then((data) => setReport(data))
-      .catch((err) => {
-        console.error("Failed to load worker report", err);
-      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }, [retry]);
 
   // Group a worker's jobs by saga (root) so a re-filed chain reads as one
   // story. Jobs without a root each form their own single-job group.
@@ -111,6 +112,8 @@ const AdminWorkerReportPrintPage = () => {
     }
   };
 
+  if (loadError) return <div role="alert" className="min-h-screen bg-background text-foreground p-6 space-y-3"><p>Не вдалося завантажити дані для друку.</p><Button onClick={() => setRetry((value) => value + 1)}>Спробувати ще раз</Button></div>;
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
@@ -124,104 +127,58 @@ const AdminWorkerReportPrintPage = () => {
   const caveats = report?.caveats ?? [];
 
   return (
-    <div className="bg-white text-black min-h-screen p-8 print-container font-sans antialiased">
-      <style>{`
-        table {
-          border-collapse: collapse;
-          width: 100%;
-          table-layout: fixed;
-        }
-        th, td {
-          border: 1px solid #d1d5db !important;
-          padding: 8px !important;
-          vertical-align: middle !important;
-          word-break: break-all;
-          overflow-wrap: break-word;
-          word-wrap: break-word;
-        }
-        th {
-          text-align: center !important;
-        }
-        td:first-child {
-          text-align: left !important;
-        }
-        td:not(:first-child) {
-          text-align: center !important;
-        }
-        .print-page {
-          page-break-before: always;
-        }
-        @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          tr {
-            page-break-inside: avoid;
-          }
-          .avoid-break {
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
+    <div className="bg-background text-foreground min-h-screen p-4 sm:p-8 print-container font-sans antialiased">
+      <PrintStyles />
 
-      <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
+      <div className="no-print flex flex-wrap gap-3 justify-between items-center bg-muted border border-border p-4 mb-8 rounded-none shadow-sm">
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
+          <Button variant="outline" className="gap-2 text-foreground border-border hover:bg-muted" onClick={handleClose}>
             <ChevronLeft className="size-4" strokeWidth={1.5} />
             Назад
           </Button>
-          <span className="text-sm font-semibold text-gray-600">Звіт по працівниках</span>
+          <span className="text-sm font-semibold text-muted-foreground">Звіт по працівниках</span>
         </div>
-        <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
+        <Button size="touch" className="max-w-full whitespace-normal gap-2" onClick={handlePrint}>
           <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>
 
-      <div className="max-w-5xl mx-auto">
-        <header className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+      <PrintDocument className="max-w-5xl">
+        <header className="border-b-2 border-foreground pb-4 mb-6 flex justify-between items-end">
           <div>
             <Logo />
-            <p className="text-xs text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
+            <p className="text-xs text-muted-foreground font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
           </div>
-          <div className="text-right text-sm text-gray-600">
+          <div className="text-right text-sm text-muted-foreground">
             <div><strong>Звіт по працівниках</strong></div>
             <div>Дата: {new Date().toLocaleDateString("uk-UA")}</div>
           </div>
         </header>
 
         {workers.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 font-semibold border border-dashed border-gray-300">
+          <div className="text-center py-12 text-muted-foreground font-semibold border border-dashed border-border">
             Немає даних для звіту. Показуються лише працівники із завершеними зверненнями (finished_at).
           </div>
         ) : (
           grouped.map(({ worker: w, groups }) => (
             <div key={w.worker_id} className="mb-10 avoid-break">
-              <h2 className="text-xl font-bold text-gray-800 border-b border-gray-400 pb-1 mb-1">
+              <h2 className="text-xl font-bold text-foreground border-b border-border pb-1 mb-1">
                 {w.full_name}
                 {[w.company, w.phone].filter(Boolean).length > 0 && (
-                  <span className="text-sm font-normal text-gray-500 ml-2">
+                  <span className="text-sm font-normal text-muted-foreground ml-2">
                     ({[w.company, w.phone].filter(Boolean).join(", ")})
                   </span>
                 )}
                 {w.has_account && (
-                  <span className="text-xs font-semibold text-green-700 ml-2 border border-green-600 px-1">панель</span>
+                  <span className="text-xs font-semibold text-status-success ml-2 border border-status-success/40 px-1">панель</span>
                 )}
               </h2>
 
-              <div className="text-sm text-gray-700 mb-3 flex flex-wrap gap-x-4 gap-y-1">
+              <div className="text-sm text-foreground mb-3 flex flex-wrap gap-x-4 gap-y-1">
                 <span>Завдань: <strong>{w.jobs_count}</strong></span>
-                <span>Вчасно: <strong className="text-green-700">{w.on_time}</strong></span>
-                <span>Прострочено: <strong className="text-red-600">{w.overdue}</strong></span>
+                <span>Вчасно: <strong className="text-status-success">{w.on_time}</strong></span>
+                <span>Прострочено: <strong className="text-status-danger">{w.overdue}</strong></span>
                 <span>Відсоток відхилення: <strong>{fmtRate(w.rejection_rate)}</strong> ({w.rejection_count} з {w.jobs_count})</span>
                 <span>Середній час вирішення: <strong>{fmtHours(w.avg_resolution_minutes)}</strong></span>
                 {w.saga_count > 0 && (
@@ -232,54 +189,54 @@ const AdminWorkerReportPrintPage = () => {
               {groups.map((group, gi) => (
                 <div key={group.root ?? `single-${gi}`} className="mb-4">
                   {group.root !== null && (
-                    <div className="text-xs font-semibold text-gray-500 mb-1">
+                    <div className="text-xs font-semibold text-muted-foreground mb-1">
                       Сага (корінь №{group.root}): {group.rootTitle ?? "—"}
                     </div>
                   )}
-                  <table className="w-full text-sm border-collapse border border-gray-300">
+                  <table className="w-full text-sm border-collapse border border-border">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "26%" }}>Проблема</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "12%" }}>Категорія</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Гуртожиток / Кімната</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "12%" }}>Початок</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "12%" }}>Завершення</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "10%" }}>Тривалість</th>
-                        <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Статус</th>
+                      <tr className="bg-muted">
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "23%" }}>Проблема</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "12%" }}>Категорія</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "14%" }}>Гуртожиток / Кімната</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "12%" }}>Початок</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "13%" }}>Завершення</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "12%" }}>Тривалість</th>
+                        <th className="border border-border p-2 font-bold text-center" style={{ width: "14%" }}>Статус</th>
                       </tr>
                     </thead>
                     <tbody>
                       {group.jobs.map((j) => (
-                        <tr key={j.complaint_id} className="hover:bg-gray-50/50">
-                          <td className="border border-gray-300 p-2 break-words">
-                            <div className="font-bold text-gray-900 break-words">
+                        <tr key={j.complaint_id} className="hover:bg-muted/50">
+                          <td className="border border-border p-2 break-words">
+                            <div className="font-bold text-foreground break-words">
                               {j.title || "Без назви"}
-                              <span className="text-gray-400 font-normal"> №{j.complaint_id}</span>
+                              <span className="text-muted-foreground font-normal"> №{j.complaint_id}</span>
                             </div>
                             {j.root !== null && (
-                              <div className="text-xs text-gray-500 mt-0.5">Повторне до №{j.root}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">Повторне до №{j.root}</div>
                             )}
                           </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs">
+                          <td className="border border-border p-2 text-center text-xs">
                             {j.category || "Не вказано"}
                           </td>
-                           <td className="border border-gray-300 p-2 text-center text-xs">
+                           <td className="border border-border p-2 text-center text-xs">
                              <div className="font-semibold">{j.building || "Не вказано"}</div>
-                             <div className="text-gray-600">{j.room || "—"}{j.is_shared && " (спільна)"}</div>
+                             <div className="text-muted-foreground">{j.room || "—"}{j.is_shared && " (спільна)"}</div>
                            </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs">
+                          <td className="border border-border p-2 text-center text-xs">
                             {formatDateTime(j.started_at)}
                           </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs">
+                          <td className="border border-border p-2 text-center text-xs">
                             {formatDateTime(j.finished_at)}
                           </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
+                          <td className="border border-border p-2 text-center text-xs font-semibold">
                             {fmtHours(j.duration_minutes)}
                           </td>
-                          <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
+                          <td className="border border-border p-2 text-center text-xs font-semibold">
                             {statusLabel(j.status)}
                             {j.is_not_accepted && (
-                              <div className="text-red-600 font-normal">(відхилено мешканцем)</div>
+                              <div className="text-status-danger font-normal">(відхилено мешканцем)</div>
                             )}
                           </td>
                         </tr>
@@ -289,7 +246,7 @@ const AdminWorkerReportPrintPage = () => {
                 </div>
               ))}
 
-              <p className="text-xs text-gray-500 italic mt-1">
+              <p className="text-xs text-muted-foreground italic mt-1">
                 Тривалість наведена за одне завдання (started_at → finished_at з поділом на сегменти при перепризначенні) — не сумується.
               </p>
             </div>
@@ -297,16 +254,16 @@ const AdminWorkerReportPrintPage = () => {
         )}
 
         {caveats.length > 0 && (
-          <div className="mt-8 border-t border-gray-300 pt-4">
-            <h3 className="text-sm font-bold text-gray-800 mb-2">Примітики до даних</h3>
-            <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+          <div className="mt-8 border-t border-border pt-4">
+            <h3 className="text-sm font-bold text-foreground mb-2">Примітики до даних</h3>
+            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
               {caveats.map((c, i) => (
                 <li key={i}>{c}</li>
               ))}
             </ul>
           </div>
         )}
-      </div>
+      </PrintDocument>
     </div>
   );
 };

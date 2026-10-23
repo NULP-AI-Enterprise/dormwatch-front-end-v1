@@ -22,11 +22,11 @@ conventions live in the root `CLAUDE.md`.
   clear hierarchy.
 - **Sharp corners everywhere** (`--radius: 0`). The only exceptions: radio
   indicators and the `LoadingSpinner` (both keep `rounded-full`).
-- **No raw CSS for visuals.** Visual styles use Tailwind utilities in JSX;
-  `index.css` holds only tokens.
-- **Named type scale only.** No `text-[Npx]`, no bracket classes where a named
-  class exists, no positive `tracking-*`, no `font-medium`, no text below
-  `text-xs`. Three weights only: `font-bold`, `font-semibold`, `font-normal`.
+- **Visual CSS:** use Tailwind utilities for ordinary visuals. Scoped print,
+  autofill, animation, and browser-specific rules are allowed by the design system.
+- **Named type scale:** use exact named equivalents, avoid positive tracking
+  and text smaller than text-xs. Follow the documented semantic weight roles,
+  including statistics, accordion, brand, and print variants.
 - **Semantic color tokens only.** Status colors come from
   `src/lib/complaintUtils.ts`; never raw hex or `bg-sky-500`.
 - **Lucide only**, rendered directly at call sites via

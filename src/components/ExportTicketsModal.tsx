@@ -96,7 +96,7 @@ export const ExportTicketsModal = ({ open, onOpenChange }: ExportTicketsModalPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md border-border">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
+          <div className="flex items-center gap-2 text-link font-bold text-lg mb-1">
             <Printer className="size-5" strokeWidth={1.5} />
             <DialogTitle>Експорт даних</DialogTitle>
           </div>

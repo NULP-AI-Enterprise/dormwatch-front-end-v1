@@ -1,3 +1,5 @@
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -63,7 +65,7 @@ export function StudentMobileMenu({
             <Link
               to="/create-report"
               onClick={() => onOpenChange(false)}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-md shadow-sm transition-all text-sm cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-none shadow-sm transition-all text-sm cursor-pointer"
             >
               <Plus className="size-4" strokeWidth={2.5} />
               <span>Створити звернення</span>
@@ -72,14 +74,14 @@ export function StudentMobileMenu({
 
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5 text-xs">
             {/* 1. Блок Навігація */}
-            <div className="rounded-md border border-border/60 bg-muted/20 overflow-hidden">
-              <button
+            <Collapsible open={navExpanded} onOpenChange={setNavExpanded} className="border border-border/60 bg-muted/20 overflow-hidden">
+              <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="content"
                 type="button"
-                onClick={() => setNavExpanded((prev) => !prev)}
                 className="flex items-center justify-between w-full py-2.5 px-3 text-left font-semibold text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Compass className="size-4 text-primary" strokeWidth={2} />
+                  <Compass className="size-4 text-link" strokeWidth={2} />
                   <span className="text-sm">Навігація</span>
                 </div>
                 <ChevronDown
@@ -89,15 +91,15 @@ export function StudentMobileMenu({
                   )}
                   strokeWidth={2}
                 />
-              </button>
+              </Button>
+              </CollapsibleTrigger>
 
-              {navExpanded && (
-                <div className="px-2 pb-2 pt-1 space-y-1 border-t border-border/40">
+              <CollapsibleContent className="px-2 pb-2 pt-1 space-y-1 border-t border-border/40">
                   <Link
                     to="/user"
                     onClick={() => onOpenChange(false)}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors",
+                      "flex items-center gap-2.5 px-3 py-2 rounded-none transition-colors",
                       currentPath === "/user"
                         ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -111,7 +113,7 @@ export function StudentMobileMenu({
                     to="/dashboard"
                     onClick={() => onOpenChange(false)}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors",
+                      "flex items-center gap-2.5 px-3 py-2 rounded-none transition-colors",
                       currentPath === "/dashboard"
                         ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -120,51 +122,50 @@ export function StudentMobileMenu({
                     <ClipboardList className="size-4" strokeWidth={1.75} />
                     <span>Звернення</span>
                   </Link>
-                </div>
-              )}
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* 2. Оголошення */}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() => {
                 onOpenChange(false);
                 setAnnouncementsOpen(true);
               }}
-              className="flex items-center justify-between w-full py-2.5 px-3 rounded-md border border-border/60 bg-muted/20 text-foreground hover:bg-muted/50 transition-colors cursor-pointer text-left font-semibold"
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-none border border-border/60 bg-muted/20 text-foreground hover:bg-muted/50 transition-colors cursor-pointer text-left font-semibold"
             >
               <div className="flex items-center gap-2.5">
-                <Megaphone className="size-4 text-primary" strokeWidth={2} />
+                <Megaphone className="size-4 text-link" strokeWidth={2} />
                 <span className="text-sm">Оголошення</span>
               </div>
               <ChevronRight className="size-4 text-muted-foreground" strokeWidth={2} />
-            </button>
+            </Button>
 
             {/* 3. Контакти гуртожитку */}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() => {
                 onOpenChange(false);
                 setContactsOpen(true);
               }}
-              className="flex items-center justify-between w-full py-2.5 px-3 rounded-md border border-border/60 bg-muted/20 text-foreground hover:bg-muted/50 transition-colors cursor-pointer text-left font-semibold"
+              className="flex items-center justify-between w-full py-2.5 px-3 rounded-none border border-border/60 bg-muted/20 text-foreground hover:bg-muted/50 transition-colors cursor-pointer text-left font-semibold"
             >
               <div className="flex items-center gap-2.5">
-                <Phone className="size-4 text-primary" strokeWidth={2} />
+                <Phone className="size-4 text-link" strokeWidth={2} />
                 <span className="text-sm">Контакти гуртожитку</span>
               </div>
               <ChevronRight className="size-4 text-muted-foreground" strokeWidth={2} />
-            </button>
+            </Button>
 
             {/* 4. Блок Оплата та правила */}
-            <div className="rounded-md border border-border/60 bg-muted/20 overflow-hidden">
-              <button
+            <Collapsible open={rulesExpanded} onOpenChange={setRulesExpanded} className="border border-border/60 bg-muted/20 overflow-hidden">
+              <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="content"
                 type="button"
-                onClick={() => setRulesExpanded((prev) => !prev)}
                 className="flex items-center justify-between w-full py-2.5 px-3 text-left font-semibold text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <FileCheck className="size-4 text-primary" strokeWidth={2} />
+                  <FileCheck className="size-4 text-link" strokeWidth={2} />
                   <span className="text-sm">Оплата та правила</span>
                 </div>
                 <ChevronDown
@@ -174,36 +175,35 @@ export function StudentMobileMenu({
                   )}
                   strokeWidth={2}
                 />
-              </button>
+              </Button>
+              </CollapsibleTrigger>
 
-              {rulesExpanded && (
-                <div className="px-2 pb-2 pt-1 space-y-1 border-t border-border/40">
-                  <button
+              <CollapsibleContent className="px-2 pb-2 pt-1 space-y-1 border-t border-border/40">
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={() => {
                       onOpenChange(false);
                       setRequisitesOpen(true);
                     }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-none text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
-                    <CreditCard className="size-4 text-primary" strokeWidth={1.75} />
+                    <CreditCard className="size-4 text-link" strokeWidth={1.75} />
                     <span>Реквізити для оплати</span>
-                  </button>
+                  </Button>
 
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={() => {
                       onOpenChange(false);
                       setRulesOpen(true);
                     }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-none text-left text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
                   >
-                    <BookOpen className="size-4 text-primary" strokeWidth={1.75} />
+                    <BookOpen className="size-4 text-link" strokeWidth={1.75} />
                     <span>Правила розпорядку</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                  </Button>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </SheetContent>
       </Sheet>

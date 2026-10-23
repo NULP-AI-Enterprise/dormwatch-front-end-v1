@@ -1,3 +1,4 @@
+import { RoleBadge } from "@/components/RoleBadge";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -17,7 +18,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [phone, setPhone] = useState(user?.phone || "");
   const [isSavingPhone, setIsSavingPhone] = useState(false);
@@ -61,7 +61,6 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
     try {
       await updateUserProfile({ phone: phone.trim() });
       setPhoneSaved(true);
-      refreshUser();
       window.dispatchEvent(new Event("profileUpdated"));
       setTimeout(() => setPhoneSaved(false), 2500);
     } catch {
@@ -91,50 +90,38 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           <div className="flex items-center gap-4 px-5 py-4 border-b border-border bg-card">
             <UserAvatar user={user} size="lg" />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-foreground truncate">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-bold text-foreground break-words">
                   {user ? `${user.first_name} ${user.last_name}` : "Завантаження..."}
                 </p>
-                {user && (
-                  isAdmin ? (
-                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 font-semibold text-yellow-500 bg-yellow-500/10 border-yellow-700/50">
-                      Адмін
-                    </Badge>
-                  ) : user.role?.role_name?.toLowerCase() === "worker" || user.role?.role_name?.toLowerCase() === "працівник" ? (
-                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 font-semibold text-orange-500 bg-orange-500/10 border-orange-700/50">
-                      Працівник
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 font-semibold text-blue-500 bg-blue-500/10 border-blue-700/50">
-                      Студент
-                    </Badge>
-                  )
-                )}
+                {user && <RoleBadge role={user.role?.role_name} isAdmin={isAdmin} />}
               </div>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground break-all">
                 {user?.email}
               </p>
             </div>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
             <div className="p-5">
               {isStudent && (
                 <div className="mb-5 space-y-2 border border-border p-4 bg-muted/20">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label htmlFor="profile-phone" className="text-sm font-semibold text-foreground flex items-center gap-2">
                       <Phone className="size-4 text-muted-foreground" strokeWidth={1.5} />
                       Номер телефону
                     </label>
-                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 font-normal text-muted-foreground border-border">
+                    <Badge variant="outline" className="text-xs px-2 py-0.5 font-normal text-muted-foreground border-border">
                       Опціонально
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Номер телефону є опціональним, але буде корисним майстру або коменданту, якщо вас не буде в гуртожитку, щоб домовитись на зручний час.
                   </p>
-                  <form onSubmit={handleSavePhone} className="flex gap-2 pt-1">
+                  <form onSubmit={handleSavePhone} className="flex flex-col sm:flex-row gap-2 pt-1">
                     <Input
+                      id="profile-phone"
+                      autoComplete="tel"
                       type="tel"
                       value={phone}
                       onChange={(e) => {
@@ -155,7 +142,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                     </Button>
                   </form>
                   {phoneError && (
-                    <p className="text-xs text-sky-500 dark:text-sky-400 font-semibold">{phoneError}</p>
+                    <p className="text-xs text-destructive font-semibold">{phoneError}</p>
                   )}
                 </div>
               )}
@@ -224,7 +211,7 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          </ScrollArea>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

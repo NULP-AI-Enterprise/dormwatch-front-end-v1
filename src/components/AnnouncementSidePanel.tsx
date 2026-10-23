@@ -270,7 +270,7 @@ const AnnouncementSidePanel = ({
             </div>
 
             {error && (
-              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+              <p className="text-xs leading-relaxed text-status-info font-semibold">{error}</p>
             )}
 
             <div className="flex gap-2">

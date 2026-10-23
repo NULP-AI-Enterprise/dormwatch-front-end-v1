@@ -56,18 +56,18 @@ const AnnouncementsWidget = () => {
               {items.map((a, i) => (
                 <div key={a.announcement_id}>
                   {i > 0 && <Separator className="my-3" dashed />}
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={() => openAnnouncement(a.announcement_id)}
                     className="flex items-start gap-2 text-left w-full group cursor-pointer p-2 -m-2 border border-transparent hover:bg-muted/50 hover:border-border transition-colors"
                   >
                     {a.is_pinned && (
                       <Pin 
-                        className="size-3.5 mt-0.5 shrink-0 text-primary"
+                        className="size-3.5 mt-0.5 shrink-0 text-link"
                         strokeWidth={2} />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      <p className="text-sm text-foreground group-hover:text-link transition-colors truncate">
                         {a.title}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -76,7 +76,7 @@ const AnnouncementsWidget = () => {
                         {formatDate(a.created_at)}
                       </p>
                     </div>
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>

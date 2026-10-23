@@ -76,8 +76,8 @@ export default function ChangePasswordForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {error && (
-          <div className="mb-5 border border-sky-500/40 bg-sky-500/10 px-3 py-2.5">
-            <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
+          <div role="alert" className="mb-5 border border-status-danger/40 bg-status-danger-bg px-3 py-2.5">
+            <p className="text-xs leading-relaxed text-status-danger font-semibold">{error}</p>
           </div>
         )}
         {success && (

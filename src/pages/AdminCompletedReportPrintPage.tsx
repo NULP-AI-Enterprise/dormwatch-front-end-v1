@@ -1,3 +1,4 @@
+import { PrintDocument, PrintStyles } from "@/components/PrintDocument";
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchCompletedReport } from "@/services/problemsApi";
@@ -37,16 +38,16 @@ const AdminCompletedReportPrintPage = () => {
 
   const [rows, setRows] = useState<CompletedReportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(true); setLoadError(false);
     fetchCompletedReport({ date_from: dateFrom, date_to: dateTo })
       .then((data) => setRows(data))
-      .catch((err) => {
-        console.error("Failed to load completed report", err);
-      })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, retry]);
 
   const handlePrint = () => {
     window.print();
@@ -68,6 +69,8 @@ const AdminCompletedReportPrintPage = () => {
     return extra ? `${w.full_name} (${extra})` : w.full_name;
   };
 
+  if (loadError) return <div role="alert" className="min-h-screen bg-background text-foreground p-6 space-y-3"><p>Не вдалося завантажити дані для друку.</p><Button onClick={() => setRetry((value) => value + 1)}>Спробувати ще раз</Button></div>;
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground">
@@ -83,122 +86,79 @@ const AdminCompletedReportPrintPage = () => {
       : "Весь період";
 
   return (
-    <div className="bg-white text-black min-h-screen p-8 print-container font-sans antialiased">
-      <style>{`
-        table {
-          border-collapse: collapse;
-          width: 100%;
-          table-layout: fixed;
-        }
-        th, td {
-          border: 1px solid #d1d5db !important;
-          padding: 8px !important;
-          vertical-align: middle !important;
-          word-break: break-all;
-          overflow-wrap: break-word;
-          word-wrap: break-word;
-        }
-        th {
-          text-align: center !important;
-        }
-        td:first-child {
-          text-align: left !important;
-        }
-        td:not(:first-child) {
-          text-align: center !important;
-        }
-        .print-title {
-          text-align: left !important;
-        }
-        @media print {
-          body {
-            background-color: white !important;
-            color: black !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          tr {
-            page-break-inside: avoid;
-          }
-        }
-      `}</style>
+    <div className="bg-background text-foreground min-h-screen p-4 sm:p-8 print-container font-sans antialiased">
+      <PrintStyles />
 
       {/* Control bar for screen rendering */}
-      <div className="no-print flex justify-between items-center bg-gray-100 border border-gray-200 p-4 mb-8 rounded-none shadow-sm">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" className="gap-2 text-gray-700 border-gray-300 hover:bg-gray-200" onClick={handleClose}>
+      <div className="no-print flex flex-wrap gap-3 justify-between items-center bg-muted border border-border p-4 mb-8 rounded-none shadow-sm">
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
+          <Button variant="outline" className="gap-2 text-foreground border-border hover:bg-muted" onClick={handleClose}>
             <ChevronLeft className="size-4" strokeWidth={1.5} />
             Назад
           </Button>
-          <span className="text-sm font-medium text-gray-600">Звіт про виконані: {rangeLabel}</span>
+          <span className="text-sm font-medium text-muted-foreground">Звіт про виконані: {rangeLabel}</span>
         </div>
-        <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handlePrint}>
+        <Button size="touch" className="max-w-full whitespace-normal gap-2" onClick={handlePrint}>
           <Printer className="size-4" strokeWidth={1.5} />
           Друкувати / Зберегти як PDF
         </Button>
       </div>
 
       {/* Print Document Layout */}
-      <div className="max-w-4xl mx-auto">
-        <header className="border-b-2 border-black pb-4 mb-6 flex justify-between items-end">
+      <PrintDocument className="max-w-4xl">
+        <header className="border-b-2 border-foreground pb-4 mb-6 flex justify-between items-end">
           <div>
             <Logo />
-            <p className="text-xs text-gray-500 font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
+            <p className="text-xs text-muted-foreground font-semibold mt-1">Система прямої комунікації між студентами та адміністрацією</p>
           </div>
-          <div className="text-right text-sm text-gray-600">
+          <div className="text-right text-sm text-muted-foreground">
             <div><strong>Звіт про виконані звернення</strong></div>
             <div>Дата: {new Date().toLocaleDateString("uk-UA")}</div>
             <div>Період: {rangeLabel}</div>
           </div>
         </header>
 
-        <h2 className="text-xl font-bold text-gray-800 border-b border-gray-400 pb-1 mb-4 flex justify-between items-baseline">
+        <h2 className="text-xl font-bold text-foreground border-b border-border pb-1 mb-4 flex justify-between items-baseline">
           <span>Виконані звернення</span>
-          <span className="text-sm font-semibold text-gray-500">Кількість: {rows.length}</span>
+          <span className="text-sm font-semibold text-muted-foreground">Кількість: {rows.length}</span>
         </h2>
 
         {rows.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 font-semibold border border-dashed border-gray-300">
+          <div className="text-center py-12 text-muted-foreground font-semibold border border-dashed border-border">
             Не знайдено жодного виконаного звернення за обраний період.
           </div>
         ) : (
-          <table className="w-full text-sm border-collapse border border-gray-300 mb-6">
+          <table className="w-full text-sm border-collapse border border-border mb-6">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "28%" }}>Проблема</th>
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "14%" }}>Категорія</th>
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "18%" }}>Гуртожиток / Кімната</th>
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "18%" }}>Працівник</th>
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "11%" }}>Дедлайн</th>
-                <th className="border border-gray-300 p-2 font-bold text-center" style={{ width: "11%" }}>Вирішено</th>
+              <tr className="bg-muted">
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "24%" }}>Проблема</th>
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "14%" }}>Категорія</th>
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "18%" }}>Гуртожиток / Кімната</th>
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "18%" }}>Працівник</th>
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "13%" }}>Дедлайн</th>
+                <th className="border border-border p-2 font-bold text-center" style={{ width: "13%" }}>Вирішено</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.complaint_id} className="hover:bg-gray-50/50">
-                  <td className="border border-gray-300 p-2 break-words">
-                    <div className="font-bold text-gray-900 break-words print-title">{row.title || "Без назви"}</div>
+                <tr key={row.complaint_id} className="hover:bg-muted/50">
+                  <td className="border border-border p-2 break-words">
+                    <div className="font-bold text-foreground break-words print-title">{row.title || "Без назви"}</div>
                   </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs">
+                  <td className="border border-border p-2 text-center text-xs">
                     {row.category || "Не вказано"}
                   </td>
-                   <td className="border border-gray-300 p-2 text-center text-xs">
+                   <td className="border border-border p-2 text-center text-xs">
                      <div className="font-semibold">{row.building || "Не вказано"}</div>
-                     <div className="text-gray-600">{row.room || "—"}{row.is_shared && " (спільна)"}</div>
+                     <div className="text-muted-foreground">{row.room || "—"}{row.is_shared && " (спільна)"}</div>
                    </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs">
+                  <td className="border border-border p-2 text-center text-xs">
                     {workerLabel(row)}
                   </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs font-semibold text-red-600">
+                  <td className="border border-border p-2 text-center text-xs font-semibold">
                     {row.deadline ? formatDate(row.deadline) : "Не визначено"}
                   </td>
-                  <td className="border border-gray-300 p-2 text-center text-xs font-semibold">
+                  <td className="border border-border p-2 text-center text-xs font-semibold">
                     {formatDate(row.resolved_at)}
                   </td>
                 </tr>
@@ -206,7 +166,7 @@ const AdminCompletedReportPrintPage = () => {
             </tbody>
           </table>
         )}
-      </div>
+      </PrintDocument>
     </div>
   );
 };

@@ -105,7 +105,7 @@ export default function ResetPasswordForm({ email }: { email: string }) {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 text-sm font-semibold rounded-lg"
+                className="w-full h-11 text-sm font-semibold rounded-none"
               >
                 {loading ? "Збереження..." : "Зберегти новий пароль"}
               </Button>

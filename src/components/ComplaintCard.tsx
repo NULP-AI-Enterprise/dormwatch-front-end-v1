@@ -1,3 +1,4 @@
+import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { useState, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBad
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
-import { isBlockComplaint, cleanComplaintDescription } from "@/lib/complaintUtils";
+import { isAdminUser, isBlockComplaint, cleanComplaintDescription } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
 import { ERROR_TEXT, ERROR_BORDER, ERROR_BG_HOVER } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
@@ -82,16 +83,12 @@ const ComplaintCard = ({
   bodyPadding = "p-4 sm:p-6",
   cardClassName,
   footerClassName,
-  metaVariant: _metaVariant = "location",
   descriptionFallback = "",
   onCardClick,
   showPhoto = true,
-  photoZoom: _photoZoom = false,
-  photoHeight: _photoHeight = "h-40",
   onPhotoPreview,
   showPriority = false,
   showProgress = false,
-  footerLeft: _footerLeft = "none",
   commentsMode = "hidden",
   commentsSide = "right",
   commentsOpen = false,
@@ -108,7 +105,7 @@ const ComplaintCard = ({
 }: ComplaintCardProps) => {
   const p = complaint;
   const { user: currentUser } = useUser();
-  const isAdmin = currentUser?.role === "admin" || (currentUser as unknown as { is_superuser?: boolean })?.is_superuser;
+  const isAdmin = isAdminUser(currentUser);
   const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(null);
   const isMyComplaint =
     !!p.isMine ||
@@ -130,7 +127,7 @@ const ComplaintCard = ({
             {p.isRework && (
               <Badge
                 variant="outline"
-                className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+                className="bg-status-danger-bg text-status-danger border-status-danger/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
               >
                 Повторне опрацювання
               </Badge>
@@ -138,7 +135,7 @@ const ComplaintCard = ({
             {showOwnerBadge && isMyComplaint && (
               <Badge
                 variant="outline"
-                className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+                className="bg-status-info-bg text-status-info border-status-info/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
               >
                 <User className="size-3" strokeWidth={2.5} />
                 Ваше звернення
@@ -147,7 +144,7 @@ const ComplaintCard = ({
             {p.studentPhone && !isAdmin && (
               <Badge
                 variant="outline"
-                className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+                className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
               >
                 <Phone className="size-3" strokeWidth={2} />
                 {p.studentPhone}
@@ -159,7 +156,7 @@ const ComplaintCard = ({
               </Badge>
             )}
             {p.supportersCount > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
+              <Badge variant="secondary" className="bg-primary/10 text-link border-transparent inline-flex items-center gap-1">
                 <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
               </Badge>
             )}
@@ -175,7 +172,7 @@ const ComplaintCard = ({
           )}
           {showPhoto && p.photoUrl && (
             <div className="mb-3">
-              <button
+              <PhotoAttachment aria-label="Переглянути фото проблеми" variant="ghost" size="content"
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -200,32 +197,32 @@ const ComplaintCard = ({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ImageIcon
-                    className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0"
+                    className="size-3.5 text-muted-foreground group-hover/attachment:text-link transition-colors shrink-0"
                     strokeWidth={2}
                   />
-                  <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
+                  <span className="font-semibold text-foreground group-hover/attachment:text-link transition-colors">
                     Фото проблеми
                   </span>
-                  <span className="text-muted-foreground text-[11px] font-normal flex items-center gap-1">
+                  <span className="text-muted-foreground text-xs font-normal flex items-center gap-1">
                     · (переглянути)
-                    <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-primary transition-colors" strokeWidth={2} />
+                    <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-link transition-colors" strokeWidth={2} />
                   </span>
                 </div>
-              </button>
+              </PhotoAttachment>
             </div>
           )}
 
           {(isBlockComplaint(p.description) || p.isShared) && (
             <div className="mb-4 flex flex-wrap gap-2 items-center">
               {isBlockComplaint(p.description) && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                  <Home className="size-3.5 shrink-0 text-blue-500" strokeWidth={2} />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-status-info-bg text-status-info border border-status-info/40">
+                  <Home className="size-3.5 shrink-0 text-status-info" strokeWidth={2} />
                   <span>Звернення стосується блоку</span>
                 </div>
               )}
               {p.isShared && (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                  <Users className="size-3.5 shrink-0 text-amber-500" strokeWidth={2} />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-status-warning-bg text-status-warning border border-status-warning/40">
+                  <Users className="size-3.5 shrink-0 text-status-warning" strokeWidth={2} />
                   <span>Звернення стосується спільного простору</span>
                 </div>
               )}
@@ -247,7 +244,7 @@ const ComplaintCard = ({
   const cleanDescription = cleanComplaintDescription(p.description);
 
   const reworkBadge = p.isRework && (
-    <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+    <Badge variant="outline" className="bg-status-danger-bg text-status-danger border-status-danger/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
       Повторне опрацювання
     </Badge>
   );
@@ -255,7 +252,7 @@ const ComplaintCard = ({
   const phoneBadge = p.studentPhone && !isAdmin && (
     <Badge
       variant="outline"
-      className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+      className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
     >
       <Phone className="size-3" strokeWidth={2} />
       {p.studentPhone}
@@ -277,7 +274,7 @@ const ComplaintCard = ({
       variant="ghost"
       size="xs"
       onClick={onCommentToggle}
-      className="text-primary text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
+      className="text-link text-xs font-semibold hover:underline inline-flex items-center gap-1 p-0 h-auto"
     >
       <MessageSquare className="size-3" strokeWidth={2} />
       Коментарі{" "}
@@ -305,31 +302,31 @@ const ComplaintCard = ({
             <OverdueBadge complaint={p} />
             {reworkBadge}
             {showOwnerBadge && isMyComplaint && (
-              <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+              <Badge variant="outline" className="bg-status-info-bg text-status-info border-status-info/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
                 <User className="size-3" strokeWidth={2.5} />
                 Ваше звернення
               </Badge>
             )}
             {phoneBadge}
             {p.supportersCount > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1 text-[11px]">
+              <Badge variant="secondary" className="bg-primary/10 text-link border-transparent inline-flex items-center gap-1 text-xs">
                 <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
               </Badge>
             )}
           </div>
           {onCardClick && (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onCardClick();
               }}
-              className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 text-link hover:text-link bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
               title="Переглянути деталі звернення"
             >
               <span>Деталі</span>
-              <ChevronRight className="size-3 text-primary/70" strokeWidth={2} />
-            </button>
+              <ChevronRight className="size-3 text-link/70" strokeWidth={2} />
+            </Button>
           )}
         </div>
 
@@ -341,14 +338,14 @@ const ComplaintCard = ({
               <OverdueBadge complaint={p} />
               {reworkBadge}
               {showOwnerBadge && isMyComplaint && (
-                <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                <Badge variant="outline" className="bg-status-info-bg text-status-info border-status-info/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
                   <User className="size-3" strokeWidth={2.5} />
                   Ваше звернення
                 </Badge>
               )}
               {phoneBadge}
               {p.supportersCount > 0 && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
+                <Badge variant="secondary" className="bg-primary/10 text-link border-transparent inline-flex items-center gap-1">
                   <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
                 </Badge>
               )}
@@ -358,7 +355,7 @@ const ComplaintCard = ({
             <div className="flex flex-wrap gap-2 items-center min-w-0">
               {reworkBadge}
               {showOwnerBadge && isMyComplaint && (
-                <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                <Badge variant="outline" className="bg-status-info-bg text-status-info border-status-info/40 inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
                   <User className="size-3" strokeWidth={2.5} />
                   Ваше звернення
                 </Badge>
@@ -368,18 +365,18 @@ const ComplaintCard = ({
           )}
           <div className="flex items-center gap-3 shrink-0">
             {onCardClick && (
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onCardClick();
                 }}
-                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-link hover:text-link bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
                 title="Переглянути деталі звернення"
               >
                 <span>Деталі</span>
-                <ChevronRight className="size-3 text-primary/70 group-hover/details:text-primary group-hover/details:translate-x-0.5 transition-all" strokeWidth={2} />
-              </button>
+                <ChevronRight className="size-3 text-link/70 group-hover/details:text-link group-hover/details:translate-x-0.5 transition-all" strokeWidth={2} />
+              </Button>
             )}
           </div>
         </div>
@@ -408,14 +405,14 @@ const ComplaintCard = ({
         {(hasBlock || p.isShared) && (
           <div className="mb-4 flex flex-wrap gap-2 items-center">
             {hasBlock && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-                <Home className="size-4 shrink-0 text-blue-500" strokeWidth={2} />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-status-info-bg text-status-info border border-status-info/40">
+                <Home className="size-4 shrink-0 text-status-info" strokeWidth={2} />
                 <span>Звернення стосується блоку</span>
               </div>
             )}
             {p.isShared && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                <Users className="size-4 shrink-0 text-amber-500" strokeWidth={2} />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-status-warning-bg text-status-warning border border-status-warning/40">
+                <Users className="size-4 shrink-0 text-status-warning" strokeWidth={2} />
                 <span>Звернення стосується спільного простору</span>
               </div>
             )}
@@ -423,15 +420,15 @@ const ComplaintCard = ({
         )}
 
         {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
-          <div className="mb-4 p-3 bg-sky-500/10 border border-sky-500/25 rounded-none text-xs">
-            <span className="font-bold text-sky-600 dark:text-sky-400 block mb-1">Причина відхилення:</span>
+          <div className="mb-4 p-3 bg-status-info-bg border border-status-info/40 rounded-none text-xs">
+            <span className="font-bold text-status-info block mb-1">Причина відхилення:</span>
             <p className="text-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{p.rejectionReason}</p>
           </div>
         )}
 
         {showPhoto && p.photoUrl && (
           <div className="mb-4">
-            <button
+            <PhotoAttachment aria-label="Переглянути фото проблеми" variant="ghost" size="content"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -456,18 +453,18 @@ const ComplaintCard = ({
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <ImageIcon
-                  className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0"
+                  className="size-3.5 text-muted-foreground group-hover/attachment:text-link transition-colors shrink-0"
                   strokeWidth={2}
                 />
-                <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
+                <span className="font-semibold text-foreground group-hover/attachment:text-link transition-colors">
                   Фото проблеми
                 </span>
-                <span className="text-muted-foreground text-[11px] font-normal flex items-center gap-1">
+                <span className="text-muted-foreground text-xs font-normal flex items-center gap-1">
                   · (переглянути)
-                  <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-primary transition-colors" strokeWidth={2} />
+                  <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-link transition-colors" strokeWidth={2} />
                 </span>
               </div>
-            </button>
+            </PhotoAttachment>
           </div>
         )}
 

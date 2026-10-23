@@ -84,7 +84,7 @@ function SheetContent({
               size="icon-sm"
             >
               <X strokeWidth={2} />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">Закрити</span>
             </Button>
           </SheetPrimitive.Close>
         )}

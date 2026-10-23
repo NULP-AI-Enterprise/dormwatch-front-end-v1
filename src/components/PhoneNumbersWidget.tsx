@@ -36,7 +36,7 @@ export function DormContactsDialog({
       <DialogContent className="max-w-md border-border rounded-none p-5">
         <DialogHeader className="text-left pb-2 border-b border-border">
           <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-            <Phone className="size-4 text-primary" strokeWidth={2} />
+            <Phone className="size-4 text-link" strokeWidth={2} />
             Контакти гуртожитку
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
@@ -48,7 +48,7 @@ export function DormContactsDialog({
           {building ? (
             <div className="p-4 border border-border bg-card space-y-3">
               <div>
-                <span className="text-muted-foreground block text-[11px]">Гуртожиток:</span>
+                <span className="text-muted-foreground block text-xs">Гуртожиток:</span>
                 <span className="text-sm font-bold text-foreground block mt-0.5">
                   {buildingName || "Гуртожиток"}
                 </span>
@@ -58,7 +58,7 @@ export function DormContactsDialog({
               </div>
 
               <div className="pt-2 border-t border-border">
-                <span className="text-muted-foreground block text-[11px] mb-1">Комендант:</span>
+                <span className="text-muted-foreground block text-xs mb-1">Комендант:</span>
                 {commandantPhone ? (
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-2.5 bg-muted/30 border border-border">
                     <span className="font-mono text-sm font-bold text-foreground">
@@ -73,8 +73,8 @@ export function DormContactsDialog({
                       >
                         {copied ? (
                           <>
-                            <Check className="size-3 text-emerald-500" strokeWidth={2} />
-                            <span className="text-emerald-500 font-semibold">Скопійовано</span>
+                            <Check className="size-3 text-status-success" strokeWidth={2} />
+                            <span className="text-status-success font-semibold">Скопійовано</span>
                           </>
                         ) : (
                           <>
@@ -136,7 +136,7 @@ const PhoneNumbersWidget = () => {
           </h4>
           {building ? (
             <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center border border-border bg-card text-primary shrink-0">
+              <div className="flex size-8 items-center justify-center border border-border bg-card text-link shrink-0">
                 <Phone className="size-4" strokeWidth={1.5} />
               </div>
               <div className="min-w-0 flex-1">
@@ -144,25 +144,25 @@ const PhoneNumbersWidget = () => {
                   Комендант {buildingName ? `(${buildingName})` : ""}
                 </p>
                 {commandantPhone ? (
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={handleCopy}
                     title="Натисніть, щоб скопіювати номер"
-                    className="group inline-flex items-center gap-1.5 text-xs font-bold text-foreground hover:text-primary transition-colors mt-0.5 cursor-pointer text-left"
+                    className="group inline-flex items-center gap-1.5 text-xs font-bold text-foreground hover:text-link transition-colors mt-0.5 cursor-pointer text-left"
                   >
                     <span>{commandantPhone}</span>
                     {copied ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-500">
+                      <span className="inline-flex items-center gap-1 text-xs font-normal text-status-success">
                         <Check className="size-3" strokeWidth={2} />
                         Скопійовано
                       </span>
                     ) : (
                       <Copy
-                        className="size-3 text-muted-foreground group-hover:text-primary transition-opacity opacity-70 group-hover:opacity-100"
+                        className="size-3 text-muted-foreground group-hover:text-link transition-opacity opacity-70 group-hover:opacity-100"
                         strokeWidth={1.5}
                       />
                     )}
-                  </button>
+                  </Button>
                 ) : (
                   <p className="text-xs font-bold text-muted-foreground mt-0.5">
                     Не вказано

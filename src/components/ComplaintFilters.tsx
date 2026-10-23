@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { FilterSheet } from "@/components/FilterSheet";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
 import {
   Combobox,
   ComboboxChip,
@@ -18,8 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PRIORITY_OPTIONS, STATUS_OPTIONS, priorityLabel, statusLabel } from "@/lib/complaintUtils";
 import { formatDate } from "@/lib/dateUtils";
 import type { Building, CategoryOption, Worker } from "@/lib/types";
-import { Search, SlidersHorizontal, RotateCcw, Check, X, ChevronUp, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, X } from "lucide-react";
 
 // Filter primitives shared by the dashboard, user, and admin sidebars. These
 // were copy-pasted (with per-page state names) across UserPage, AdminPage,
@@ -43,6 +44,7 @@ export function FilterSearchInput({
         className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground"
         strokeWidth={2} />
       <Input
+        aria-label={placeholder}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -91,7 +93,7 @@ function MultiFilterCombobox({
             ))
           }
         </ComboboxValue>
-        <ComboboxChipsInput placeholder={value.length ? "" : placeholder} />
+        <ComboboxChipsInput aria-label={placeholder} placeholder={value.length ? "" : placeholder} />
       </ComboboxChips>
       <ComboboxContent>
         <ComboboxEmpty>Нічого не знайдено</ComboboxEmpty>
@@ -213,7 +215,7 @@ export function CategoryFilterCombobox({
             ))
           }
         </ComboboxValue>
-        <ComboboxChipsInput placeholder={value.length ? "" : "Усі категорії"} />
+        <ComboboxChipsInput aria-label="Усі категорії" placeholder={value.length ? "" : "Усі категорії"} />
       </ComboboxChips>
       <ComboboxContent>
         <ComboboxEmpty>Категорій не знайдено</ComboboxEmpty>
@@ -282,80 +284,8 @@ export function ComplaintFiltersPopover({
   onReset,
   activeCount,
 }: ComplaintFiltersPopoverProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      if (containerRef.current?.contains(target)) return;
-      if (
-        target.closest(
-          '[data-slot="combobox-content"], [data-slot="popover-content"], [role="listbox"], [role="dialog"], [role="presentation"], [data-slot="select-content"], .rdp, .react-day-picker'
-        )
-      ) {
-        return;
-      }
-      setOpen(false);
-    };
-
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("touchstart", handleOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("touchstart", handleOutside);
-    };
-  }, [open]);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        variant={activeCount > 0 ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOpen((prev) => !prev)}
-        className="h-9 gap-2 text-xs font-semibold shrink-0 cursor-pointer"
-      >
-        <SlidersHorizontal className="size-4" strokeWidth={2} />
-        <span>Фільтри</span>
-        {activeCount > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.2 bg-background text-foreground text-[11px] font-bold border border-border">
-            {activeCount}
-          </span>
-        )}
-        {open ? (
-          <ChevronUp className="size-3.5 opacity-70" strokeWidth={2} />
-        ) : (
-          <ChevronDown className="size-3.5 opacity-70" strokeWidth={2} />
-        )}
-      </Button>
-
-      {open && (
-        <div className="absolute left-0 right-auto sm:left-auto sm:right-0 top-full mt-2 z-50 w-[calc(100vw-1.5rem)] sm:w-[540px] max-w-[calc(100vw-1.5rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
-              <span className="text-xs font-semibold text-foreground">
-                Фільтри звернень
-              </span>
-              {activeCount > 0 && (
-                <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal">
-                  Активно: {activeCount}
-                </Badge>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => setOpen(false)}
-              className="text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Згорнути"
-            >
-              <X className="size-4" strokeWidth={2} />
-            </Button>
-          </div>
-
+  return <FilterSheet title="Фільтри звернень" activeCount={activeCount} onReset={onReset}>
+    <div className="sm:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-1.5">
@@ -403,7 +333,7 @@ export function ComplaintFiltersPopover({
                 <WorkerFilterSelect
                   value={selectedWorkers ?? []}
                   onChange={onWorkersChange}
-                  workers={workers as any}
+                  workers={workers}
                 />
               </div>
             )}
@@ -460,33 +390,8 @@ export function ComplaintFiltersPopover({
               </div>
             )}
           </div>
-
-          <div className="flex items-center justify-between border-t border-border pt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onReset}
-              disabled={activeCount === 0}
-              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 cursor-pointer"
-            >
-              <RotateCcw className="size-3.5 mr-1" strokeWidth={2} />
-              Скинути все
-            </Button>
-
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setOpen(false)}
-              className="text-xs font-semibold h-8 px-4 cursor-pointer"
-            >
-              <Check className="size-3.5 mr-1" strokeWidth={2} />
-              Згорнути
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
-  );
+  </FilterSheet>;
 }
 
 export type ComplaintFiltersModalProps = ComplaintFiltersPopoverProps;
@@ -554,16 +459,16 @@ export function ComplaintActiveFilterChips({
         <Badge
           key={s}
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Статус:</span> {statusLabel(s)}
-          <button
+          <Button aria-label={"Прибрати статус: " + statusLabel(s)} variant="ghost" size="content"
             type="button"
             onClick={() => onStatusChange(selectedStatus.filter((x) => x !== s))}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       ))}
 
@@ -571,16 +476,16 @@ export function ComplaintActiveFilterChips({
         <Badge
           key={b}
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Гуртожиток:</span> {b}
-          <button
+          <Button aria-label={"Прибрати гуртожиток: " + b} variant="ghost" size="content"
             type="button"
             onClick={() => onBuildingChange(selectedBuilding.filter((x) => x !== b))}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       ))}
 
@@ -588,16 +493,16 @@ export function ComplaintActiveFilterChips({
         <Badge
           key={p}
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Пріоритет:</span> {priorityLabel(p)}
-          <button
+          <Button aria-label={"Прибрати пріоритет: " + priorityLabel(p)} variant="ghost" size="content"
             type="button"
             onClick={() => onPriorityChange(selectedPriority.filter((x) => x !== p))}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       ))}
 
@@ -605,16 +510,16 @@ export function ComplaintActiveFilterChips({
         <Badge
           key={c}
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Категорія:</span> {c}
-          <button
+          <Button aria-label={"Прибрати категорію: " + c} variant="ghost" size="content"
             type="button"
             onClick={() => onCategoriesChange(selectedCategories.filter((x) => x !== c))}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       ))}
 
@@ -623,80 +528,80 @@ export function ComplaintActiveFilterChips({
           <Badge
             key={w}
             variant="secondary"
-            className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+            className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
           >
             <span className="text-muted-foreground">Виконавець:</span> {w}
-            <button
+            <Button aria-label={"Прибрати виконавця: " + w} variant="ghost" size="content"
               type="button"
               onClick={() => onWorkersChange?.(selectedWorkers.filter((x) => x !== w))}
               className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
             >
               <X className="size-3" />
-            </button>
+            </Button>
           </Badge>
         ))}
 
       {selectedDate && onDateChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Дата:</span> {formatDate(selectedDate.toISOString())}
-          <button
+          <Button aria-label="Прибрати дату подання" variant="ghost" size="content"
             type="button"
             onClick={() => onDateChange(undefined)}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {selectedDeadline && onDeadlineChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Дедлайн:</span> {formatDate(selectedDeadline.toISOString())}
-          <button
+          <Button aria-label="Прибрати дедлайн" variant="ghost" size="content"
             type="button"
             onClick={() => onDeadlineChange(undefined)}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {overdueOnly && onOverdueOnlyChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20"
+          className="text-xs gap-1 px-2 py-0.5 bg-status-danger-bg text-status-danger border border-status-danger/40"
         >
           <span>Лише прострочені</span>
-          <button
+          <Button aria-label="Прибрати фільтр прострочених" variant="ghost" size="content"
             type="button"
             onClick={() => onOverdueOnlyChange(false)}
-            className="hover:text-foreground text-red-400 ml-0.5 cursor-pointer"
+            className="hover:text-foreground text-status-danger ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {reworkOnly && onReworkOnlyChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
+          className="text-xs gap-1 px-2 py-0.5 bg-status-danger-bg text-status-danger border border-status-danger/40"
         >
           <span>Повторне опрацювання</span>
-          <button
+          <Button aria-label="Прибрати фільтр повторних" variant="ghost" size="content"
             type="button"
             onClick={() => onReworkOnlyChange(false)}
-            className="hover:text-foreground text-red-600 dark:text-red-400 ml-0.5 cursor-pointer"
+            className="hover:text-foreground text-status-danger ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
@@ -704,7 +609,7 @@ export function ComplaintActiveFilterChips({
         variant="ghost"
         size="sm"
         onClick={onResetAll}
-        className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+        className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
       >
         Скинути всі
       </Button>
@@ -757,117 +662,20 @@ export function WorkerFiltersPopover({
   onReset,
   activeCount,
 }: WorkerFiltersPopoverProps) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      if (containerRef.current?.contains(target)) return;
-      if (
-        target.closest(
-          '[data-slot="combobox-content"], [data-slot="popover-content"], [role="listbox"], [role="dialog"], [role="presentation"], [data-slot="select-content"], .rdp, .react-day-picker'
-        )
-      ) {
-        return;
-      }
-      setOpen(false);
-    };
-
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("touchstart", handleOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("touchstart", handleOutside);
-    };
-  }, [open]);
-
-  return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        variant={activeCount > 0 ? "default" : "outline"}
-        size="sm"
-        onClick={() => setOpen((prev) => !prev)}
-        className="h-9 gap-2 text-xs font-semibold shrink-0 cursor-pointer"
-      >
-        <SlidersHorizontal className="size-4" strokeWidth={2} />
-        <span>Фільтри</span>
-        {activeCount > 0 && (
-          <span className="ml-0.5 px-1.5 py-0.2 bg-background text-foreground text-[11px] font-bold border border-border">
-            {activeCount}
-          </span>
-        )}
-        {open ? (
-          <ChevronUp className="size-3.5 opacity-70" strokeWidth={2} />
-        ) : (
-          <ChevronDown className="size-3.5 opacity-70" strokeWidth={2} />
-        )}
-      </Button>
-
-      {open && (
-        <div className="absolute left-0 right-auto sm:left-auto sm:right-0 top-full mt-2 z-50 w-[calc(100vw-1.5rem)] sm:w-[460px] max-w-[calc(100vw-1.5rem)] bg-card border border-border shadow-xl p-4 space-y-4 rounded-none animate-in fade-in-0 zoom-in-95 duration-100">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="size-4 text-foreground" strokeWidth={2} />
-              <span className="text-xs font-semibold text-foreground">
-                Фільтри завдань
-              </span>
-              {activeCount > 0 && (
-                <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal">
-                  Активно: {activeCount}
-                </Badge>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => setOpen(false)}
-              className="text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Згорнути"
-            >
-              <X className="size-4" strokeWidth={2} />
-            </Button>
-          </div>
-
+  return <FilterSheet title="Фільтри завдань" activeCount={activeCount} onReset={onReset}>
+    <div className="sm:col-span-2">
           <div className="space-y-3.5 text-xs">
             {/* Статус */}
             <div>
               <label className="text-xs font-medium text-muted-foreground block mb-2">
                 Статус завдання
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                {WORKER_STATUS_OPTIONS.map((opt) => {
-                  const active = selectedStatus === opt.id;
-                  const count = statusCounts[opt.id] ?? 0;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => onStatusChange(opt.id)}
-                      className={cn(
-                        "flex items-center justify-between px-2.5 py-2 text-xs border rounded-none text-left cursor-pointer transition-colors",
-                        active
-                          ? "bg-primary text-primary-foreground font-semibold border-primary shadow-xs"
-                          : "bg-muted/20 hover:bg-muted/50 text-foreground border-border/80"
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      <span
-                        className={cn(
-                          "ml-1 text-[10px] px-1 py-0 font-bold border",
-                          active
-                            ? "bg-primary-foreground/20 text-primary-foreground border-transparent"
-                            : "bg-card text-muted-foreground border-border"
-                        )}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <ToggleGroup type="single" value={selectedStatus} onValueChange={(value) => { if (value) onStatusChange(value as WorkerStatusFilter); }}
+                aria-label="Статус завдання" variant="outline" className="grid w-full grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {WORKER_STATUS_OPTIONS.map((option) => <ToggleGroupItem key={option.id} value={option.id} className="min-w-0 whitespace-normal">
+                  {option.label} ({statusCounts[option.id] ?? 0})
+                </ToggleGroupItem>)}
+              </ToggleGroup>
             </div>
 
             {/* Пріоритет */}
@@ -895,37 +703,18 @@ export function WorkerFiltersPopover({
             {/* Тумблер сортування за терміновістю */}
             {onSortByUrgencyChange && (
               <div
-                onClick={() => onSortByUrgencyChange(!sortByUrgency)}
                 className="flex items-center justify-between gap-3 py-2 px-3 bg-muted/30 border border-border/80 hover:border-primary/40 transition-colors cursor-pointer select-none"
               >
                 <div>
                   <span className="text-xs font-semibold text-foreground block">
                     Сортувати термінові
                   </span>
-                  <span className="text-[11px] text-muted-foreground block">
+                  <span className="text-xs text-muted-foreground block">
                     Найтерміновіші до вирішення завдання зверху
                   </span>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={!!sortByUrgency}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSortByUrgencyChange(!sortByUrgency);
-                  }}
-                  className={cn(
-                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none",
-                    sortByUrgency ? "bg-primary" : "bg-muted-foreground/30"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "pointer-events-none block size-4 rounded-full bg-background shadow-sm transition-transform",
-                      sortByUrgency ? "translate-x-4" : "translate-x-0"
-                    )}
-                  />
-                </button>
+                <Switch aria-label="Сортувати за терміновістю" checked={!!sortByUrgency}
+                  onCheckedChange={onSortByUrgencyChange} />
               </div>
             )}
 
@@ -954,33 +743,8 @@ export function WorkerFiltersPopover({
               )}
             </div>
           </div>
-
-          <div className="flex items-center justify-between border-t border-border pt-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onReset}
-              disabled={activeCount === 0}
-              className="text-xs text-muted-foreground hover:text-foreground h-8 px-2 cursor-pointer"
-            >
-              <RotateCcw className="size-3.5 mr-1" strokeWidth={2} />
-              Скинути все
-            </Button>
-
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setOpen(false)}
-              className="text-xs font-semibold h-8 px-4 cursor-pointer"
-            >
-              <Check className="size-3.5 mr-1" strokeWidth={2} />
-              Згорнути
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
-  );
+  </FilterSheet>;
 }
 
 export type WorkerActiveFilterChipsProps = {
@@ -1031,16 +795,16 @@ export function WorkerActiveFilterChips({
       {selectedStatus !== "all" && currentStatusOption && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Статус:</span> {currentStatusOption.label}
-          <button
+          <Button aria-label={"Прибрати статус: " + currentStatusOption.label} variant="ghost" size="content"
             type="button"
             onClick={() => onStatusChange("all")}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
@@ -1048,80 +812,80 @@ export function WorkerActiveFilterChips({
         <Badge
           key={p}
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Пріоритет:</span> {priorityLabel(p)}
-          <button
+          <Button aria-label={"Прибрати пріоритет: " + priorityLabel(p)} variant="ghost" size="content"
             type="button"
             onClick={() => onPriorityChange(selectedPriority.filter((x) => x !== p))}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       ))}
 
       {selectedDate && onDateChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-muted/60 border border-border"
+          className="text-xs gap-1 px-2 py-0.5 bg-muted/60 border border-border"
         >
           <span className="text-muted-foreground">Дата призначення:</span> {formatDate(selectedDate.toISOString())}
-          <button
+          <Button aria-label="Прибрати дату призначення" variant="ghost" size="content"
             type="button"
             onClick={() => onDateChange(undefined)}
             className="hover:text-foreground text-muted-foreground ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {sortByUrgency && onSortByUrgencyChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-primary/10 text-primary border border-primary/25"
+          className="text-xs gap-1 px-2 py-0.5 bg-primary/10 text-link border border-primary/25"
         >
           <span>Сортувати термінові</span>
-          <button
+          <Button aria-label="Скасувати сортування за терміновістю" variant="ghost" size="content"
             type="button"
             onClick={() => onSortByUrgencyChange(false)}
-            className="hover:text-foreground text-primary ml-0.5 cursor-pointer"
+            className="hover:text-foreground text-link ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {overdueOnly && onOverdueOnlyChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20"
+          className="text-xs gap-1 px-2 py-0.5 bg-status-danger-bg text-status-danger border border-status-danger/40"
         >
           <span>Лише прострочені</span>
-          <button
+          <Button aria-label="Прибрати фільтр прострочених" variant="ghost" size="content"
             type="button"
             onClick={() => onOverdueOnlyChange(false)}
-            className="hover:text-foreground text-red-400 ml-0.5 cursor-pointer"
+            className="hover:text-foreground text-status-danger ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
       {reworkOnly && onReworkOnlyChange && (
         <Badge
           variant="secondary"
-          className="text-[11px] gap-1 px-2 py-0.5 bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
+          className="text-xs gap-1 px-2 py-0.5 bg-status-danger-bg text-status-danger border border-status-danger/40"
         >
           <span>Повторне опрацювання</span>
-          <button
+          <Button aria-label="Прибрати фільтр повторних" variant="ghost" size="content"
             type="button"
             onClick={() => onReworkOnlyChange(false)}
-            className="hover:text-foreground text-red-600 dark:text-red-400 ml-0.5 cursor-pointer"
+            className="hover:text-foreground text-status-danger ml-0.5 cursor-pointer"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </Badge>
       )}
 
@@ -1129,7 +893,7 @@ export function WorkerActiveFilterChips({
         variant="ghost"
         size="sm"
         onClick={onResetAll}
-        className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+        className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
       >
         Скинути всі
       </Button>

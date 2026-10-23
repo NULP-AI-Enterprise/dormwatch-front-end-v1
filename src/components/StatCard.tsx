@@ -18,7 +18,7 @@ interface StatCardProps {
 
 const StatCardSkeleton = () => (
   <div className="bg-card border border-border p-5 animate-pulse flex flex-col items-center justify-center text-center">
-    <div className="h-3 w-20 bg-muted/50 mb-4" />
+    <div className="h-3 w-20 bg-muted/30 mb-4" />
     <div className="h-8 w-16 bg-muted/50" />
   </div>
 );

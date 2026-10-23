@@ -53,7 +53,7 @@ export const OverdueBadge = ({
   complaintIsOverdue(complaint) ? (
     <Badge
       variant="outline"
-      className={cn("text-red-500 bg-red-500/10 border-red-700/50", className)}
+      className={cn("text-status-danger bg-status-danger-bg border-status-danger/40", className)}
     >
       {OVERDUE_LABEL}
     </Badge>
