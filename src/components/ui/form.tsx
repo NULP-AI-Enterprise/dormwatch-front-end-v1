@@ -96,7 +96,8 @@ function FormLabel({
       data-slot="form-label"
       data-error={!!error}
       className={cn(
-        "data-error:text-destructive-foreground",
+        // Design system §3: error text must contrast with the form surface.
+        "data-[error=true]:text-destructive",
         className
       )}
       htmlFor={formItemId}
