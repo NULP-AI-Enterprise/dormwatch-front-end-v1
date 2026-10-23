@@ -181,7 +181,6 @@ const AnnouncementSidePanel = ({
             </h3>
             <p className="text-xs font-normal text-muted-foreground">
               {formatDate(announcement?.created_at)}
-              {announcement?.created_by_name ? ` · ${announcement.created_by_name}` : ""}
             </p>
             <p className="text-sm text-foreground leading-relaxed break-words whitespace-pre-wrap">
               {announcement?.body || "—"}
@@ -271,7 +270,7 @@ const AnnouncementSidePanel = ({
             </div>
 
             {error && (
-              <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+              <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
             )}
 
             <div className="flex gap-2">

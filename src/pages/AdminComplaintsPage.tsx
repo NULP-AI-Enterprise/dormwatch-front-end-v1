@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { DatePicker } from "@/components/ui/date-picker";
 import { isSameLocalDay } from "@/lib/dateUtils";
 import {
   fetchAllComplaints,
@@ -13,28 +12,34 @@ import ComplaintSidePanel from "@/components/ComplaintSidePanel";
 import ComplaintCard from "@/components/ComplaintCard";
 import {
   FilterSearchInput,
-  StatusFilterSelect,
-  BuildingFilterSelect,
-  PriorityFilterSelect,
-  CategoryFilterCombobox,
-  WorkerFilterSelect,
+  ComplaintFiltersPopover,
+  ComplaintActiveFilterChips,
 } from "@/components/ComplaintFilters";
-import { FilterSheet, FilterField } from "@/components/FilterSheet";
+import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
 import { complaintIsOverdue } from "@/lib/complaintUtils";
 import { ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, ERROR, ERROR_TEXT } from "@/lib/theme";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useUser } from "@/context/UserContext";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+import ImagePreviewDialog from "@/components/ImagePreviewDialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { X, Inbox } from "lucide-react";
+import { X, Inbox, ArrowLeft, ArrowRight } from "lucide-react";
 import type { Complaint, CategoryOption } from "@/lib/types";
+
+const ITEMS_PER_PAGE = 10;
+
+const getPageNumbers = (current: number, total: number): (number | string)[] => {
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, "...", total];
+  }
+  if (current >= total - 2) {
+    return [1, "...", total - 3, total - 2, total - 1, total];
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total];
+};
 
 const AdminComplaintsPage = () => {
   const location = useLocation();
@@ -52,6 +57,7 @@ const AdminComplaintsPage = () => {
   const [overdueOnly, setOverdueOnly] = useState<boolean>(
     !!location.state?.overdueOnly
   );
+  const [reworkOnly, setReworkOnly] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -60,6 +66,7 @@ const AdminComplaintsPage = () => {
   const [err, setErr] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -157,6 +164,7 @@ const AdminComplaintsPage = () => {
         const deadlineOk =
           !selectedDeadline || isSameLocalDay(p.deadline, selectedDeadline);
         const overdueOk = !overdueOnly || complaintIsOverdue(p);
+        const reworkOk = !reworkOnly || Boolean(p.isRework);
         const searchOk =
           searchQuery === "" ||
           (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,11 +172,46 @@ const AdminComplaintsPage = () => {
         const dateOk = !selectedDate || isSameLocalDay(p.createdAt, selectedDate);
         return (
           statusOk && categoryOk && buildingOk && priorityOk &&
-          workerOk && deadlineOk && overdueOk && searchOk && dateOk
+          workerOk && deadlineOk && overdueOk && reworkOk && searchOk && dateOk
         );
       }),
-    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, selectedWorkers, selectedDeadline, overdueOnly, searchQuery, selectedDate]
+    [complaints, selectedStatus, selectedCategories, selectedBuilding, selectedPriority, selectedWorkers, selectedDeadline, overdueOnly, reworkOnly, searchQuery, selectedDate]
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    selectedStatus,
+    selectedCategories,
+    selectedBuilding,
+    selectedPriority,
+    selectedWorkers,
+    selectedDeadline,
+    overdueOnly,
+    reworkOnly,
+    selectedDate,
+    searchQuery,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredComplaints.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedComplaints = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredComplaints.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredComplaints, safeCurrentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    const targetPage = Math.max(1, Math.min(totalPages, newPage));
+    setCurrentPage(targetPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const resetFilters = () => {
     setSelectedStatus([]);
@@ -178,8 +221,10 @@ const AdminComplaintsPage = () => {
     setSelectedWorkers([]);
     setSelectedDeadline(undefined);
     setOverdueOnly(false);
+    setReworkOnly(false);
     setSelectedDate(undefined);
     setSearchQuery("");
+    setCurrentPage(1);
   };
 
   const activeFilterCount =
@@ -190,97 +235,99 @@ const AdminComplaintsPage = () => {
     selectedWorkers.length +
     (selectedDeadline ? 1 : 0) +
     (selectedDate ? 1 : 0) +
-    (overdueOnly ? 1 : 0);
+    (overdueOnly ? 1 : 0) +
+    (reworkOnly ? 1 : 0);
 
   return (
     <>
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="max-w-[90vw] sm:max-w-[90vw] bg-transparent border-none shadow-none p-0 flex justify-center items-center" showCloseButton={false}>
-          <DialogTitle className="sr-only">Image preview</DialogTitle>
-          {previewImage && (
-            <img
-              src={previewImage}
-              className="w-full h-auto max-h-[90vh] object-contain"
-              alt="Full size"
-            />
-          )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
-            <X className="size-6" strokeWidth={2} />
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
+      <ImagePreviewDialog
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
 
-      <div className="flex-1 flex flex-col min-h-screen">
-        <div className="flex-1 p-6 space-y-6">
-          {/* Search stays in the open; the facet filters sit behind one trigger
-              that opens a sheet at every breakpoint, so the queue starts near
-              the top on desktop as well. */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="sm:flex-1">
-              <FilterSearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Пошук звернень..."
-              />
-            </div>
-            <FilterSheet
-              onReset={resetFilters}
-              activeCount={activeFilterCount}
-              resultCount={filteredComplaints.length}
-            >
-              <FilterField label="Статус">
-                <StatusFilterSelect value={selectedStatus} onChange={setSelectedStatus} />
-              </FilterField>
-              <FilterField label="Пріоритет">
-                <PriorityFilterSelect value={selectedPriority} onChange={setSelectedPriority} />
-              </FilterField>
-              <FilterField label="Категорія">
-                <CategoryFilterCombobox
-                  value={selectedCategories}
-                  onChange={setSelectedCategories}
-                  categories={categories}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <div className="flex-1 p-6 space-y-4 min-w-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row flex-1 items-stretch sm:items-center gap-3 min-w-0">
+              <div className="w-full sm:max-w-md min-w-0">
+                <FilterSearchInput
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Пошук звернень..."
                 />
-              </FilterField>
-              <FilterField label="Гуртожиток">
-                <BuildingFilterSelect
-                  value={selectedBuilding}
-                  onChange={setSelectedBuilding}
+              </div>
+              <div className="flex items-center gap-2">
+                <ComplaintFiltersPopover
+                  selectedStatus={selectedStatus}
+                  onStatusChange={setSelectedStatus}
+                  selectedBuilding={selectedBuilding}
+                  onBuildingChange={setSelectedBuilding}
                   buildings={buildings}
-                />
-              </FilterField>
-              <FilterField label="Виконавець">
-                <WorkerFilterSelect
-                  value={selectedWorkers}
-                  onChange={setSelectedWorkers}
+                  selectedPriority={selectedPriority}
+                  onPriorityChange={setSelectedPriority}
+                  selectedCategories={selectedCategories}
+                  onCategoriesChange={setSelectedCategories}
+                  categories={categories}
+                  selectedWorkers={selectedWorkers}
+                  onWorkersChange={setSelectedWorkers}
                   workers={workers}
+                  selectedDate={selectedDate}
+                  onDateChange={setSelectedDate}
+                  selectedDeadline={selectedDeadline}
+                  onDeadlineChange={setSelectedDeadline}
+                  overdueOnly={overdueOnly}
+                  onOverdueOnlyChange={setOverdueOnly}
+                  reworkOnly={reworkOnly}
+                  onReworkOnlyChange={setReworkOnly}
+                  onReset={resetFilters}
+                  activeCount={activeFilterCount}
                 />
-              </FilterField>
-              <FilterField label="Дедлайн">
-                <DatePicker
-                  date={selectedDeadline}
-                  setDate={setSelectedDeadline}
-                  placeholder="Будь-який"
-                />
-              </FilterField>
-              <FilterField label="Дата подання">
-                <DatePicker
-                  date={selectedDate}
-                  setDate={setSelectedDate}
-                  placeholder="Будь-яка"
-                />
-              </FilterField>
-              <label className="flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
-                <Checkbox
-                  id="overdue-only"
-                  checked={overdueOnly}
-                  onCheckedChange={(v) => setOverdueOnly(v === true)}
-                />
-                <span>Лише прострочені</span>
-              </label>
-            </FilterSheet>
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground h-9 px-2.5 cursor-pointer"
+                  >
+                    <X className="size-3.5 mr-1" strokeWidth={2} />
+                    Скинути
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground self-start sm:self-auto shrink-0">
+              Знайдено: <span className="font-semibold text-foreground">{filteredComplaints.length}</span>
+              {totalPages > 1 && (
+                <span className="ml-1 text-muted-foreground">
+                  (стор. {safeCurrentPage} з {totalPages})
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-4">
+          <ComplaintActiveFilterChips
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            selectedBuilding={selectedBuilding}
+            onBuildingChange={setSelectedBuilding}
+            selectedPriority={selectedPriority}
+            onPriorityChange={setSelectedPriority}
+            selectedCategories={selectedCategories}
+            onCategoriesChange={setSelectedCategories}
+            selectedWorkers={selectedWorkers}
+            onWorkersChange={setSelectedWorkers}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            selectedDeadline={selectedDeadline}
+            onDeadlineChange={setSelectedDeadline}
+            overdueOnly={overdueOnly}
+            onOverdueOnlyChange={setOverdueOnly}
+            reworkOnly={reworkOnly}
+            onReworkOnlyChange={setReworkOnly}
+            onResetAll={resetFilters}
+          />
+
+          <div className="space-y-4 min-w-0">
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <LoadingSpinner size="md" />
@@ -302,11 +349,11 @@ const AdminComplaintsPage = () => {
 
             {!loading &&
               !err &&
-              filteredComplaints.map((p) => (
+              paginatedComplaints.map((p) => (
                 <ComplaintCard
                   key={p.id}
                   complaint={p}
-                  cardClassName={`group transition-colors cursor-pointer ${
+                  cardClassName={`group transition-colors ${
                     p.status === "pending" && !viewedComplaints.has(p.id as number)
                       ? `border-l-2 ${ACCENT_BORDER} border-y-border border-r-border ${ACCENT_BG_LIGHT} ${ACCENT_BG_HOVER_LIGHT}`
                       : ""
@@ -322,13 +369,66 @@ const AdminComplaintsPage = () => {
                   photoZoom
                   photoHeight="h-44"
                   onPhotoPreview={setPreviewImage}
-                  footerLeft="id"
                   showAdminActions
                   onAdminPatch={handleAdminPatch}
                   onAdminDelete={handleRemove}
                 />
               ))}
           </div>
+
+          {!loading && !err && totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border bg-card p-4">
+              <span className="text-xs text-muted-foreground font-normal order-2 sm:order-1">
+                Показано {(safeCurrentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safeCurrentPage * ITEMS_PER_PAGE, filteredComplaints.length)} з {filteredComplaints.length} звернень
+              </span>
+
+              <div className="flex items-center gap-1.5 order-1 sm:order-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage === 1}
+                  onClick={() => handlePageChange(safeCurrentPage - 1)}
+                  className="h-8 px-2.5 text-xs cursor-pointer"
+                >
+                  <ArrowLeft className="size-3.5 mr-1" strokeWidth={2} />
+                  <span className="hidden sm:inline">Попередня</span>
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {getPageNumbers(safeCurrentPage, totalPages).map((page, idx) =>
+                    page === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-xs text-muted-foreground select-none">
+                        …
+                      </span>
+                    ) : (
+                      <Button
+                        key={`page-${page}`}
+                        variant={page === safeCurrentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(page as number)}
+                        className={`h-8 w-8 p-0 text-xs font-semibold cursor-pointer ${
+                          page === safeCurrentPage ? "pointer-events-none" : ""
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    )
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage === totalPages}
+                  onClick={() => handlePageChange(safeCurrentPage + 1)}
+                  className="h-8 px-2.5 text-xs cursor-pointer"
+                >
+                  <span className="hidden sm:inline">Наступна</span>
+                  <ArrowRight className="size-3.5 ml-1" strokeWidth={2} />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

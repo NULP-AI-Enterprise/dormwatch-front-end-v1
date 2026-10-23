@@ -1,25 +1,28 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp, Home, Image as ImageIcon, Eye, User, Users, Phone } from "lucide-react";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ProgressStepper from "@/components/ProgressStepper";
-import { formatDate } from "@/lib/dateUtils";
+import { isBlockComplaint, cleanComplaintDescription } from "@/lib/complaintUtils";
 import { cn } from "@/lib/utils";
 import { ERROR_TEXT, ERROR_BORDER, ERROR_BG_HOVER } from "@/lib/theme";
+import { useUser } from "@/context/UserContext";
+import ImagePreviewDialog from "@/components/ImagePreviewDialog";
 import type { Complaint } from "@/lib/types";
 
 interface ComplaintCardProps {
   complaint: Complaint;
   variant?: "default" | "compact";
+  showOwnerBadge?: boolean;
 
   // Layout
-  bodyPadding?: "p-5" | "p-6";
+  bodyPadding?: string;
   cardClassName?: string;
   footerClassName?: string;
 
@@ -75,19 +78,20 @@ export const Dot = ({ className }: { className?: string }) => (
 const ComplaintCard = ({
   complaint,
   variant = "default",
-  bodyPadding = "p-6",
+  showOwnerBadge = false,
+  bodyPadding = "p-4 sm:p-6",
   cardClassName,
-  footerClassName = "flex flex-col md:flex-row md:items-center justify-between pt-4 gap-4",
-  metaVariant = "location",
+  footerClassName,
+  metaVariant: _metaVariant = "location",
   descriptionFallback = "",
   onCardClick,
-  showPhoto = false,
-  photoZoom = false,
-  photoHeight = "h-40",
+  showPhoto = true,
+  photoZoom: _photoZoom = false,
+  photoHeight: _photoHeight = "h-40",
   onPhotoPreview,
   showPriority = false,
   showProgress = false,
-  footerLeft = "none",
+  footerLeft: _footerLeft = "none",
   commentsMode = "hidden",
   commentsSide = "right",
   commentsOpen = false,
@@ -103,6 +107,13 @@ const ComplaintCard = ({
   onResidentChange,
 }: ComplaintCardProps) => {
   const p = complaint;
+  const { user: currentUser } = useUser();
+  const isAdmin = currentUser?.role === "admin" || (currentUser as unknown as { is_superuser?: boolean })?.is_superuser;
+  const [internalPreviewUrl, setInternalPreviewUrl] = useState<string | null>(null);
+  const isMyComplaint =
+    !!p.isMine ||
+    (currentUser?.user != null &&
+      (p.user_id === currentUser.user || (p as unknown as { userId?: number }).userId === currentUser.user));
 
   // ── Compact variant ──────────────────────────────────────────────
   if (variant === "compact") {
@@ -115,7 +126,33 @@ const ComplaintCard = ({
             </h4>
             {showPriority && <PriorityBadge priority={p.priority} />}
           </div>
-          <div className="flex gap-2 mb-3 items-center">
+          <div className="flex gap-2 mb-3 items-center flex-wrap">
+            {p.isRework && (
+              <Badge
+                variant="outline"
+                className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+              >
+                Повторне опрацювання
+              </Badge>
+            )}
+            {showOwnerBadge && isMyComplaint && (
+              <Badge
+                variant="outline"
+                className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+              >
+                <User className="size-3" strokeWidth={2.5} />
+                Ваше звернення
+              </Badge>
+            )}
+            {p.studentPhone && !isAdmin && (
+              <Badge
+                variant="outline"
+                className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+              >
+                <Phone className="size-3" strokeWidth={2} />
+                {p.studentPhone}
+              </Badge>
+            )}
             {p.category && (
               <Badge variant="outline" className="text-muted-foreground border-border bg-card">
                 {p.category}
@@ -129,49 +166,110 @@ const ComplaintCard = ({
             <span className="text-xs text-muted-foreground">
               {p.building || "?"}
               {p.placeName && <><Dot />{p.placeName}</>}
-              {p.isShared && <span className="ml-0.5">(спільна)</span>}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 break-all whitespace-pre-wrap">
-            {p.description}
-          </p>
+          {cleanComplaintDescription(p.description) && (
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-3 break-all whitespace-pre-wrap">
+              {cleanComplaintDescription(p.description)}
+            </p>
+          )}
+          {showPhoto && p.photoUrl && (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = resolveImageUrl(p.photoUrl as string);
+                  if (url) {
+                    if (onPhotoPreview) {
+                      onPhotoPreview(url);
+                    } else {
+                      setInternalPreviewUrl(url);
+                    }
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-2.5 py-1 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none"
+                title="Натисніть для перегляду фото у повному розмірі"
+              >
+                <div className="relative size-6 shrink-0 overflow-hidden border border-border bg-card">
+                  <img
+                    src={resolveImageUrl(p.thumbnail || p.photoUrl) || ""}
+                    alt=""
+                    className="w-full h-full object-cover group-hover/attachment:scale-110 transition-transform duration-300"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <ImageIcon
+                    className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0"
+                    strokeWidth={2}
+                  />
+                  <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
+                    Фото проблеми
+                  </span>
+                  <span className="text-muted-foreground text-[11px] font-normal flex items-center gap-1">
+                    · (переглянути)
+                    <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-primary transition-colors" strokeWidth={2} />
+                  </span>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {(isBlockComplaint(p.description) || p.isShared) && (
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
+              {isBlockComplaint(p.description) && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                  <Home className="size-3.5 shrink-0 text-blue-500" strokeWidth={2} />
+                  <span>Звернення стосується блоку</span>
+                </div>
+              )}
+              {p.isShared && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                  <Users className="size-3.5 shrink-0 text-amber-500" strokeWidth={2} />
+                  <span>Звернення стосується спільного простору</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Модальне вікно перегляду фото */}
+        <ImagePreviewDialog
+          imageUrl={internalPreviewUrl}
+          onClose={() => setInternalPreviewUrl(null)}
+        />
       </Card>
     );
   }
 
   // ── Default variant ─────────────────────────────────────────────
+  const hasBlock = isBlockComplaint(p.description);
+  const cleanDescription = cleanComplaintDescription(p.description);
 
-  // Re-file chain flag: a follow-up cites its source so a saga reads as one
-  // story in every list that renders it. Public payloads carry no
-  // follow_up_of, so the mark never leaks to the board.
-  const redoMark = p.followUpOf != null && (
-    <>
-      <span className="text-xs font-semibold text-foreground shrink-0">
-        Повторне до №{p.followUpOf}
-      </span>
-      <Dot />
-    </>
+  const reworkBadge = p.isRework && (
+    <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+      Повторне опрацювання
+    </Badge>
   );
 
-  const metaLine =
-    metaVariant === "date" ? (
-      <>
-        {redoMark}
-        {p.category || ""}
-        <Dot className="mx-1.5" />
-        {formatDate(p.createdAt)}
-      </>
-    ) : (
-      <>
-        {redoMark}
-        {p.category}
-        <Dot />
-        {p.building || "?"}
-        {p.placeName && <><Dot />{p.placeName}</>}
-        {p.isShared && <span className="ml-0.5">(спільна)</span>}
-      </>
-    );
+  const phoneBadge = p.studentPhone && !isAdmin && (
+    <Badge
+      variant="outline"
+      className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5"
+    >
+      <Phone className="size-3" strokeWidth={2} />
+      {p.studentPhone}
+    </Badge>
+  );
+
+  const metaLine = (
+    <>
+      {p.category}
+      {p.category && <Dot />}
+      {p.building || "?"}
+      {p.placeName && <><Dot />{p.placeName}</>}
+    </>
+  );
 
   const statusBadge = <StatusBadge status={p.status} />;
   const commentButton = commentsMode === "inline" && (
@@ -191,38 +289,64 @@ const ComplaintCard = ({
     </Button>
   );
 
+  const hasFooterActions =
+    (commentsMode === "inline" && !!commentButton) ||
+    showResidentActions ||
+    (showDelete && isAdmin) ||
+    showAdminActions;
+
   return (
-    <Card
-      className={cn(
-        "py-0 border-border shadow-none bg-card",
-        // Clickable cards carry their own visible "Деталі" cue in the header
-        // (rendered above). Background does not shift on hover — touch devices
-        // never see hover, and the persistent label is the honest affordance.
-        onCardClick && "cursor-pointer focus-visible:ring-1 focus-visible:ring-ring/50",
-        cardClassName
-      )}
-      onClick={
-        onCardClick
-          ? (e) => {
-              if ((e.target as HTMLElement).closest('button, [role="dialog"], a')) return;
-              onCardClick();
-            }
-          : undefined
-      }
-      >
-      <div className={bodyPadding}>
-        {/* Unified header: status badge left, meta line right, bold title below.
-            Same across admin / feed / reports — role-specific controls live in
-            the footer, not the header. Cards showing the progress stepper omit
-            the badge: the stepper already names the current state. When the
-            whole card is a tap target, an inline "Деталі" cue gives the row a
-            persistent affordance — hover-only background shifts don't read as
-            clickable on touch. */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+    <Card className={cn("py-0 border-border shadow-none bg-card overflow-hidden w-full max-w-full min-w-0", cardClassName)}>
+      <div className={cn("min-w-0", bodyPadding)}>
+        {/* Mobile top row: badges left, details button right */}
+        <div className="flex items-start justify-between gap-2 mb-2 sm:hidden">
+          <div className="flex flex-wrap gap-1.5 items-center flex-1 min-w-0">
+            {statusBadge}
+            <OverdueBadge complaint={p} />
+            {reworkBadge}
+            {showOwnerBadge && isMyComplaint && (
+              <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                <User className="size-3" strokeWidth={2.5} />
+                Ваше звернення
+              </Badge>
+            )}
+            {phoneBadge}
+            {p.supportersCount > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1 text-[11px]">
+                <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
+              </Badge>
+            )}
+          </div>
+          {onCardClick && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCardClick();
+              }}
+              className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
+              title="Переглянути деталі звернення"
+            >
+              <span>Деталі</span>
+              <ChevronRight className="size-3 text-primary/70" strokeWidth={2} />
+            </button>
+          )}
+        </div>
+
+        {/* Desktop top row: badges left, details button right */}
+        <div className="hidden sm:flex sm:justify-between sm:items-start mb-3 gap-2">
           {!showProgress && (
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center min-w-0">
               {statusBadge}
               <OverdueBadge complaint={p} />
+              {reworkBadge}
+              {showOwnerBadge && isMyComplaint && (
+                <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                  <User className="size-3" strokeWidth={2.5} />
+                  Ваше звернення
+                </Badge>
+              )}
+              {phoneBadge}
               {p.supportersCount > 0 && (
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent inline-flex items-center gap-1">
                   <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
@@ -230,61 +354,120 @@ const ComplaintCard = ({
               )}
             </div>
           )}
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-normal text-muted-foreground shrink-0">
-              {metaLine}
-            </span>
+          {showProgress && (
+            <div className="flex flex-wrap gap-2 items-center min-w-0">
+              {reworkBadge}
+              {showOwnerBadge && isMyComplaint && (
+                <Badge variant="outline" className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                  <User className="size-3" strokeWidth={2.5} />
+                  Ваше звернення
+                </Badge>
+              )}
+              {phoneBadge}
+            </div>
+          )}
+          <div className="flex items-center gap-3 shrink-0">
             {onCardClick && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary shrink-0">
-                Деталі
-                <ChevronRight className="size-3" strokeWidth={2} />
-              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCardClick();
+                }}
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 text-primary hover:text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-none transition-all cursor-pointer group/details select-none shrink-0"
+                title="Переглянути деталі звернення"
+              >
+                <span>Деталі</span>
+                <ChevronRight className="size-3 text-primary/70 group-hover/details:text-primary group-hover/details:translate-x-0.5 transition-all" strokeWidth={2} />
+              </button>
             )}
           </div>
         </div>
-        <h3 className="text-sm font-semibold text-foreground mb-2">
+        <h3 className="text-sm font-semibold text-foreground mb-2 break-words [overflow-wrap:anywhere]">
           {p.title || "Без назви"}
         </h3>
 
         {showPriority && (
           <div className="flex flex-wrap gap-2 mb-3">
             <PriorityBadge priority={p.priority} />
-            {p.createdAt && (
-              <span className="text-xs text-muted-foreground font-normal">
-                {formatDate(p.createdAt)}
-              </span>
+          </div>
+        )}
+
+        {cleanDescription && (
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all [overflow-wrap:anywhere] line-clamp-2">
+            {cleanDescription}
+          </p>
+        )}
+
+        {!cleanDescription && !hasBlock && !p.isShared && descriptionFallback && (
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all [overflow-wrap:anywhere] line-clamp-2">
+            {descriptionFallback}
+          </p>
+        )}
+
+        {(hasBlock || p.isShared) && (
+          <div className="mb-4 flex flex-wrap gap-2 items-center">
+            {hasBlock && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                <Home className="size-4 shrink-0 text-blue-500" strokeWidth={2} />
+                <span>Звернення стосується блоку</span>
+              </div>
+            )}
+            {p.isShared && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                <Users className="size-4 shrink-0 text-amber-500" strokeWidth={2} />
+                <span>Звернення стосується спільного простору</span>
+              </div>
             )}
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground leading-relaxed mb-4 break-all whitespace-pre-wrap">
-          {p.description || descriptionFallback}
-        </p>
+        {p.rejectionReason && (p.status === "rejected" || p.status === "denied") && (
+          <div className="mb-4 p-3 bg-sky-500/10 border border-sky-500/25 rounded-none text-xs">
+            <span className="font-bold text-sky-600 dark:text-sky-400 block mb-1">Причина відхилення:</span>
+            <p className="text-foreground leading-relaxed whitespace-pre-wrap break-all [overflow-wrap:anywhere]">{p.rejectionReason}</p>
+          </div>
+        )}
 
         {showPhoto && p.photoUrl && (
-          <div
-            className={cn(
-              "w-full overflow-hidden border border-border mb-4",
-              photoHeight,
-              photoZoom && "cursor-zoom-in"
-            )}
-            onClick={
-              photoZoom
-                ? (e) => {
-                    e.stopPropagation();
-                    onPhotoPreview?.(resolveImageUrl(p.photoUrl as string));
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const url = resolveImageUrl(p.photoUrl as string);
+                if (url) {
+                  if (onPhotoPreview) {
+                    onPhotoPreview(url);
+                  } else {
+                    setInternalPreviewUrl(url);
                   }
-                : undefined
-            }
-          >
-            <img
-              src={resolveImageUrl(p.thumbnail || p.photoUrl)}
-              className={cn(
-                "w-full h-full object-cover",
-                photoZoom && "hover:scale-105 transition-transform duration-500"
-              )}
-              alt=""
-            />
+                }
+              }}
+              className="inline-flex items-center gap-2.5 px-3 py-1.5 text-xs border border-border bg-muted/30 hover:bg-muted text-foreground hover:border-primary/40 transition-all cursor-pointer group/attachment select-none max-w-full"
+              title="Натисніть для перегляду фото у повному розмірі"
+            >
+              <div className="relative size-7 shrink-0 overflow-hidden border border-border bg-card">
+                <img
+                  src={resolveImageUrl(p.thumbnail || p.photoUrl) || ""}
+                  alt=""
+                  className="w-full h-full object-cover group-hover/attachment:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <ImageIcon
+                  className="size-3.5 text-muted-foreground group-hover/attachment:text-primary transition-colors shrink-0"
+                  strokeWidth={2}
+                />
+                <span className="font-semibold text-foreground group-hover/attachment:text-primary transition-colors">
+                  Фото проблеми
+                </span>
+                <span className="text-muted-foreground text-[11px] font-normal flex items-center gap-1">
+                  · (переглянути)
+                  <Eye className="size-3 ml-0.5 text-muted-foreground group-hover/attachment:text-primary transition-colors" strokeWidth={2} />
+                </span>
+              </div>
+            </button>
           </div>
         )}
 
@@ -295,46 +478,41 @@ const ComplaintCard = ({
           </div>
         )}
 
-        <div className={footerClassName}>
-          <div className="flex items-center gap-4">
-            {footerLeft === "added-date" && (
-              <span className="text-xs font-normal text-muted-foreground">
-                Додано {formatDate(p.createdAt)}
-              </span>
-            )}
-            {footerLeft === "id" && (
-              <span className="text-xs text-muted-foreground font-normal">ID: {p.id}</span>
-            )}
-            {commentsSide === "left" && commentButton}
-          </div>
+        <div className={cn("flex flex-wrap items-center justify-between pt-3 gap-2", footerClassName)}>
+          {hasFooterActions && (
+            <div className="flex flex-wrap gap-2 items-center">
+              {commentsSide === "left" && commentButton}
+              {commentsSide === "right" && commentButton}
+              {showResidentActions && (
+                <ComplaintResidentActions
+                  complaint={p}
+                  onChanged={() => onResidentChange?.()}
+                  size="xs"
+                />
+              )}
+              {showDelete && isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => onDelete?.(p.id)}
+                  className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
+                >
+                  <Trash2 className="size-3.5" strokeWidth={2} />
+                </Button>
+              )}
+              {showAdminActions && (
+                <ComplaintAdminActions
+                  complaint={p}
+                  onPatch={(body) => onAdminPatch?.(p.id, body)}
+                  onDelete={() => onAdminDelete?.(p.id)}
+                />
+              )}
+            </div>
+          )}
 
-          <div className="flex flex-wrap gap-2 items-center">
-            {commentsSide === "right" && commentButton}
-            {showResidentActions && (
-              <ComplaintResidentActions
-                complaint={p}
-                onChanged={() => onResidentChange?.()}
-                size="xs"
-              />
-            )}
-            {showDelete && (
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => onDelete?.(p.id)}
-                className={`${ERROR_TEXT} border ${ERROR_BORDER} ${ERROR_BG_HOVER} transition-colors`}
-              >
-                <Trash2 className="size-3.5" strokeWidth={2} />
-              </Button>
-            )}
-            {showAdminActions && (
-              <ComplaintAdminActions
-                complaint={p}
-                onPatch={(body) => onAdminPatch?.(p.id, body)}
-                onDelete={() => onAdminDelete?.(p.id)}
-              />
-            )}
-          </div>
+          <span className="text-xs font-normal text-muted-foreground ml-auto text-right">
+            {metaLine}
+          </span>
         </div>
       </div>
 
@@ -344,6 +522,12 @@ const ComplaintCard = ({
           <div className="p-4">{commentsContent}</div>
         </>
       )}
+
+      {/* Модальне вікно перегляду фото */}
+      <ImagePreviewDialog
+        imageUrl={internalPreviewUrl}
+        onClose={() => setInternalPreviewUrl(null)}
+      />
     </Card>
   );
 };

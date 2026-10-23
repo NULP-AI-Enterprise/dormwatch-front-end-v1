@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { registerUser } from "@/services/problemsApi";
+import { registerUser, fetchInviteInfo } from "@/services/problemsApi";
 import { roleHomeRoute } from "@/lib/complaintUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,25 @@ import PlaceCombobox from "@/components/PlaceCombobox";
 import type { Place } from "@/lib/types";
 import { AuthLayout, ErrorBanner } from "@/components/AuthLayout";
 
+const ALLOWED_INVITE_DOMAINS = [
+  "lpnu.ua",
+  "gmail.com",
+  "ukr.net",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "meta.ua",
+  "i.ua",
+  "email.ua",
+  "proton.me",
+  "protonmail.com",
+  "live.com",
+  "msn.com",
+  "me.com",
+  "mac.com",
+];
+
 // Building is required once buildings exist; on an empty DB (first-user/admin
 // bootstrap there is nothing to pick) it stays optional — mirrors the server-side
 // guard in RegisterSerializer.validate().
@@ -39,11 +58,22 @@ const makeRegisterSchema = (buildingRequired: boolean, hasInvite: boolean) => z.
   first_name: z.string().min(1, "Ім'я обов'язкове"),
   last_name: z.string().min(1, "Прізвище обов'язкове"),
   email: z.string().min(1, "Email обов'язковий").email("Невірний формат email").superRefine((val, ctx) => {
-    if (!hasInvite && !val.endsWith("@lpnu.ua")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Дозволені тільки домени @lpnu.ua",
-      });
+    const domain = val.includes("@") ? val.split("@").pop()?.toLowerCase() || "" : "";
+    if (!hasInvite) {
+      if (domain !== "lpnu.ua" && !domain.endsWith(".lpnu.ua")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Дозволені тільки домени @lpnu.ua",
+        });
+      }
+    } else {
+      const isValid = ALLOWED_INVITE_DOMAINS.includes(domain) || domain.endsWith(".lpnu.ua");
+      if (!isValid) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Поштовий домен @${domain} не підтримується. Перевірте правильність написання (наприклад, @gmail.com, @ukr.net, @lpnu.ua).`,
+        });
+      }
     }
   }),
   password: z.string().min(8, "Пароль має бути щонайменше 8 символів"),
@@ -92,6 +122,31 @@ function RegisterForm() {
 
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get("invite");
+  const roleParam = searchParams.get("role");
+
+  const [inviteRole, setInviteRole] = useState<string | null>(
+    roleParam ? roleParam.toLowerCase() : null
+  );
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    fetchInviteInfo(inviteToken)
+      .then((res: any) => {
+        if (res?.role) {
+          setInviteRole(String(res.role).toLowerCase());
+        }
+      })
+      .catch((err: any) => {
+        try {
+          const parsed = JSON.parse(err.message);
+          setError(parsed.detail || "Посилання-запрошення недійсне або вже використане");
+        } catch {
+          setError(err.message || "Посилання-запрошення недійсне або вже використане");
+        }
+      });
+  }, [inviteToken]);
+
+  const isWorker = inviteRole === "worker" || inviteRole === "працівник";
 
   const registerSchema = useMemo(
     () => makeRegisterSchema(buildings.length > 0 && !inviteToken, !!inviteToken),
@@ -133,10 +188,6 @@ function RegisterForm() {
       window.dispatchEvent(new Event("profileUpdated"));
       navigate(roleHomeRoute(result.role), { replace: true });
     } catch (err: any) {
-      if (err.requiresVerification) {
-        navigate(`/auth?tab=verify&email=${encodeURIComponent(err.email)}`);
-        return;
-      }
       let msg = "Не вдалося зареєструватися. Перевірте дані й спробуйте ще раз.";
       if (err instanceof Error) {
         try {
@@ -165,7 +216,11 @@ function RegisterForm() {
 
   return (
     <AuthLayout
-      heading={inviteToken ? "Реєстрація за запрошенням" : "Реєстрація"}
+      heading={
+        inviteToken
+          ? `Реєстрація за запрошенням: ${isWorker ? "Працівник" : "Адміністратор"}`
+          : "Реєстрація"
+      }
       subtitle={
         inviteToken
           ? "Створіть свій обліковий запис для доступу до системи за запрошенням."
@@ -216,11 +271,11 @@ function RegisterForm() {
                     <FormControl>
                       <Input type="email" placeholder={inviteToken ? "ваш.email@example.com" : "student@lpnu.ua"} {...field} />
                     </FormControl>
-                    <FormDescription>
-                      {inviteToken
-                        ? "Реєстрація за запрошенням — підійде будь-яка електронна пошта"
-                        : "Дозволені домени: @lpnu.ua"}
-                    </FormDescription>
+                    {!inviteToken && (
+                      <FormDescription>
+                        Дозволені домени: @lpnu.ua
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

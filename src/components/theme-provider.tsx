@@ -16,50 +16,59 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void;
 };
 
-const DEFAULT_THEME = "dark";
 const THEME_STORAGE_KEY = "dormwatch-theme";
-const THEMES: Theme[] = ["dark", "light", "system"];
 
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
-function readStoredTheme(storageKey: string, fallback: Theme): Theme {
-  const stored = localStorage.getItem(storageKey) as Theme | null;
-  return stored && THEMES.includes(stored) ? stored : fallback;
+function getSystemTheme(): ResolvedTheme {
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+  return "light";
+}
+
+function readStoredTheme(storageKey: string, fallback?: Theme): Theme {
+  const stored = localStorage.getItem(storageKey);
+  if (stored === "dark" || stored === "light" || stored === "system") {
+    return stored;
+  }
+  if (fallback === "dark" || fallback === "light" || fallback === "system") {
+    return fallback;
+  }
+  return "system";
 }
 
 function applyTheme(theme: Theme): ResolvedTheme {
   const root = window.document.documentElement;
-  const resolved: ResolvedTheme =
-    theme === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme;
   root.classList.remove("light", "dark");
+  const resolved = theme === "system" ? getSystemTheme() : theme;
   root.classList.add(resolved);
   return resolved;
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme = DEFAULT_THEME,
+  defaultTheme = "system",
   storageKey = THEME_STORAGE_KEY,
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => readStoredTheme(storageKey, defaultTheme));
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(defaultTheme === "light" ? "light" : "dark");
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
+    theme === "system" ? getSystemTheme() : theme
+  );
 
   useEffect(() => {
     const resolved = applyTheme(theme);
     setResolvedTheme(resolved);
 
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystemChange = () => {
-      if (theme === "system") {
-        setResolvedTheme(applyTheme("system"));
-      }
-    };
-    mql.addEventListener("change", onSystemChange);
-    return () => mql.removeEventListener("change", onSystemChange);
+    if (theme === "system") {
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const listener = () => {
+        const next = applyTheme("system");
+        setResolvedTheme(next);
+      };
+      media.addEventListener("change", listener);
+      return () => media.removeEventListener("change", listener);
+    }
   }, [theme]);
 
   const value: ThemeProviderState = {

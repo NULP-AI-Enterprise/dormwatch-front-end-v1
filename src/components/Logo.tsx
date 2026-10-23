@@ -6,11 +6,12 @@ interface LogoProps {
   /** When set, the logo is a router link to this path. */
   to?: string;
   className?: string;
+  onClick?: () => void;
 }
 
 // The DormWatch brand mark: Building03 icon + wordmark, primary color, bold.
 // Shared by the student nav, admin sidebar, and landing-page header.
-const Logo = ({ to, className }: LogoProps) => {
+const Logo = ({ to, className, onClick }: LogoProps) => {
   const content = (
     <>
       <Building2 className="size-6" strokeWidth={1.5} />
@@ -26,13 +27,13 @@ const Logo = ({ to, className }: LogoProps) => {
 
   if (to) {
     return (
-      <Link to={to} className={baseClass}>
+      <Link to={to} onClick={onClick} className={baseClass}>
         {content}
       </Link>
     );
   }
 
-  return <div className={baseClass}>{content}</div>;
+  return <div onClick={onClick} className={baseClass}>{content}</div>;
 };
 
 export default Logo;

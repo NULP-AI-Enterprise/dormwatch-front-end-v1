@@ -1,56 +1,34 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, ClipboardList, ChevronDown, Settings, Megaphone, User, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { LayoutDashboard, ClipboardList, Settings, Megaphone, Coins } from "lucide-react";
 import React, { type ReactNode, useState } from "react";
-import { useUser } from "@/context/UserContext";
 import { SELECTED } from "@/lib/theme";
-import { SettingsModal } from "@/components/SettingsModal";
 import { AdminHeaderProvider } from "@/components/AdminHeaderContext";
-import { AdminGlobalActions } from "@/components/AdminGlobalActions";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminExportButton, AdminNotificationBell } from "@/components/AdminGlobalActions";
 import Logo from "@/components/Logo";
-import UserAvatar from "@/components/UserAvatar";
-import { logoutUser } from "@/services/problemsApi";
+import UserNavProfile from "@/components/UserNavProfile";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Інформаційна панель",
-  "/admin/residents": "Мешканці",
-  "/admin/complaints": "Звернення",
+  "/admin/complaints": "Всі звернення",
   "/admin/announcements": "Оголошення",
+  "/admin/resources": "Ресурси",
   "/admin/settings": "Налаштування",
 };
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const { user } = useUser();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   // Page-specific ("semantic") actions pushed up into the header via
   // useAdminHeaderActions; the global chrome (export + bell) is always present.
   const [pageActions, setPageActions] = useState<ReactNode>(null);
 
-  const handleLogout = async () => {
-    await logoutUser();
-    window.location.href = "/auth";
-  };
-
-  // Real office from the admin's profile; empty when they have no place assigned
-  // (no invented "Головний офіс").
-  const placeName = user?.place?.place_name || "";
   const title = ROUTE_TITLES[currentPath] || "";
 
   const navItems: Array<{ name: string; path: string; icon: React.ReactElement; disabled?: boolean }> = [
     { name: "Загальний огляд", path: "/admin", icon: <LayoutDashboard className="size-5" strokeWidth={1.5} /> },
-    { name: "Мешканці", path: "/admin/residents", icon: <Users className="size-5" strokeWidth={1.5} /> },
-    { name: "Звернення", path: "/admin/complaints", icon: <ClipboardList className="size-5" strokeWidth={1.5} /> },
+    { name: "Всі звернення", path: "/admin/complaints", icon: <ClipboardList className="size-5" strokeWidth={1.5} /> },
     { name: "Оголошення", path: "/admin/announcements", icon: <Megaphone className="size-5" strokeWidth={1.5} /> },
+    { name: "Ресурси", path: "/admin/resources", icon: <Coins className="size-5" strokeWidth={1.5} /> },
     { name: "Налаштування", path: "/admin/settings", icon: <Settings className="size-5" strokeWidth={1.5} /> },
   ];
 
@@ -92,36 +70,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             );
           })}
         </nav>
-
-        <div className="p-4 border-t border-border">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto w-full justify-start gap-3 px-4 py-3 text-left hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring/50">
-                <UserAvatar user={user} size="md" fallback="AD" />
-                <div className="flex flex-col overflow-hidden">
-                  <span className="text-sm font-bold text-foreground truncate">
-                    {user ? `${user.first_name} ${user.last_name}` : "Адмін"}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-normal truncate">
-                    {placeName}
-                  </span>
-                </div>
-                <ChevronDown className="size-4 ml-auto shrink-0 text-muted-foreground" strokeWidth={1.5} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
-                <User className="size-4" strokeWidth={1.5} />
-                <span>Профіль</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} variant="destructive" className="cursor-pointer">
-                <LogOut className="size-4" strokeWidth={1.5} />
-                <span>Вийти</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0">
@@ -129,16 +77,16 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           <div className="flex items-center gap-3">
             {pageActions}
-            <ThemeToggle />
-            <AdminGlobalActions />
+            <AdminExportButton />
+            <div className="h-6 w-px bg-border hidden sm:block" />
+            <UserNavProfile />
+            <AdminNotificationBell />
           </div>
         </header>
         <AdminHeaderProvider setActions={setPageActions}>
           {children}
         </AdminHeaderProvider>
       </main>
-
-      <SettingsModal open={isProfileOpen} onOpenChange={setIsProfileOpen} />
     </div>
   );
 };

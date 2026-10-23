@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
 import CommentSection from "@/components/CommentSection";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
   Combobox,
   ComboboxContent,
@@ -22,36 +20,31 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
+import ImagePreviewDialog from "@/components/ImagePreviewDialog";
 import { resolveImageUrl } from "@/services/imageUtils";
 import {
   updateComplaintAdmin,
   deleteAdminComplaint,
-  updateComplaintPriority,
-  updateComplaintAssignment,
   fetchCategories,
-  fetchWorkers,
   fetchJson,
 } from "@/services/problemsApi";
 import {
-  priorityBadgeClass,
   priorityLabel,
   PRIORITY_OPTIONS,
-  TERMINAL_STATUSES,
+  isBlockComplaint,
+  cleanComplaintDescription,
 } from "@/lib/complaintUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useUser } from "@/context/UserContext";
+import ProgressStepper from "@/components/ProgressStepper";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
 import ComplaintResidentActions from "@/components/ComplaintResidentActions";
+import ComplaintResourcesSection from "@/components/ComplaintResourcesSection";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
-import { X } from "lucide-react";
-import type { Complaint, CategoryOption, Worker } from "@/lib/types";
+import { Home, Users, ZoomIn, Pencil, Phone } from "lucide-react";
+import type { Complaint, CategoryOption } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
   complaint: Complaint;
@@ -71,7 +64,6 @@ const ComplaintSidePanel = ({
   isAdmin,
 }: ComplaintSidePanelProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const isPrioritySelectOpen = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -80,19 +72,11 @@ const ComplaintSidePanel = ({
   const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [workers, setWorkers] = useState<Worker[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setCategories([{ category_id: 0, name: "Помилка завантаження" }]));
   }, []);
-
-  // Assignment targets for the admin panel (worker + deadline controls).
-  useEffect(() => {
-    if (isAdmin && open) {
-      fetchWorkers().then(setWorkers).catch(() => setWorkers([]));
-    }
-  }, [isAdmin, open]);
 
   useEffect(() => {
     if (!editPhotoFile) {
@@ -107,7 +91,7 @@ const ComplaintSidePanel = ({
   useEffect(() => {
     if (!complaint) return;
     setEditTitle(complaint.title);
-    setEditDescription(complaint.description);
+    setEditDescription(cleanComplaintDescription(complaint.description));
     setEditCategory(complaint.category ?? "");
     setEditPriority(complaint.priority ?? "");
     setEditPhotoFile(null);
@@ -116,14 +100,12 @@ const ComplaintSidePanel = ({
 
   if (!complaint) return null;
 
-  const isOwner = String(currentUserId) === String(complaint.user_id);
-  // Only the complaint owner may edit content, and only while pending. Admins
-  // run the moderation workflow (status/priority/delete/tickets) but must not
-  // rewrite a resident's report — enforced here and on the backend.
+  const { user: currentUser } = useUser();
+  const isOwner = String(currentUserId) === String(complaint.user_id) || (currentUser?.user != null && complaint.user_id === currentUser.user);
+  const isWorker = currentUser?.role === "worker" || (currentUser as any)?.worker != null;
+  const canViewReasons = isOwner || isAdmin || isWorker;
   const canEdit = isOwner && complaint.status === "pending";
 
-  // Admin triage cluster: combined moves (approve+assign, reject with reason,
-  // finalize on behalf) travel as one PATCH body.
   const handleAdminPatch = async (body: Record<string, unknown>) => {
     setError(null);
     try {
@@ -133,46 +115,6 @@ const ComplaintSidePanel = ({
     } catch (err) {
       console.warn("Failed to update complaint", err);
       throw err;
-    }
-  };
-
-  // The owner accepts or rejects finished work from the review state; those
-  // controls land with the resident stepper work (step 04).
-  const handlePriorityChange = async (newPriority: string) => {
-    setEditPriority(newPriority);
-    try {
-      await updateComplaintPriority(complaint.id, newPriority);
-      window.dispatchEvent(new CustomEvent("complaintUpdated"));
-      onStatusChange();
-    } catch (err) {
-      setError("Не вдалося змінити пріоритет. Спробуйте ще раз.");
-      console.warn('Failed to change complaint priority', err);
-    }
-  };
-
-  const handleWorkerChange = async (raw: string) => {
-    try {
-      await updateComplaintAssignment(complaint.id, {
-        workerId: raw === "none" ? null : Number(raw),
-      });
-      window.dispatchEvent(new CustomEvent("complaintUpdated"));
-      onStatusChange();
-    } catch (err) {
-      setError("Не вдалося призначити виконавця. Спробуйте ще раз.");
-      console.warn('Failed to assign worker', err);
-    }
-  };
-
-  const handleDeadlineChange = async (date?: Date) => {
-    try {
-      await updateComplaintAssignment(complaint.id, {
-        deadline: date ? date.toISOString() : null,
-      });
-      window.dispatchEvent(new CustomEvent("complaintUpdated"));
-      onStatusChange();
-    } catch (err) {
-      setError("Не вдалося зберегти дедлайн. Спробуйте ще раз.");
-      console.warn('Failed to save deadline', err);
     }
   };
 
@@ -191,7 +133,9 @@ const ComplaintSidePanel = ({
   const handleSave = async () => {
     const formData = new FormData();
     formData.append("title", editTitle);
-    formData.append("description", editDescription);
+    const isBlock = isBlockComplaint(complaint.description);
+    const finalDesc = isBlock ? `${editDescription.trim()}\n\n[Блок]` : editDescription.trim();
+    formData.append("description", finalDesc);
     // Only send category/priority when actually set, so an empty (unknown)
     // value is never persisted as a fabricated category/priority.
     if (editCategory) formData.append("category_name", editCategory);
@@ -216,7 +160,7 @@ const ComplaintSidePanel = ({
 
   const handleCancel = () => {
     setEditTitle(complaint.title);
-    setEditDescription(complaint.description);
+    setEditDescription(cleanComplaintDescription(complaint.description));
     setEditCategory(complaint.category ?? "");
     setEditPriority(complaint.priority ?? "");
     setEditPhotoFile(null);
@@ -227,30 +171,13 @@ const ComplaintSidePanel = ({
 
   return (
     <>
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className={`${isAdmin ? "max-w-[90vw] sm:max-w-[90vw]" : "max-w-4xl sm:max-w-4xl"} bg-transparent border-none shadow-none p-0 flex justify-center items-center`} showCloseButton={false}>
-          <DialogTitle className="sr-only">Image preview</DialogTitle>
-          {previewImage && (
-            <img
-              src={previewImage}
-              className="w-full h-auto max-h-[90vh] object-contain"
-              alt="Full size"
-            />
-          )}
-          <DialogClose className="absolute top-4 right-4 text-foreground hover:text-muted-foreground">
-            <X className="size-6" strokeWidth={2} />
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
+      <ImagePreviewDialog
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
 
-    <Sheet 
-      open={open} 
-      onOpenChange={(newOpen) => {
-        if (!newOpen && isPrioritySelectOpen.current) return;
-        onOpenChange(newOpen);
-      }}
-    >
-      <SheetContent>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="overflow-x-hidden w-full max-w-full sm:max-w-md md:max-w-xl">
         <SheetHeader>
           <SheetTitle>Деталі звернення</SheetTitle>
           <SheetDescription>Інформація про звернення та керування статусом</SheetDescription>
@@ -262,10 +189,18 @@ const ComplaintSidePanel = ({
               <div className="flex flex-wrap gap-2">
                 <StatusBadge status={complaint.status} />
                 <OverdueBadge complaint={complaint} />
+                {complaint.isRework && (
+                  <Badge variant="outline" className="bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                    Повторне опрацювання
+                  </Badge>
+                )}
+                {complaint.studentPhone && !isAdmin && (
+                  <Badge variant="outline" className="border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400 inline-flex items-center gap-1 font-semibold text-[11px] px-2 py-0.5">
+                    <Phone className="size-3" strokeWidth={2} />
+                    {complaint.studentPhone}
+                  </Badge>
+                )}
               </div>
-              <span className="text-xs font-normal text-muted-foreground">
-                {String(complaint.id) !== "new" && `#${complaint.id}`}
-              </span>
             </div>
             {isEditing ? (
               <Input
@@ -274,14 +209,17 @@ const ComplaintSidePanel = ({
                 placeholder="Назва звернення"
               />
             ) : (
-              <h3 className="text-base font-bold text-foreground mb-1">{complaint.title || "Без назви"}</h3>
+              <h3 className="text-base font-bold text-foreground mb-1 break-words [overflow-wrap:anywhere]">{complaint.title || "Без назви"}</h3>
             )}
-             <p className="text-xs font-normal text-muted-foreground">{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}{complaint.isShared && <span className="ml-0.5">(спільна)</span>}</p>
-            {complaint.followUpOf != null && (
-              <p className="text-xs font-normal text-muted-foreground mt-1">
-                Повторне звернення до №{complaint.followUpOf}
-              </p>
-            )}
+            <p className="text-xs font-normal text-muted-foreground flex flex-wrap items-center">
+              <span>{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}</span>
+              <span className="w-1 h-1 bg-border inline-block mx-1.5" />
+              <span>{isOwner ? "Ви (автор)" : isAdmin ? (complaint.userName || "Автор звернення") : "Автор звернення"}</span>
+            </p>
+          </div>
+
+          <div className="py-2.5 border-y border-border/50">
+            <ProgressStepper status={complaint.status} />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -322,52 +260,7 @@ const ComplaintSidePanel = ({
                 <span className="text-xs text-muted-foreground font-normal">
                   {categoryLabel}
                 </span>
-                <span className="w-1 h-1 bg-border" />
-                {isAdmin && !TERMINAL_STATUSES.includes(complaint.status) ? (
-                  <Select
-                    value={complaint.priority ?? undefined}
-                    onValueChange={handlePriorityChange}
-                    onOpenChange={(isOpen) => {
-                      if (!isOpen) {
-                        setTimeout(() => { isPrioritySelectOpen.current = false; }, 150);
-                      } else {
-                        isPrioritySelectOpen.current = true;
-                      }
-                    }}
-                  >
-                    {/* Real control: an honest SelectTrigger with chevron and
-                        normal padding. The trigger is the same `PriorityBadge`
-                        color hint (design-system §3 weight rules keep the
-                        label `font-semibold`) so the field still reads as a
-                        priority, but its affordance matches the worker's
-                        worker select directly below. */}
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Пріоритет" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRIORITY_OPTIONS.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {/* `bg-transparent` enforces the design system: the
-                              neutral priority badge paints `bg-card`, and the
-                              select item's `focus:**:text-accent-foreground`
-                              turns the label near-white on hover — an opaque
-                              badge background would render it invisible. */}
-                          <span
-                            className={cn(
-                              "px-1.5 py-0.5 text-xs font-semibold border",
-                              priorityBadgeClass(p),
-                              "bg-transparent"
-                            )}
-                          >
-                            {priorityLabel(p)}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <PriorityBadge priority={complaint.priority} />
-                )}
+                <PriorityBadge priority={complaint.priority} />
                 {complaint.createdAt && (
                   <span className="text-xs text-muted-foreground font-normal">
                     {formatDate(complaint.createdAt)}
@@ -385,24 +278,43 @@ const ComplaintSidePanel = ({
               className="min-h-24 resize-none"
             />
           ) : (
-            <p className="text-sm text-foreground leading-relaxed break-words whitespace-pre-wrap">{complaint.description || "—"}</p>
-          )}
-
-          {complaint.rejectionReason && (complaint.status === "rejected" || complaint.status === "denied") && (
-            <div className="p-3 bg-destructive/10 border border-destructive/25 rounded-lg text-xs">
-              <span className="font-bold text-destructive block mb-1">Причина відхилення:</span>
-              <p className="text-foreground leading-relaxed whitespace-pre-wrap">{complaint.rejectionReason}</p>
+            <div className="space-y-3">
+              {cleanComplaintDescription(complaint.description) && (
+                <p className="text-sm text-foreground leading-relaxed break-all [overflow-wrap:anywhere] whitespace-pre-wrap">
+                  {cleanComplaintDescription(complaint.description)}
+                </p>
+              )}
+              {(isBlockComplaint(complaint.description) || complaint.isShared) && (
+                <div className="flex flex-wrap gap-2 items-center">
+                  {isBlockComplaint(complaint.description) && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/25">
+                      <Home className="size-4 shrink-0 text-blue-500" strokeWidth={2} />
+                      <span>Звернення стосується блоку</span>
+                    </div>
+                  )}
+                  {complaint.isShared && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                      <Users className="size-4 shrink-0 text-amber-500" strokeWidth={2} />
+                      <span>Звернення стосується спільного простору</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {!cleanComplaintDescription(complaint.description) && !isBlockComplaint(complaint.description) && !complaint.isShared && (
+                <p className="text-sm text-muted-foreground leading-relaxed">—</p>
+              )}
             </div>
           )}
+
 
           {isEditing ? (
             <div className="space-y-2">
               {(editPhotoPreview || complaint.photoUrl) && (
-                <div className="w-full h-32 overflow-hidden border border-border">
+                <div className="w-full max-h-56 overflow-hidden border border-border bg-muted/20 flex items-center justify-center">
                   <img
-                    src={editPhotoPreview || resolveImageUrl(complaint.thumbnail || complaint.photoUrl)}
+                    src={editPhotoPreview || resolveImageUrl(complaint.thumbnail || complaint.photoUrl) || undefined}
                     alt=""
-                    className="w-full h-full object-cover"
+                    className="max-h-56 w-auto max-w-full object-contain mx-auto"
                   />
                 </div>
               )}
@@ -414,20 +326,24 @@ const ComplaintSidePanel = ({
           ) : (
             complaint.photoUrl && (
               <div 
-                className="w-full h-44 overflow-hidden border border-border cursor-zoom-in"
+                className="relative w-full max-h-80 overflow-hidden border border-border bg-muted/20 dark:bg-black/30 flex items-center justify-center group/panelphoto cursor-zoom-in"
                 onClick={() => setPreviewImage(resolveImageUrl(complaint.photoUrl as string))}
               >
                 <img
-                  src={resolveImageUrl(complaint.thumbnail || complaint.photoUrl)}
-                  alt=""
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                  src={resolveImageUrl(complaint.photoUrl || complaint.thumbnail) || undefined}
+                  alt={complaint.title || "Фото звернення"}
+                  className="max-h-80 w-auto max-w-full object-contain mx-auto group-hover/panelphoto:scale-[1.02] transition-transform duration-300"
                 />
+                <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 bg-background/90 backdrop-blur-sm border border-border text-xs font-medium text-foreground flex items-center gap-1.5 opacity-80 group-hover/panelphoto:opacity-100 transition-opacity pointer-events-none shadow-sm">
+                  <ZoomIn className="size-3.5 text-muted-foreground" strokeWidth={2} />
+                  <span>Збільшити фото</span>
+                </div>
               </div>
             )
           )}
 
           {error && (
-            <p className="text-xs leading-relaxed text-destructive font-semibold">{error}</p>
+            <p className="text-xs leading-relaxed text-sky-500 dark:text-sky-400 font-semibold">{error}</p>
           )}
 
           {isEditing && (
@@ -437,36 +353,73 @@ const ComplaintSidePanel = ({
             </div>
           )}
 
-          {canEdit && !isEditing && (
-            <Button variant="ghost" onClick={() => { setError(null); setIsEditing(true); }}>
-              Редагувати
-            </Button>
-          )}
-
-          {/* Reason read surfaces: the marks a rejection leaves behind must be
-              readable where the state is visible (full-loop rule). */}
-          {complaint.status === "rejected" && complaint.rejectionReason && (
-            <div className="border border-border bg-muted/30 p-3">
-              <p className="text-xs font-semibold text-foreground mb-1">Причина відхилення</p>
+          {/* Reason read surfaces: only visible to owner, admin, or worker */}
+          {canViewReasons && complaint.status === "rejected" && complaint.rejectionReason && (
+            <div className="border border-sky-500/30 bg-sky-500/10 p-3">
+              <p className="text-xs font-semibold text-sky-600 dark:text-sky-400 mb-1">Причина відхилення</p>
               <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
                 {complaint.rejectionReason}
               </p>
             </div>
           )}
-          {complaint.status === "not_accepted" && complaint.reworkReason && (
-            <div className="border border-border bg-muted/30 p-3">
-              <p className="text-xs font-semibold text-destructive mb-1">Причина неприйняття</p>
+          {canViewReasons && (complaint.status === "not_accepted" || complaint.isRework) && complaint.reworkReason && (
+            <div className="border border-red-500/30 bg-red-500/10 p-3 space-y-2">
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">Причина неприйняття (повторне опрацювання)</p>
               <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-all">
                 {complaint.reworkReason}
               </p>
+              {complaint.reworkPhoto && (
+                <div
+                  className="mt-2 relative inline-block cursor-zoom-in border border-border overflow-hidden bg-background"
+                  onClick={() => setPreviewImage(resolveImageUrl(complaint.reworkPhoto as string))}
+                >
+                  <img
+                    src={resolveImageUrl(complaint.reworkPhoto as string) || undefined}
+                    alt="Фото від мешканця"
+                    className="max-h-36 w-auto object-contain"
+                  />
+                  <div className="text-[10px] text-muted-foreground p-1 text-center bg-muted/40">
+                    Фото від мешканця (натисніть для збільшення)
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {complaint.completionPhoto && (
+            <div className="border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-2">
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Фото виконаної роботи (від працівника)</p>
+              <div
+                className="relative inline-block cursor-zoom-in border border-border overflow-hidden bg-background"
+                onClick={() => setPreviewImage(resolveImageUrl(complaint.completionPhoto as string))}
+              >
+                <img
+                  src={resolveImageUrl(complaint.completionPhoto as string) || undefined}
+                  alt="Фото виконаної роботи"
+                  className="max-h-36 w-auto object-contain"
+                />
+                <div className="text-[10px] text-muted-foreground p-1 text-center bg-muted/40">
+                  Фото виконання (натисніть для збільшення)
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Owner lifecycle: accept/reject finished work, withdraw while
-              Очікує, re-file from any closed state. */}
-          {isOwner && !isEditing && (
+          {/* Owner lifecycle & actions: edit, cancel, accept, etc. */}
+          {!isEditing && (canEdit || isOwner) && (
             <div className="flex flex-wrap gap-2 items-center">
-              <ComplaintResidentActions complaint={complaint} onChanged={onStatusChange} />
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  onClick={() => { setError(null); setIsEditing(true); }}
+                  className="cursor-pointer"
+                >
+                  <Pencil className="size-3 mr-1" strokeWidth={2} />
+                  Редагувати
+                </Button>
+              )}
+              {isOwner && (
+                <ComplaintResidentActions complaint={complaint} onChanged={onStatusChange} />
+              )}
             </div>
           )}
 
@@ -483,44 +436,22 @@ const ComplaintSidePanel = ({
                   />
                 </div>
 
-                {/* Assignment lives on the complaint itself now — the same
-                    PATCH endpoint backs the print/export surfaces. */}
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">Виконавець</label>
-                    <Select
-                      value={complaint.worker ? String(complaint.worker.worker_id) : "none"}
-                      onValueChange={handleWorkerChange}
-                    >
-                      <SelectTrigger className="w-full h-8 text-xs">
-                        <SelectValue placeholder="Не призначено" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Не призначено</SelectItem>
-                        {workers.map((w) => (
-                          <SelectItem key={w.worker_id} value={String(w.worker_id)}>
-                            <span className="flex items-center gap-1.5">
-                              {w.full_name}
-                              {w.has_account && (
-                                <Badge variant="secondary" className="px-1 py-0 text-xs leading-none h-4">
-                                  доступ
-                                </Badge>
-                              )}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {(complaint.worker || complaint.deadline) && (
+                  <div className="grid grid-cols-2 gap-2 text-xs border border-border/60 bg-muted/20 p-2.5">
+                    {complaint.worker && (
+                      <div>
+                        <span className="text-muted-foreground block text-[11px]">Виконавець:</span>
+                        <span className="font-semibold text-foreground">{complaint.worker.full_name}</span>
+                      </div>
+                    )}
+                    {complaint.deadline && (
+                      <div>
+                        <span className="text-muted-foreground block text-[11px]">Дедлайн:</span>
+                        <span className="font-semibold text-foreground">{formatDate(complaint.deadline)}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold text-foreground mb-1 block">Дедлайн</label>
-                    <DatePicker
-                      date={complaint.deadline ? new Date(complaint.deadline) : undefined}
-                      setDate={(d) => handleDeadlineChange(d ?? undefined)}
-                      placeholder="Не визначено"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             </>
           )}
@@ -531,6 +462,10 @@ const ComplaintSidePanel = ({
               unusable list + input. */}
           {(isOwner || isAdmin) && (
             <>
+              <Separator />
+
+              <ComplaintResourcesSection complaintId={complaint.id} isAdmin={isAdmin} />
+
               <Separator dashed />
 
               <CommentSection complaintId={complaint.id} currentUserId={currentUserId} isAdmin={isAdmin} complaintAuthorId={complaint.user_id} />

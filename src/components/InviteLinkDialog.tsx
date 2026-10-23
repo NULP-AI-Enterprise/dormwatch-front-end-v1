@@ -63,7 +63,7 @@ export function InviteLinkDialog({
         place_id: null,
       };
       const res = await generateInviteLink(payload);
-      const url = `${window.location.origin}/auth?tab=register&invite=${res.invite_token}`;
+      const url = `${window.location.origin}/auth?tab=register&invite=${res.invite_token}&role=${selectedRole}`;
       setInviteUrl(url);
     } catch {
       setError("Не вдалося згенерувати посилання");
@@ -85,11 +85,16 @@ export function InviteLinkDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary font-bold text-lg mb-1">
             <Link className="size-5" strokeWidth={1.5} />
-            <DialogTitle>Запросити адміністратора</DialogTitle>
+            <DialogTitle>
+              {selectedRole === "worker"
+                ? "Запросити працівника"
+                : "Запросити адміністратора"}
+            </DialogTitle>
           </div>
           <DialogDescription>
-            Одноразове посилання-запрошення. Користувач, який перейде за ним,
-            автоматично зареєструється як адміністратор.
+            {selectedRole === "worker"
+              ? "Одноразове посилання-запрошення. Користувач, який перейде за ним, автоматично зареєструється як працівник."
+              : "Одноразове посилання-запрошення. Користувач, який перейде за ним, автоматично зареєструється як адміністратор."}
           </DialogDescription>
         </DialogHeader>
 

@@ -14,7 +14,6 @@ import {
   deleteWorker,
   fetchRoles,
   createWorkerInvite,
-  unlinkWorker,
   apiErrorText,
 } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
@@ -768,12 +767,6 @@ function WorkersTab() {
   const [pending, setPending] = useState<Worker | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-   // Account unlinking: sever the Worker→account bond. The live link check on
-   // the worker endpoints then 403s at the next request instead of letting the
-   // old refresh cookie ride for up to 7 days (call #21).
-   const [unlinking, setUnlinking] = useState<Worker | null>(null);
-   const [unlinkingBusy, setUnlinkingBusy] = useState(false);
-
    // Account provisioning: one dialog per worker — mint the token, then hand
    // over the redemption link by email or printed QR.
   const [provisioning, setProvisioning] = useState<Worker | null>(null);
@@ -871,22 +864,8 @@ function WorkersTab() {
     }
   };
 
-   const confirmUnlink = async () => {
-     if (!unlinking) return;
-     setUnlinkingBusy(true);
-     try {
-       await unlinkWorker(unlinking.worker_id);
-       await load();
-       setUnlinking(null);
-     } catch (err) {
-       console.warn("Failed to unlink worker", err);
-     } finally {
-       setUnlinkingBusy(false);
-     }
-   };
-
    const inviteUrl = inviteToken
-    ? `${window.location.origin}/auth?tab=register&invite=${inviteToken}`
+    ? `${window.location.origin}/auth?tab=register&invite=${inviteToken}&role=worker`
     : "";
 
   const copyInvite = async () => {
@@ -912,9 +891,9 @@ function WorkersTab() {
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Компанія</Label>
+            <Label className="text-xs">Спеціалізація</Label>
             <Input
-              placeholder="Напр. АкваСервіс"
+              placeholder="Напр. Слюсар"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
               className="h-8 text-xs"
@@ -961,20 +940,9 @@ function WorkersTab() {
                   )}
                 </div>
                 {w.has_account ? (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge variant="secondary" className="shrink-0">
-                      має доступ до панелі
-                    </Badge>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => setUnlinking(w)}
-                      aria-label="Відкликати доступ"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <X className="size-4" strokeWidth={2} />
-                    </Button>
-                  </div>
+                  <Badge variant="secondary" className="shrink-0">
+                    має доступ до панелі
+                  </Badge>
                 ) : (
                   <Button
                     size="sm"
@@ -1025,8 +993,9 @@ function WorkersTab() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Компанія</Label>
+              <Label className="text-xs">Спеціалізація</Label>
               <Input
+                placeholder="Напр. Слюсар"
                 value={editCompany}
                 onChange={(e) => setEditCompany(e.target.value)}
                 className="h-8 text-xs"
@@ -1138,33 +1107,6 @@ function WorkersTab() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Unlink dialog: sever the account bond — worker endpoints 403 next request */}
-      <AlertDialog open={!!unlinking} onOpenChange={(o) => !o && setUnlinking(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Відкликати доступ — {unlinking?.full_name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Працівник втратить доступ до панелі — при наступному запиті йому
-              буде відмовлено. Обліковий запис залишиться, доступ можна
-              відновити новим запрошенням.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={unlinkingBusy}>Скасувати</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={unlinkingBusy}
-              onClick={(e) => {
-                e.preventDefault();
-                confirmUnlink();
-              }}
-            >
-              Відкликати
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }
