@@ -1,5 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { isUrgentPriority, priorityBreakdown } from "@/lib/complaintUtils";
+import { isUrgentPriority, priorityBreakdown, statusChartColor } from "@/lib/complaintUtils";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -294,37 +294,37 @@ export const AdminAnalyticsSheet = ({
 
             <div className="w-full h-3 bg-muted/60 overflow-hidden flex border border-border">
               <div
-                className="bg-foreground h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("resolved"))}
                 style={{ width: `${resolutionRate}%` }}
                 title={`Вирішено: ${resolved}`}
               />
               <div
-                className="bg-foreground/80 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("in_progress"))}
                 style={{ width: `${inProgressRate}%` }}
                 title={`В роботі: ${inProgress}`}
               />
               <div
-                className="bg-foreground/60 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("review"))}
                 style={{ width: `${reviewRate}%` }}
                 title={`На перевірці: ${review}`}
               />
               <div
-                className="bg-foreground/45 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("approved"))}
                 style={{ width: `${approvedRate}%` }}
                 title={`Схвалено: ${approved}`}
               />
               <div
-                className="bg-foreground/30 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("pending"))}
                 style={{ width: `${pendingRate}%` }}
                 title={`Очікують: ${pending}`}
               />
               <div
-                className="bg-foreground/20 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("not_accepted"))}
                 style={{ width: `${notAcceptedRate}%` }}
                 title={`Не прийнято: ${notAccepted}`}
               />
               <div
-                className="bg-slate-500 h-full transition-all duration-500"
+                className={cn("h-full transition-all duration-500", statusChartColor("closed_other"))}
                 style={{ width: `${closedOtherRate}%` }}
                 title={`Відхилено/Скасовано: ${closedOther}`}
               />
@@ -332,49 +332,49 @@ export const AdminAnalyticsSheet = ({
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("resolved"))} />
                 <span className="text-muted-foreground truncate">
                   Вирішено: <span className="font-semibold text-foreground">{resolved}</span> ({resolutionRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground/80 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("in_progress"))} />
                 <span className="text-muted-foreground truncate">
                   В роботі: <span className="font-semibold text-foreground">{inProgress}</span> ({inProgressRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground/60 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("review"))} />
                 <span className="text-muted-foreground truncate">
                   На перевірці: <span className="font-semibold text-foreground">{review}</span> ({reviewRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground/45 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("approved"))} />
                 <span className="text-muted-foreground truncate">
                   Схвалено: <span className="font-semibold text-foreground">{approved}</span> ({approvedRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground/30 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("pending"))} />
                 <span className="text-muted-foreground truncate">
                   Очікують: <span className="font-semibold text-foreground">{pending}</span> ({pendingRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-foreground/20 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("not_accepted"))} />
                 <span className="text-muted-foreground truncate">
                   Не прийнято: <span className="font-semibold text-foreground">{notAccepted}</span> ({notAcceptedRate}%)
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
-                <div className="size-2 bg-slate-500 shrink-0" />
+                <div className={cn("size-2 shrink-0", statusChartColor("closed_other"))} />
                 <span className="text-muted-foreground truncate">
                   Інші: <span className="font-semibold text-foreground">{closedOther}</span> ({closedOtherRate}%)
                 </span>

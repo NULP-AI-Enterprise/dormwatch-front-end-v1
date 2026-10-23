@@ -62,6 +62,15 @@ export const statusBadgeClass = (status: string | null | undefined) =>
 export const statusColor = (status: string | null | undefined) =>
   STATUS_COLORS[String(status || "").toLowerCase()] ?? NEUTRAL_COLOR;
 
+// Distribution charts share status semantics, with distinct fills for the two
+// blue stages and a visible neutral review segment.
+export const statusChartColor = (status: string) => {
+  if (status === "in_progress") return "bg-chart-in-progress";
+  if (status === "review") return "bg-muted-foreground";
+  if (status === "closed_other") return "bg-muted-foreground/50";
+  return statusColor(status).fill;
+};
+
 export const PRIORITY_LABELS: Record<string, string> = {
   high: "Високий",
   medium: "Середній",

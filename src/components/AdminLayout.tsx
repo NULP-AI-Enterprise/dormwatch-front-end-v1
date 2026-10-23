@@ -83,7 +83,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
       <main className="flex-1 flex flex-col min-w-0">
         <header className="min-h-20 bg-card flex flex-wrap items-center gap-3 px-4 py-3 lg:px-6 shrink-0 border-b border-border sticky top-0 z-30">
-          <div className="flex w-full min-w-0 flex-none items-center gap-3 lg:w-auto lg:flex-1">
+          <div className="flex w-full min-w-0 flex-none items-center gap-3 lg:min-w-max lg:w-auto lg:flex-1">
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="lg:hidden" aria-label="Відкрити навігацію">
@@ -101,11 +101,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             <h1 className="min-w-0 text-lg sm:text-2xl font-bold text-foreground break-words">{title}</h1>
           </div>
           <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-between gap-2 lg:ml-auto lg:w-auto lg:justify-end">
+            {pageActions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 [&>*]:max-w-full">{pageActions}</div>}
             <AdminExportButton />
-            <UserNavProfile />
+            <UserNavProfile compact={Boolean(pageActions)} />
             <AdminNotificationBell />
           </div>
-          {pageActions && <div className="flex w-full min-w-0 flex-wrap items-center gap-2 [&>*]:max-w-full">{pageActions}</div>}
         </header>
         <AdminHeaderProvider setActions={setPageActions}>
           {children}

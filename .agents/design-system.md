@@ -62,7 +62,10 @@ Palette A (foreground / tinted background):
 
 Use status-*-bg for a badge background and status-* for its foreground.
 Neutral review is an explicit product decision. Withdrawn is neutral.
-Not accepted and rejected use the danger meaning. Role badges stay neutral.
+Not accepted and rejected use the danger meaning.
+Role badges retain distinct identity cues: administrator yellow/amber, worker
+orange, and student blue. RoleBadge owns the mapping; --role-* tokens define
+readable foreground/background pairs in both themes. Unknown roles stay neutral.
 Critical priority may use danger; remaining priorities stay neutral.
 High and critical are both included in the separate urgent filter/count.
 
@@ -81,8 +84,9 @@ Verify measured contrast rather than deriving it from a palette shade number.
 
 Meaningful exceptions to neutral surfaces include selected controls, unread
 notifications, contextual success/error messages, and rework/completion feedback.
-They use semantic tokens and an explicit label. Ordinary charts, role labels,
-location labels, and pipeline progress need no decorative hue spectrum.
+They use semantic tokens and an explicit label. Charts use color to communicate
+status, not a decorative hue spectrum. Role colors communicate the
+administrator/worker/student distinction.
 
 ## 4. Interaction and accessibility
 
@@ -143,8 +147,10 @@ AAA is 44x44. Check width, height, and spacing together.
 
 Toggle/ToggleGroup selected state uses primary fill, primary-foreground and a
 primary boundary. Tabs may use an explicit underline or selected surface.
-Pipeline bars are neutral foreground on muted tracks; an error terminal can
-use danger. The current status label always remains visible.
+Processing-status distribution bars and their legend use shared semantic status
+fills: success green, in-progress blue, approved cyan, pending amber, and
+not-accepted red. Review remains neutral. Shared statusChartColor owns the
+mapping so the chart and legend cannot drift. Counts and labels remain visible.
 
 ## 6. Empty, loading, and error states
 

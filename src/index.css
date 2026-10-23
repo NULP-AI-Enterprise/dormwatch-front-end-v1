@@ -23,6 +23,13 @@
   --color-status-info-bg: var(--status-info-bg);
   --color-status-warning: var(--status-warning);
   --color-status-warning-bg: var(--status-warning-bg);
+  --color-chart-in-progress: var(--chart-in-progress);
+  --color-role-admin: var(--role-admin);
+  --color-role-admin-bg: var(--role-admin-bg);
+  --color-role-worker: var(--role-worker);
+  --color-role-worker-bg: var(--role-worker-bg);
+  --color-role-student: var(--role-student);
+  --color-role-student-bg: var(--role-student-bg);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -52,6 +59,13 @@
 }
 
 :root {
+  --chart-in-progress: #2563eb;
+  --role-admin: #854d0e;
+  --role-admin-bg: #fefce8;
+  --role-worker: #9a3412;
+  --role-worker-bg: #fff7ed;
+  --role-student: #1e40af;
+  --role-student-bg: #eff6ff;
   --link: #075985;
   --status-warning: #92400e;
   --status-warning-bg: #fffbeb;
@@ -98,6 +112,13 @@
 }
 
 .dark {
+  --chart-in-progress: #60a5fa;
+  --role-admin: #fde047;
+  --role-admin-bg: #30291b;
+  --role-worker: #fdba74;
+  --role-worker-bg: #342319;
+  --role-student: #93c5fd;
+  --role-student-bg: #17223b;
   --link: #7dd3fc;
   --status-warning: #fcd34d;
   --status-warning-bg: #30271b;
