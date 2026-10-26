@@ -1,6 +1,6 @@
 # DormWatch design system
 
-Approved audit decisions, 2026-10-23. This is the stable visual and interaction
+Approved audit decisions, 2026-10-23; high-contrast app-wide palette refined 2026-10-26. This is the stable visual and interaction
 contract; page-specific behavior remains in the components.
 
 ## 1. Principles and language
@@ -26,6 +26,10 @@ text-sm; card titles use text-sm font-semibold; section titles use text-lg or
 text-xl; page titles use text-2xl or text-3xl. The house minimum of text-xs is a
 design choice, not a WCAG minimum font-size rule.
 
+Main forms use text-sm for labels, choices, input values, and instructions.
+Use font-semibold labels for hierarchy; text-xs compact labels are for dense
+interfaces, not main forms. Counters and file-size metadata remain text-xs.
+
 Useful variants:
 - Brand and hero: display sizes and font-bold with optional tracking-tight.
 - Statistics: text-2xl/text-3xl font-bold; values retain readable units.
@@ -50,28 +54,41 @@ src/index.css owns theme tokens. src/lib/complaintUtils.ts maps lifecycle and
 priority meanings; StatusBadge and RoleBadge own shared presentation.
 Do not duplicate mappings in cards, filters, comments, or analytics.
 
-Palette A (foreground / tinted background):
+Use saturated, readable text and thin colored borders over subtle tinted
+backgrounds. High contrast means clear foreground/background separation, not
+large luminous fills, pastel text, or neon buttons. Apply this app-wide to
+actions, links, selection, badges, and status indicators. Neutral content
+surfaces keep these cues legible. DESIGN.md records the user-approved decisions.
+
+Semantic palette (foreground / tinted background):
 
 | Meaning | Light | Dark |
 |---|---|---|
-| Awaiting action | #92400e / #fffbeb | #fcd34d / #30271b |
-| Approved or in progress | #075985 / #f0f9ff | #7dd3fc / #152a36 |
-| Success | #166534 / #f0fdf4 | #86efac / #172e22 |
-| Rejected, error, critical, overdue | #991b1b / #fef2f2 | #fca5a5 / #341c20 |
-| Neutral, including review | #57534e / #f5f5f4 | #d6d3d1 / #292524 |
+| Awaiting action | #a16207 / #fef9c3 | #facc15 / #302710 |
+| Approved, in progress, or review | #0369a1 / #e0f2fe | #00b7ff / #102a38 |
+| Success | #15803d / #dcfce7 | #00d65a / #10291a |
+| Rejected, error, critical, overdue | #b91c1c / #fee2e2 | #ff5252 / #321616 |
+| Administrator | #a16207 / #fef9c3 | #facc15 / #302a10 |
+| Worker | #c2410c / #ffedd5 | #fb923c / #321f12 |
+| Student | #1d4ed8 / #dbeafe | #3b9dff / #11243e |
 
 Use status-*-bg for a badge background and status-* for its foreground.
-Neutral review is an explicit product decision. Withdrawn is neutral.
-Not accepted and rejected use the danger meaning.
+Review uses information blue, matching approved/in-progress (2026-10-26).
+Withdrawn is neutral.
+Not accepted uses warning yellow/amber for another attempt; rejected uses danger.
 Role badges retain distinct identity cues: administrator yellow/amber, worker
 orange, and student blue. RoleBadge owns the mapping; --role-* tokens define
 readable foreground/background pairs in both themes. Unknown roles stay neutral.
 Critical priority may use danger; remaining priorities stay neutral.
 High and critical are both included in the separate urgent filter/count.
 
-The primary fill and primary-foreground pair belong to filled actions and
-selected controls. Link text uses --link (#075985 light / #7dd3fc dark).
-Never use the dark-theme primary fill as small text on a dark surface.
+Filled actions and selected controls use --primary / --primary-foreground:
+#0369a1 / #ffffff in both themes. Use the opaque --primary-hover fill #075985,
+rather than fading filled buttons and losing text contrast. Link text uses
+--link (#0369a1 light / #00b7ff dark). Selection and accent panels use
+--selection (#e0f2fe light / #112b3b dark), with --link text and a primary border.
+Use --link for small brand-colored text; filled controls use the paired foreground.
+Role/status badge borders use their foreground color at 40% opacity.
 Muted foreground is #57534e light / #d6d3d1 dark.
 Destructive foreground must always be defined.
 
@@ -89,6 +106,9 @@ status, not a decorative hue spectrum. Role colors communicate the
 administrator/worker/student distinction.
 
 ## 4. Interaction and accessibility
+
+Comment controls must not pulse or use animated attention dots. Show unread
+comments with static “· нові” text and preserve the expand/collapse behavior.
 
 Compose shared shadcn primitives. Use Button for actions, links for navigation,
 ToggleGroup for exclusive visible choices, Checkbox/Switch for boolean state,
@@ -131,6 +151,15 @@ Card padding and apply it once to the inner wrapper.
 Surface tiers: bg-muted for separation, bg-muted/50 for subtle hover/header
 fills, bg-muted/30 for subordinate content and secondary skeleton bars.
 
+Top-navbar navigation marks the current route with bg-muted/30, text-foreground,
+and a 2px border-link underline. Inactive links use text-muted-foreground.
+Keep this active surface neutral and expose aria-current="page".
+Below lg (1024px, including md), the student navbar replaces its logo with
+a left-aligned menu button and opens the navigation drawer from the left.
+The user button fits its content beside the rightmost notification bell, with
+left-aligned text capped by available space rather than fixed mobile widths.
+Inline metadata uses a decorative text middle dot (·), never a CSS square.
+
 Button variants:
 - default: primary fill with primary-foreground; principal action.
 - outline: visible boundary and neutral surface; secondary action.
@@ -145,11 +174,24 @@ worker actions; do not shrink them for mechanical consistency.
 WCAG 2.2 AA target sizing is 24x24 CSS pixels with stated exceptions; enhanced
 AAA is 44x44. Check width, height, and spacing together.
 
-Toggle/ToggleGroup selected state uses primary fill, primary-foreground and a
-primary boundary. Tabs may use an explicit underline or selected surface.
+Default/outline Toggle variants use primary fill and primary-foreground when
+selected. The shared selection variant, used for new-report categories and
+priorities, uses bg-selection/40, text-link (inherited by icons), border-link and a 1px
+inset ring for a stable 2px accent edge. Selected hover retains this appearance;
+keyboard focus uses the separate visible outer ring. Define these styles in the
+CVA primitive variant, not page CSS overrides.
+Tabs may use an explicit underline or selected surface.
+Admin overview, analytics, and resource-report period selectors use segmented
+Tabs: a padded bordered track using bg-card to match the sidebar/navigation,
+with an inset active tab using bg-primary and text-primary-foreground.
+Each selected period controls an associated tab panel and supports arrow keys.
+Complaint progress steppers use --primary for completed/current stages and
+--progress-track (#d4d4d8 light / #3f3f46 dark) for future stages. Keep stage
+labels visible.
+
 Processing-status distribution bars and their legend use shared semantic status
 fills: success green, in-progress blue, approved cyan, pending amber, and
-not-accepted red. Review remains neutral. Shared statusChartColor owns the
+not-accepted yellow/amber. Review uses information blue. Shared statusChartColor owns the
 mapping so the chart and legend cannot drift. Counts and labels remain visible.
 
 ## 6. Empty, loading, and error states

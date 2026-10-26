@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp, Home, Image as ImageIcon, Eye, User, Users, Phone } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageSquare, Trash2, ChevronRight, ThumbsUp, Home, Image as ImageIcon, Eye, User, Users } from "lucide-react";
 import { resolveImageUrl } from "@/services/imageUtils";
 import { StatusBadge, PriorityBadge, OverdueBadge } from "@/components/StatusBadge";
 import ComplaintAdminActions from "@/components/ComplaintAdminActions";
@@ -73,7 +73,7 @@ interface ComplaintCardProps {
 }
 
 export const Dot = ({ className }: { className?: string }) => (
-  <span className={cn("w-1 h-1 bg-border inline-block mx-1", className)} />
+  <span aria-hidden="true" className={cn("mx-1", className)}>·</span>
 );
 
 const ComplaintCard = ({
@@ -139,15 +139,6 @@ const ComplaintCard = ({
               >
                 <User className="size-3" strokeWidth={2.5} />
                 Ваше звернення
-              </Badge>
-            )}
-            {p.studentPhone && !isAdmin && (
-              <Badge
-                variant="outline"
-                className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
-              >
-                <Phone className="size-3" strokeWidth={2} />
-                {p.studentPhone}
               </Badge>
             )}
             {p.category && (
@@ -249,15 +240,6 @@ const ComplaintCard = ({
     </Badge>
   );
 
-  const phoneBadge = p.studentPhone && !isAdmin && (
-    <Badge
-      variant="outline"
-      className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5"
-    >
-      <Phone className="size-3" strokeWidth={2} />
-      {p.studentPhone}
-    </Badge>
-  );
 
   const metaLine = (
     <>
@@ -307,7 +289,6 @@ const ComplaintCard = ({
                 Ваше звернення
               </Badge>
             )}
-            {phoneBadge}
             {p.supportersCount > 0 && (
               <Badge variant="secondary" className="bg-primary/10 text-link border-transparent inline-flex items-center gap-1 text-xs">
                 <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
@@ -343,7 +324,6 @@ const ComplaintCard = ({
                   Ваше звернення
                 </Badge>
               )}
-              {phoneBadge}
               {p.supportersCount > 0 && (
                 <Badge variant="secondary" className="bg-primary/10 text-link border-transparent inline-flex items-center gap-1">
                   <ThumbsUp className="size-3" strokeWidth={2} /> {p.supportersCount}
@@ -360,7 +340,6 @@ const ComplaintCard = ({
                   Ваше звернення
                 </Badge>
               )}
-              {phoneBadge}
             </div>
           )}
           <div className="flex items-center gap-3 shrink-0">

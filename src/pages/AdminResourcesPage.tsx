@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchResourceReport, apiErrorText } from "@/services/problemsApi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { ResourceCatalogEditor } from "@/components/ResourceCatalogEditor";
@@ -39,9 +39,11 @@ export default function AdminResourcesPage() {
   return <div className="min-w-0 p-4 sm:p-6 space-y-6">
     <Card><CardContent className="space-y-5">
       <h2 className="text-lg font-semibold inline-flex items-center gap-2"><Coins className="size-5" />Звіт витрат на ремонтні роботи</h2>
-      <ToggleGroup type="single" value={period} onValueChange={(value) => { if (value) setPeriod(value); }} aria-label="Період звіту витрат" variant="outline" className="flex w-full flex-wrap justify-start">
-        {PERIOD_OPTIONS.map((option) => <ToggleGroupItem key={option.key} value={option.key}>{option.label}</ToggleGroupItem>)}
-      </ToggleGroup>
+      <Tabs value={period} onValueChange={setPeriod} className="min-w-0 gap-5">
+        <TabsList aria-label="Період звіту витрат" variant="segmented" className="grid w-full grid-cols-2 sm:w-fit sm:grid-cols-5">
+          {PERIOD_OPTIONS.map((option) => <TabsTrigger key={option.key} value={option.key} className="min-w-0 whitespace-normal last:col-span-2 sm:last:col-span-1">{option.label}</TabsTrigger>)}
+        </TabsList>
+        <TabsContent value={period} className="min-w-0 space-y-5">
       {loading ? <p role="status" className="text-sm text-muted-foreground">Завантаження звіту…</p> :
         error ? <div role="alert" className="space-y-2"><p className="text-sm text-destructive">{error}</p><Button variant="outline" onClick={load}>Спробувати ще раз</Button></div> :
         report && <>
@@ -116,6 +118,8 @@ export default function AdminResourcesPage() {
               )}
             </div>
         </>}
+        </TabsContent>
+      </Tabs>
     </CardContent></Card>
     <Card><CardContent className="space-y-5">
       <h2 className="text-lg font-semibold">Каталог ресурсів та матеріалів</h2>

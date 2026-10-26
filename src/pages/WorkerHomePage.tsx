@@ -1,3 +1,4 @@
+import ComplaintPhone from "@/components/ComplaintPhone";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { ComplaintResourceDisclosure } from "@/components/ComplaintResourcesSection";
@@ -13,7 +14,6 @@ import {
   Users,
   X,
   CheckCircle2,
-  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -384,15 +384,11 @@ const WorkerHomePage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <nav className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <Logo to="/worker" />
-          <div className="hidden sm:flex items-center gap-3">
-            <UserNavProfile />
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
+            <UserNavProfile allowFullWidth />
             <NotificationBell />
-          </div>
-          <div className="flex sm:hidden items-center gap-1.5">
-            <NotificationBell />
-            <UserNavProfile />
           </div>
         </div>
       </nav>
@@ -524,21 +520,14 @@ const WorkerHomePage = () => {
                           Повторне опрацювання
                         </Badge>
                       )}
-                      {job.studentPhone && (
-                        <Badge
-                          variant="outline"
-                          className="border-status-info/40 bg-status-info-bg text-status-info gap-1 text-xs font-semibold px-2 py-0.5"
-                        >
-                          <Phone className="size-3" strokeWidth={2} />
-                          {job.studentPhone}
-                        </Badge>
-                      )}
                     </div>
 
                     {/* Title */}
                     <h3 className="text-base font-semibold text-foreground leading-snug break-words [overflow-wrap:anywhere]">
                       {job.title}
                     </h3>
+
+                    <ComplaintPhone phone={job.studentPhone} />
 
                     {/* Description */}
                     {cleanDescription && (
@@ -696,7 +685,7 @@ const WorkerHomePage = () => {
                             size="lg"
                             disabled={busyId === job.id}
                             onClick={() => openFinishDialog(job)}
-                            className="w-full cursor-pointer font-semibold bg-primary hover:bg-primary/80 text-primary-foreground"
+                            className="w-full cursor-pointer font-semibold bg-primary hover:bg-primary-hover text-primary-foreground"
                           >
                             <CheckCircle2 className="size-4 mr-1.5" />
                             Виконано
@@ -713,20 +702,10 @@ const WorkerHomePage = () => {
                         onClick={() => toggleComments(job)}
                         aria-expanded={!!openComments[job.id]}
                         aria-controls={"comments-" + job.id}
-                        className={`text-link text-xs font-semibold hover:underline inline-flex items-center gap-1.5 h-auto cursor-pointer transition-all ${
-                          hasUnreadComments
-                            ? "animate-pulse bg-primary/10 px-2.5 py-1 border border-primary/30 rounded-none"
-                            : "p-0"
-                        }`}
+                        className="text-link text-xs font-semibold hover:underline inline-flex items-center gap-1.5 h-auto p-0 cursor-pointer"
                       >
                         <MessageSquare className="size-3.5 shrink-0" />
-                        <span>Коментарі ({commentCount})</span>
-                        {hasUnreadComments && (
-                          <span className="relative flex size-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-primary opacity-75" />
-                            <span className="relative inline-flex rounded-none size-2 bg-primary" />
-                          </span>
-                        )}
+                        <span>Коментарі ({commentCount}){hasUnreadComments ? " · нові" : ""}</span>
                         {openComments[job.id] ? (
                           <ChevronUp className="size-3.5 shrink-0" />
                         ) : (
@@ -852,7 +831,7 @@ const WorkerHomePage = () => {
               size="sm"
               onClick={confirmFinish}
               disabled={isFinishing}
-              className="text-xs font-semibold cursor-pointer bg-primary hover:bg-primary/80 text-primary-foreground"
+              className="text-xs font-semibold cursor-pointer bg-primary hover:bg-primary-hover text-primary-foreground"
             >
               {isFinishing ? "Збереження..." : "Підтвердити виконання"}
             </Button>

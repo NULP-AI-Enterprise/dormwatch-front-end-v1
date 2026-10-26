@@ -300,6 +300,7 @@ const CreateReportPage = () => {
 
   const visibleCategories = ALL_CATEGORIES.slice(categoryPage * 6, (categoryPage + 1) * 6);
 
+  // Design system §2: main-form labels, choices and content use text-sm; counters and file metadata stay text-xs.
   return (
     <div className="w-full min-w-0 max-w-3xl mx-auto px-4 py-8 relative">
       <div className="flex items-center gap-4 mb-8">
@@ -312,7 +313,7 @@ const CreateReportPage = () => {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Нове звернення
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Повідомте про проблему, і ми вирішимо її найближчим часом
           </p>
         </div>
@@ -324,7 +325,7 @@ const CreateReportPage = () => {
         <Button type="button" variant="outline" onClick={() => setLocationReload((value) => value + 1)}>Спробувати ще раз</Button>
       </div>}
       {error && (
-        <div className="mb-6 p-4 border border-destructive/30 bg-destructive/10 text-destructive text-xs font-bold">
+        <div className="mb-6 p-4 border border-destructive/30 bg-destructive/10 text-destructive text-sm font-bold">
           {error}
         </div>
       )}
@@ -333,7 +334,7 @@ const CreateReportPage = () => {
         {/* Категорії з пагінацією 6 категорій на сторінці */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <label className="text-xs font-bold text-foreground ">
+            <label className="text-sm font-semibold text-foreground ">
               Що саме трапилось?
             </label>
 
@@ -368,12 +369,12 @@ const CreateReportPage = () => {
           </div>
 
           <ToggleGroup type="single" value={selectedCategory} onValueChange={(value) => { if (value) setSelectedCategory(value); }}
-            aria-label="Категорія звернення" variant="outline" className="grid w-full grid-cols-2 md:grid-cols-3 gap-3">
+            aria-label="Категорія звернення" variant="selection" className="grid w-full grid-cols-2 md:grid-cols-3 gap-3">
             {visibleCategories.map((category) => {
               const IconComponent = category.Icon;
               return (
                 <ToggleGroupItem key={category.id} value={category.id}
-                  className="min-w-0 h-auto p-3 flex-col gap-2 whitespace-normal">
+                  className="min-w-0 h-auto p-3 flex-col gap-2 whitespace-normal text-sm">
                   <IconComponent className="size-6" strokeWidth={2} />
                   <span>{category.label}</span>
                 </ToggleGroupItem>
@@ -386,19 +387,19 @@ const CreateReportPage = () => {
           <div className="space-y-5">
             {/* Рівень пріоритету */}
             <div>
-              <label className="text-xs font-bold text-foreground  block mb-3">
+              <label className="text-sm font-semibold text-foreground  block mb-3">
                 Рівень пріоритету
               </label>
               <ToggleGroup type="single" value={formData.priority}
                 onValueChange={(value) => { if (value) setFormData((prev) => ({ ...prev, priority: value })); }}
-                aria-label="Рівень пріоритету" variant="outline" className="grid w-full grid-cols-2 gap-2">
-                {priorities.map((priority) => <ToggleGroupItem key={priority.id} value={priority.id} className="min-w-0">{priority.label}</ToggleGroupItem>)}
+                aria-label="Рівень пріоритету" variant="selection" className="grid w-full grid-cols-2 gap-2">
+                {priorities.map((priority) => <ToggleGroupItem key={priority.id} value={priority.id} className="min-w-0 text-sm">{priority.label}</ToggleGroupItem>)}
               </ToggleGroup>
             </div>
 
             {/* Короткий заголовок */}
             <div>
-              <label htmlFor="report-title" className="text-xs font-semibold block mb-2">
+              <label htmlFor="report-title" className="text-sm font-semibold block mb-2">
                 Короткий заголовок
               </label>
               <Input
@@ -410,13 +411,13 @@ const CreateReportPage = () => {
                 placeholder="Наприклад: Зламався змішувач, протікає батарея..."
                 maxLength={80}
                 required
-                className="h-10 text-xs"
+                className="h-10 text-sm md:text-sm"
               />
             </div>
 
             {/* Де саме проблема */}
             <div>
-              <label htmlFor="report-place" className="text-xs font-semibold block mb-2">
+              <label htmlFor="report-place" className="text-sm font-semibold block mb-2">
                 Де саме проблема?
               </label>
               {allowedPlaces.length > 0 ? (
@@ -432,12 +433,12 @@ const CreateReportPage = () => {
                   itemToStringLabel={(p) => p.place_name}
                   isItemEqualToValue={(a, b) => a.place_id === b.place_id}
                 >
-                  <ComboboxInput id="report-place" placeholder="Оберіть кімнату або зону..." className="w-full h-10 text-xs" />
+                  <ComboboxInput id="report-place" placeholder="Оберіть кімнату або зону..." className="w-full h-10 [&_input]:text-sm md:[&_input]:text-sm" />
                   <ComboboxContent>
                     <ComboboxEmpty>Місць не знайдено</ComboboxEmpty>
                     <ComboboxList>
                       {(p: Place) => (
-                        <ComboboxItem key={p.place_id} value={p}>
+                        <ComboboxItem key={p.place_id} value={p} className="text-sm">
                           {p.place_name}
                           {p.isShared && (
                             <span className="ml-1 text-muted-foreground text-xs">(спільна)</span>
@@ -466,7 +467,7 @@ const CreateReportPage = () => {
                   value=""
                   disabled
                   placeholder="Немає доступних кімнат — вкажіть гуртожиток у профілі"
-                  className="h-10 text-xs"
+                  className="h-10 text-sm md:text-sm"
                 />
               )}
 
@@ -478,7 +479,7 @@ const CreateReportPage = () => {
                     onCheckedChange={(checked) => setIsBlockShared(checked === true)}
                     className="rounded-none border-border bg-card text-link focus:ring-primary size-4"
                   />
-                  <label htmlFor="isBlockShared" className="text-xs font-medium text-foreground cursor-pointer select-none">
+                  <label htmlFor="isBlockShared" className="text-sm font-semibold text-foreground cursor-pointer select-none">
                     Це проблема спільного блоку
                   </label>
                 </div>
@@ -487,7 +488,7 @@ const CreateReportPage = () => {
 
             {/* Детальний опис проблеми */}
             <div>
-              <label htmlFor="report-description" className="text-xs font-semibold block mb-2">
+              <label htmlFor="report-description" className="text-sm font-semibold block mb-2">
                 Детальний опис проблеми
               </label>
               <Textarea
@@ -497,7 +498,7 @@ const CreateReportPage = () => {
                 onChange={handleInputChange}
                 rows={4}
                 placeholder="Будь ласка, вкажіть деталі: що сталось, коли помітили, чи потрібна присутність у кімнаті..."
-                className="min-h-28 resize-none text-xs"
+                className="min-h-28 resize-none text-sm md:text-sm"
                 required
               />
             </div>
@@ -506,7 +507,7 @@ const CreateReportPage = () => {
           {/* Фотодоказ: до 6 фото, стиснення, макс 10МБ */}
           <div className="flex flex-col">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <label className="text-xs font-bold text-foreground ">
+              <label className="text-sm font-semibold text-foreground ">
                 Фотодоказ (до {MAX_PHOTOS} фото)
               </label>
               <span className="text-xs font-medium text-muted-foreground">
@@ -548,7 +549,7 @@ const CreateReportPage = () => {
 
                   {photos.length < MAX_PHOTOS && (
                     <PhotoUploadField label="Додати ще фото" multiple disabled={compressing} onChange={handleFilesSelect} className="aspect-square p-2">
-                      <Plus className="size-6" /><span className="text-xs">Додати ще</span>
+                      <Plus className="size-6" /><span className="text-sm">Додати ще</span>
                     </PhotoUploadField>
                   )}
                 </div>
@@ -558,8 +559,8 @@ const CreateReportPage = () => {
               {photos.length === 0 && (
                 <PhotoUploadField label="Завантажити фото звернення" multiple disabled={compressing} onChange={handleFilesSelect} className="min-h-52 flex-1">
                   <Camera className="size-10 text-muted-foreground" />
-                  <span className="text-xs font-semibold">{compressing ? "Стискаємо фотографії…" : "Обрати фото"}</span>
-                  <span className="text-xs text-muted-foreground">До 6 фото PNG, JPEG або WEBP. Фото оптимізуються автоматично, загальний розмір — до 10 МБ.</span>
+                  <span className="text-sm font-semibold">{compressing ? "Стискаємо фотографії…" : "Обрати фото"}</span>
+                  <span className="text-sm text-muted-foreground">До 6 фото PNG, JPEG або WEBP. Фото оптимізуються автоматично, загальний розмір — до 10 МБ.</span>
                 </PhotoUploadField>
               )}
             </div>
@@ -573,7 +574,7 @@ const CreateReportPage = () => {
               <h3 className="text-sm font-semibold text-foreground">
                 Знайдено схожі відкриті проблеми
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Можливо, хтось уже повідомив про це? Приєднайтесь до звернення, щоб підвищити його пріоритет та отримувати сповіщення, замість створення нового.
               </p>
             </div>

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { LogOut, User, Sun } from "lucide-react";
 import { useUser } from "@/context/UserContext";
@@ -59,9 +60,10 @@ interface UserNavProfileProps {
   className?: string;
   showBurger?: boolean;
   compact?: boolean;
+  allowFullWidth?: boolean;
 }
 
-export default function UserNavProfile({ className, compact = false }: UserNavProfileProps) {
+export default function UserNavProfile({ className, compact = false, allowFullWidth = false }: UserNavProfileProps) {
   const { user } = useUser();
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -75,22 +77,31 @@ export default function UserNavProfile({ className, compact = false }: UserNavPr
 
   const displayName = getDisplayName(user);
   const roleLabel = getRoleLabel(user);
+  const textWidthClass = allowFullWidth
+    ? "max-w-full min-w-0"
+    : cn(
+        "max-w-[80px] min-[360px]:max-w-[110px] sm:max-w-[180px] md:max-w-[240px]",
+        compact && "lg:max-w-28 xl:max-w-[240px]",
+      );
 
   return (
     <>
-      <div className={`flex items-center gap-2 sm:gap-3 ${className || ""}`}>
+      <div className={cn("flex items-center gap-2 sm:gap-3", allowFullWidth && "min-w-0 max-w-full", className)}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="content"
               type="button"
-              className="flex flex-col items-start gap-0 text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-muted/50 select-none"
+              className={cn(
+                "flex flex-col items-start gap-0 text-left group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-none px-1.5 py-0.5 transition-colors hover:bg-muted/50 select-none",
+                allowFullWidth ? "min-w-0 max-w-full shrink" : "-mx-1.5",
+              )}
               title="Меню користувача"
               aria-label="Меню користувача"
             >
-              <span className={`text-sm font-semibold text-foreground leading-tight truncate max-w-[80px] min-[360px]:max-w-[110px] sm:max-w-[180px] md:max-w-[240px] group-hover:text-link transition-colors ${compact ? "lg:max-w-32 xl:max-w-[240px]" : ""}`}>
+              <span className={cn("text-sm font-semibold text-foreground leading-tight truncate group-hover:text-link transition-colors", textWidthClass)}>
                 {displayName}
               </span>
-              <span className={`text-xs text-muted-foreground leading-tight truncate max-w-[80px] min-[360px]:max-w-[110px] sm:max-w-[180px] md:max-w-[240px] mt-0.5 ${compact ? "lg:max-w-32 xl:max-w-[240px]" : ""}`}>
+              <span className={cn("text-xs text-muted-foreground leading-tight truncate mt-0.5", textWidthClass)}>
                 {roleLabel ? `${roleLabel} · ` : ""}{user.email}
               </span>
             </Button>

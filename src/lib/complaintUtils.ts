@@ -27,7 +27,7 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 // One color row per state, shared by every surface that paints a state.
-// Design system §4: status color is a hard ceiling of four hues, each earned
+// Design system §3: lifecycle colors communicate distinct meanings, each earned
 // by a distinct meaning — amber = awaiting action, sky = in work, green =
 // resolved/success, red = rejected/error/urgent/overdue. States that resolve
 // to the same meaning share a hue; everything else is neutral.
@@ -39,20 +39,20 @@ const NEUTRAL_COLOR = {
 
 const semanticStatus = (name: "warning" | "info" | "success" | "danger") => ({
   // Literal classes are kept here so Tailwind discovers every palette token.
-  warning: { badge: "text-status-warning bg-status-warning-bg border-status-warning/30", text: "text-status-warning", fill: "bg-status-warning" },
-  info: { badge: "text-status-info bg-status-info-bg border-status-info/30", text: "text-status-info", fill: "bg-status-info" },
-  success: { badge: "text-status-success bg-status-success-bg border-status-success/30", text: "text-status-success", fill: "bg-status-success" },
-  danger: { badge: "text-status-danger bg-status-danger-bg border-status-danger/30", text: "text-status-danger", fill: "bg-status-danger" },
+  warning: { badge: "text-status-warning bg-status-warning-bg border-status-warning/40", text: "text-status-warning", fill: "bg-status-warning" },
+  info: { badge: "text-status-info bg-status-info-bg border-status-info/40", text: "text-status-info", fill: "bg-status-info" },
+  success: { badge: "text-status-success bg-status-success-bg border-status-success/40", text: "text-status-success", fill: "bg-status-success" },
+  danger: { badge: "text-status-danger bg-status-danger-bg border-status-danger/40", text: "text-status-danger", fill: "bg-status-danger" },
 })[name];
 
 const STATUS_COLORS: Record<string, { badge: string; text: string; fill: string }> = {
   pending: semanticStatus("warning"),
   approved: semanticStatus("info"),
   in_progress: semanticStatus("info"),
-  review: NEUTRAL_COLOR,
+  review: semanticStatus("info"),
   resolved: semanticStatus("success"),
   rejected: semanticStatus("danger"),
-  not_accepted: semanticStatus("danger"),
+  not_accepted: semanticStatus("warning"),
   withdrawn: NEUTRAL_COLOR,
 };
 
@@ -63,10 +63,9 @@ export const statusColor = (status: string | null | undefined) =>
   STATUS_COLORS[String(status || "").toLowerCase()] ?? NEUTRAL_COLOR;
 
 // Distribution charts share status semantics, with distinct fills for the two
-// blue stages and a visible neutral review segment.
+// blue stages. Review and approved share the information-blue fill.
 export const statusChartColor = (status: string) => {
   if (status === "in_progress") return "bg-chart-in-progress";
-  if (status === "review") return "bg-muted-foreground";
   if (status === "closed_other") return "bg-muted-foreground/50";
   return statusColor(status).fill;
 };

@@ -19,7 +19,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -39,6 +38,7 @@ interface SettingsModalProps {
 const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
   const { user } = useUser();
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [showPhoneChange, setShowPhoneChange] = useState(false);
   const [phone, setPhone] = useState(user?.phone || "");
   const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [phoneSaved, setPhoneSaved] = useState(false);
@@ -56,10 +56,17 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
 
   const handleSavePhone = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSavingPhone(true);
+    const normalizedPhone = phone.trim().replace(/[\s().-]/g, "");
     setPhoneError(null);
+    setPhoneSaved(false);
+    if (normalizedPhone && !/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
+      setPhoneError("Вкажіть код країни й номер, наприклад +380671234567.");
+      return;
+    }
+    setIsSavingPhone(true);
     try {
-      await updateUserProfile({ phone: phone.trim() });
+      await updateUserProfile({ phone: normalizedPhone });
+      setPhone(normalizedPhone);
       setPhoneSaved(true);
       window.dispatchEvent(new Event("profileUpdated"));
       setTimeout(() => setPhoneSaved(false), 2500);
@@ -105,19 +112,19 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
           <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
             <div className="p-5">
               {isStudent && (
-                <div className="mb-5 space-y-2 border border-border p-4 bg-muted/20">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label htmlFor="profile-phone" className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Phone className="size-4 text-muted-foreground" strokeWidth={1.5} />
-                      Номер телефону
-                    </label>
-                    <Badge variant="outline" className="text-xs px-2 py-0.5 font-normal text-muted-foreground border-border">
-                      Опціонально
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Номер телефону є опціональним, але буде корисним майстру або коменданту, якщо вас не буде в гуртожитку, щоб домовитись на зручний час.
-                  </p>
+                <Collapsible open={showPhoneChange} onOpenChange={setShowPhoneChange} className="mb-5">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between h-auto py-2 cursor-pointer hover:bg-transparent">
+                      <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <Phone className="size-4" strokeWidth={2} />
+                        Змінити номер телефону
+                      </span>
+                      {showPhoneChange ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                <div className="mt-2 space-y-2">
+                  <label htmlFor="profile-phone" className="sr-only">Номер телефону</label>
                   <form onSubmit={handleSavePhone} className="flex flex-col sm:flex-row gap-2 pt-1">
                     <Input
                       id="profile-phone"
@@ -127,8 +134,13 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                       onChange={(e) => {
                         setPhone(e.target.value);
                         setPhoneSaved(false);
+                        setPhoneError(null);
                       }}
-                      placeholder="+380..."
+                      placeholder="+380671234567"
+                      inputMode="tel"
+                      maxLength={32}
+                      aria-invalid={!!phoneError}
+                      aria-describedby={phoneError ? "profile-phone-error" : undefined}
                       className="rounded-none text-sm h-9 bg-background"
                       disabled={isSavingPhone}
                     />
@@ -142,9 +154,12 @@ const SettingsModal = ({ open, onOpenChange }: SettingsModalProps) => {
                     </Button>
                   </form>
                   {phoneError && (
-                    <p className="text-xs text-destructive font-semibold">{phoneError}</p>
+                    <p id="profile-phone-error" role="alert" className="text-xs text-destructive font-semibold">{phoneError}</p>
                   )}
+                  {phoneSaved && <span role="status" className="sr-only">Номер телефону збережено.</span>}
                 </div>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
 
               <div className="mb-5">

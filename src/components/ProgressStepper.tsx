@@ -6,9 +6,8 @@ import { STATUS_LABELS } from "@/lib/complaintUtils";
 // Terminal outcomes off the pipeline (Відхилено / Не прийнято / Скасовано)
 // render as one full-width marker instead of lighting up the path.
 //
-// Design system §5: the pipeline itself is information — bars are monochrome
-// (reached = `bg-foreground`, future = `bg-muted`). Color appears only for a
-// genuinely alert terminal: rejected renders a `--destructive` bar.
+// Design system §5: reached/current stages use the primary accent;
+// future stages use the neutral progress track.
 const PIPELINE = ["pending", "approved", "in_progress", "review", "resolved"] as const;
 
 // Terminal label tones — same four-hue status set as badges (§4). "rejected"
@@ -80,7 +79,7 @@ const ProgressStepper = ({ status }: ProgressStepperProps) => {
               key={key}
               className={cn(
                 "h-full transition-all duration-500",
-                isReached ? "bg-foreground" : "bg-muted",
+                isReached ? "bg-primary" : "bg-progress-track",
                 isCurrent && !isResolved && "motion-safe:animate-pulse"
               )}
             />

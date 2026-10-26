@@ -33,7 +33,7 @@ export function ThemeToggle() {
           title={label}
           // design-system.md §7: ToggleGroup on-states carry the primary fill,
           // not the muted on-state shadcn ships by default.
-          className="size-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary/80 cursor-pointer"
+          className="size-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary data-[state=on]:hover:bg-primary-hover cursor-pointer"
         >
           <Icon className="size-3.5" strokeWidth={2} />
         </ToggleGroupItem>

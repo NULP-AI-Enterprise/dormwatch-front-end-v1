@@ -45,7 +45,12 @@ export function apiErrorText(err, fallback) {
       body.worker_id ??
       body.priority ??
       body.deadline ??
-      body.detail;
+      body.quantity ??
+      body.unit_cost ??
+      body.resource_id ??
+      body.non_field_errors ??
+      body.detail ??
+      body.error;
     if (typeof field === "string") return field;
     if (Array.isArray(field)) return field.join(" ");
   } catch {

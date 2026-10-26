@@ -1,4 +1,4 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { isUrgentPriority } from "@/lib/complaintUtils";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -110,12 +110,11 @@ const AdminPage = () => {
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <div className="flex-1 overflow-auto p-6">
-        <div className="mx-auto max-w-6xl space-y-8">
+        <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as AnalyticsTimeframe)} className="mx-auto w-full max-w-6xl gap-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <ToggleGroup type="single" value={timeframe} onValueChange={(value) => { if (value) setTimeframe(value as AnalyticsTimeframe); }}
-              aria-label="Період огляду" variant="outline" className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4 gap-1">
-              {TIMEFRAME_OPTIONS.map((opt) => <ToggleGroupItem key={opt.value} value={opt.value} className="min-w-0 whitespace-normal h-auto min-h-8 py-1.5">{opt.label}</ToggleGroupItem>)}
-            </ToggleGroup>
+            <TabsList aria-label="Період огляду" variant="segmented" className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
+              {TIMEFRAME_OPTIONS.map((opt) => <TabsTrigger key={opt.value} value={opt.value} className="min-w-0 whitespace-normal h-auto min-h-8 py-1.5">{opt.label}</TabsTrigger>)}
+            </TabsList>
 
             <Button
               variant="outline"
@@ -128,6 +127,7 @@ const AdminPage = () => {
             </Button>
           </div>
 
+          <TabsContent value={timeframe}>
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -174,6 +174,8 @@ const AdminPage = () => {
               />
             </div>
           )}
+
+          </TabsContent>
 
           <div className="bg-card border border-border overflow-hidden">
             <div className="px-6 py-4">
@@ -258,7 +260,7 @@ const AdminPage = () => {
               </TableBody>
             </Table>
           </div>
-        </div>
+        </Tabs>
       </div>
 
       {selectedComplaint && (

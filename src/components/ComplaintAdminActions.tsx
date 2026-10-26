@@ -48,7 +48,7 @@ interface ComplaintAdminActionsProps {
 
 const destructiveActionClass =
   "bg-destructive text-destructive-foreground hover:bg-destructive/90";
-const skyActionClass = "bg-primary hover:bg-primary/80 text-primary-foreground";
+const skyActionClass = "bg-primary hover:bg-primary-hover text-primary-foreground";
 
 // One confirmation dialog + trigger button for the actions that need no input.
 const ConfirmAction = ({

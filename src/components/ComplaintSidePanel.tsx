@@ -1,3 +1,4 @@
+import ComplaintPhone from "@/components/ComplaintPhone";
 import { PhotoAttachment } from "@/components/PhotoAttachment";
 import { useState, useEffect } from "react";
 import { Sheet, SheetHeader, SheetTitle, SheetDescription, SheetContent } from "@/components/ui/sheet";
@@ -44,7 +45,7 @@ import ComplaintResidentActions from "@/components/ComplaintResidentActions";
 import ComplaintResourcesSection from "@/components/ComplaintResourcesSection";
 import PhotoUploadField from "@/components/PhotoUploadField";
 import { formatDate } from "@/lib/dateUtils";
-import { Home, Users, ZoomIn, Pencil, Phone } from "lucide-react";
+import { Home, Users, ZoomIn, Pencil } from "lucide-react";
 import type { Complaint, CategoryOption } from "@/lib/types";
 
 interface ComplaintSidePanelProps {
@@ -194,12 +195,6 @@ const ComplaintSidePanel = ({
                     Повторне опрацювання
                   </Badge>
                 )}
-                {complaint.studentPhone && !isAdmin && (
-                  <Badge variant="outline" className="border-status-info/40 bg-status-info-bg text-status-info inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5">
-                    <Phone className="size-3" strokeWidth={2} />
-                    {complaint.studentPhone}
-                  </Badge>
-                )}
               </div>
             </div>
             {isEditing ? (
@@ -212,10 +207,13 @@ const ComplaintSidePanel = ({
               <h3 className="text-base font-bold text-foreground mb-1 break-words [overflow-wrap:anywhere]">{complaint.title || "Без назви"}</h3>
             )}
             <p className="text-xs font-normal text-muted-foreground flex flex-wrap items-center">
-              <span>{complaint.building || "?"}{complaint.placeName && <><span className="w-1 h-1 bg-border inline-block mx-1.5" />{complaint.placeName}</>}</span>
-              <span className="w-1 h-1 bg-border inline-block mx-1.5" />
+              <span>{complaint.building || "?"}{complaint.placeName && <><span aria-hidden="true" className="mx-1.5">·</span>{complaint.placeName}</>}</span>
+              <span aria-hidden="true" className="mx-1.5">·</span>
               <span>{isOwner ? "Ви (автор)" : isAdmin ? (complaint.userName || "Автор звернення") : "Автор звернення"}</span>
             </p>
+            <div className="mt-2">
+              <ComplaintPhone phone={complaint.studentPhone} />
+            </div>
           </div>
 
           <div className="py-2.5 border-y border-border/50">

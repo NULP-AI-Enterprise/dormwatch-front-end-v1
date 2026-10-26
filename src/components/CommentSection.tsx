@@ -138,7 +138,7 @@ const CommentSection = ({
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">{c.text}</p>
-              {(currentUserId === c.author_id || isAdmin) && (
+              {(currentUserId != null && String(currentUserId) === String(c.author_id)) && (
                 <Button aria-label={"Видалити коментар: " + c.author} variant="ghost" size="icon-xs" onClick={() => handleDelete(c.id)} className={`absolute top-1 right-1 ${ERROR_TEXT} opacity-100 transition-opacity`}>
                   <X className="size-3" strokeWidth={2} />
                 </Button>

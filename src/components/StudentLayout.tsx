@@ -3,7 +3,6 @@ import { type ReactNode, useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAdminUser } from "@/lib/complaintUtils";
-import { SELECTED } from "@/lib/theme";
 import { useUser } from "@/context/UserContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import ComplaintSidePanel from "@/components/ComplaintSidePanel";
@@ -41,20 +40,34 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col w-full max-w-full">
       <nav className="bg-card border-b border-border sticky top-0 z-50 w-full">
-        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-8">
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden cursor-pointer"
+              aria-label="Меню навігації"
+              aria-expanded={mobileMenuOpen}
+              aria-haspopup="dialog"
+              title="Меню навігації"
+            >
+              <Menu className="size-5" strokeWidth={1.75} />
+            </Button>
             {/* Logo route matches the layout: residents → /user (their home),
                 admins landing here via /dashboard → /admin (avoid a bounce). */}
-            <Logo to={admin ? "/admin" : "/user"} />
+            <Logo to={admin ? "/admin" : "/user"} className="hidden lg:flex" />
 
             <div className="hidden lg:flex items-center">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
+                  aria-current={currentPath === item.to ? "page" : undefined}
                   className={`px-4 py-5 text-sm font-semibold transition-colors border-b-2 ${
                     currentPath === item.to
-                      ? SELECTED
+                      // Design system §5: neutral nav surface, foreground text, accent underline.
+                      ? "border-link bg-muted/30 text-foreground"
                       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >
@@ -70,19 +83,10 @@ const StudentLayout = ({ children }: { children: ReactNode }) => {
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
           </div>
 
-          {/* Mobile & Tablet right controls: [NotificationBell] [UserNavProfile] [MenuButton] */}
-          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
+          {/* Mobile/tablet: content-sized account and notifications align to the right. */}
+          <div className="flex min-w-0 flex-1 lg:hidden items-center justify-end gap-3">
+            <UserNavProfile allowFullWidth />
             <NotificationBell onSelectComplaint={setSelectedComplaint} />
-            <UserNavProfile />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMobileMenuOpen(true)}
-              className="size-9 text-foreground hover:bg-muted/60 cursor-pointer"
-              title="Меню навігації"
-            >
-              <Menu className="size-5" strokeWidth={1.75} />
-            </Button>
           </div>
         </div>
       </nav>

@@ -1,3 +1,4 @@
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { Link, useLocation } from "react-router-dom";
@@ -103,7 +104,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-between gap-2 lg:ml-auto lg:w-auto lg:justify-end">
             {pageActions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 [&>*]:max-w-full">{pageActions}</div>}
             <AdminExportButton />
-            <UserNavProfile compact={Boolean(pageActions)} />
+            <Separator orientation="vertical" className="hidden h-8 data-vertical:self-center lg:block" />
+            <UserNavProfile compact />
             <AdminNotificationBell />
           </div>
         </header>

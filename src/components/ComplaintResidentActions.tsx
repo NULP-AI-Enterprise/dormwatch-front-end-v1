@@ -118,7 +118,7 @@ const ComplaintResidentActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Скасувати</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-primary hover:bg-primary/80 text-primary-foreground"
+                className="bg-primary hover:bg-primary-hover text-primary-foreground"
                 onClick={handleAccept}
               >
                 Прийняти
@@ -197,7 +197,7 @@ const ComplaintResidentActions = ({
                 Скасувати
               </Button>
               <Button
-                className="bg-primary hover:bg-primary/80 text-primary-foreground"
+                className="bg-primary hover:bg-primary-hover text-primary-foreground"
                 disabled={!reason.trim() || busy}
                 onClick={handleReject}
               >
@@ -231,7 +231,7 @@ const ComplaintResidentActions = ({
             <AlertDialogFooter>
               <AlertDialogCancel>Назад</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-primary hover:bg-primary/80 text-primary-foreground"
+                className="bg-primary hover:bg-primary-hover text-primary-foreground"
                 onClick={handleWithdraw}
               >
                 Скасувати звернення

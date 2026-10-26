@@ -1,4 +1,4 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { isUrgentPriority, priorityBreakdown, statusChartColor } from "@/lib/complaintUtils";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -161,6 +161,7 @@ export const AdminAnalyticsSheet = ({
         side="right"
         className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 border-l border-border bg-card flex flex-col h-full shadow-2xl"
       >
+        <Tabs value={timeframe} onValueChange={(value) => handleTfClick(value as AnalyticsTimeframe)} className="min-h-0 flex-1 gap-0">
         {/* Sticky Header with Title and Segmented Timeframe Switcher */}
         <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b border-border p-6 pr-14 space-y-4">
           <div className="flex flex-col gap-1">
@@ -178,14 +179,13 @@ export const AdminAnalyticsSheet = ({
           </div>
 
           {/* Timeframe selector: responsive 4-column grid, no clipping */}
-          <ToggleGroup type="single" value={timeframe} onValueChange={(value) => { if (value) handleTfClick(value as AnalyticsTimeframe); }}
-              aria-label="Період аналітики" variant="outline" className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4 gap-1">
-              {(["week", "month", "year", "all"] as AnalyticsTimeframe[]).map((tf) => <ToggleGroupItem key={tf} value={tf} className="min-w-0 whitespace-normal h-auto min-h-8 py-1.5">{TIMEFRAME_LABELS[tf]}</ToggleGroupItem>)}
-            </ToggleGroup>
+          <TabsList aria-label="Період аналітики" variant="segmented" className="grid w-full sm:w-auto grid-cols-2 sm:grid-cols-4">
+              {(["week", "month", "year", "all"] as AnalyticsTimeframe[]).map((tf) => <TabsTrigger key={tf} value={tf} className="min-w-0 whitespace-normal h-auto min-h-8 py-1.5">{TIMEFRAME_LABELS[tf]}</TabsTrigger>)}
+            </TabsList>
         </div>
 
         {/* Scrollable Analytics Body */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <TabsContent value={timeframe} className="min-h-0 p-6 space-y-6 overflow-y-auto flex-1">
           {/* Key KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 bg-muted/20 border border-border">
@@ -547,7 +547,8 @@ export const AdminAnalyticsSheet = ({
               Закрити
             </Button>
           </div>
-        </div>
+        </TabsContent>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );

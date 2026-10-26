@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
   fetchComplaintDetail,
 } from "@/services/problemsApi";
 import type { Complaint } from "@/lib/types";
-import { ACCENT_BG, ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT, LINK, LINK_HOVER } from "@/lib/theme";
+import { ACCENT_BG, ACCENT_BORDER, ACCENT_BG_LIGHT, ACCENT_BG_HOVER_LIGHT } from "@/lib/theme";
 
 interface NotificationBellProps {
   onSelectComplaint?: (complaint: Complaint) => void;
@@ -146,11 +146,15 @@ export function NotificationBell({ onSelectComplaint }: NotificationBellProps) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="text-sm font-bold text-foreground">Сповіщення</span>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="content"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleMarkAllRead}
-              className={`text-xs font-semibold ${LINK} ${LINK_HOVER} cursor-pointer`}
+              aria-label="Позначити все як прочитане"
+              title="Позначити все як прочитане"
+              className="cursor-pointer"
             >
-              Позначити все як прочитане
+              <CheckCheck className="size-4" aria-hidden="true" />
             </Button>
           )}
         </div>

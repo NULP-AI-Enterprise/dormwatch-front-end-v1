@@ -69,6 +69,7 @@ conventions live in the root `CLAUDE.md`.
 
 ## References
 
+- `DESIGN.md` — user-approved design and interaction decisions
 - `.agents/design-system.md` — the visual spec (authoritative)
 - `components.json` — shadcn config (style, base color, icon library)
 - `src/lib/types.ts` — shared data types
